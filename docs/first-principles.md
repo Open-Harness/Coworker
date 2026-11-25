@@ -10,7 +10,7 @@ application is for. Nothing here is agreed until it says so. Evidence is in [fin
 
 Three things follow, and each rules something out:
 
-1. **It is about outcomes, not chats and not cards.** A board is one way to look at the work. It is not the product.
+1. **It is about outcomes, not chats and not cards.** A board is how a manager keeps track (28). It is not the product.
 2. **A co-worker is measured by what it finishes per minute of your attention.** A screen you have to check is a cost.
 3. **Trust is earned per kind of work.** So it must show its evidence, be corrected, and remember the correction.
 
@@ -100,6 +100,20 @@ Yours in 1 to 7, 9, 10 and 19 to 25; the rest proposed and agreed. 25 November 2
     scope; provisions what they need (a phone number, a WhatsApp account, an address); runs the email system; and over time
     watches, refines and updates them. It mostly makes a new one from a template, or forks itself. *Meta-management, hill
     climbing.* It has the permission to do this, and scopes permissions to the others.
+
+**Restated by the user after the first GitHub drawings, which had drifted. To be confirmed. Where it differs, this wins:**
+
+26. **A tree.** The root manager has all the authority there is. It does not do the jobs. It creates, manages, maintains and
+    improves the managers that do, and so the whole system.
+27. **Each manager is made for one job**, with the connectors that job needs: GitHub, or email, or several together.
+28. **A manager runs a process, like a factory.** Events come in from its connectors and turn into work, the work is tracked
+    on its board, output goes out. It decides how it keeps its state and how things move through it. *The board, the
+    mission and the rest of what the canvas had for a manager stay.* (Takes back "no board".)
+29. **A manager starts the threads that do the work.** They can be opened, with their reasoning trace, but people do not
+    live in them. Whoever wants to talk, talks to the manager.
+30. **Mostly you look at it in aggregate**: what came in, what is in each step, what went out, how well, where it is stuck.
+31. **The console is for the people who configure and run the system.** Everyone else meets it in the gateway: the pull
+    request, the mail, the chat.
 
 How I read 19 to 25, to be corrected:
 

@@ -29,6 +29,8 @@ the environment, tries it, and says in one message what it found and what it can
 
 ## In the console
 
+Being redone: this was drawn for someone doing the work. The console is for whoever runs the system (first-principles 26 to 31).
+
 - **Its GitHub**, as it sees it: issues and pull requests it has, each with what it waits for (you, CI, itself), done ones
   gone. Opens as an issue or a pull request: the conversation, the diff, the checks, and what it did beside it, live.
 - **The co-worker**: talk to it; what it is doing now; what it may do on this repo; its notes.
