@@ -43,13 +43,17 @@ interface Person { id: PersonId; handles: Handle[]; standIn?: PersonId }   // (1
 ## Reach
 
 ```ts
-interface Connector {                      // GitHub, email, Slack, WhatsApp, or a plain MCP server (8, 32). See connectors.md
+interface Connector {                      // GitHub, email, Slack, WhatsApp: ours, in code (32). See connectors.md
   id: ConnectorId;
   setUp: AdminAction[];                    // the root manager's, and a person's where only a person can
-  events: EventKind[];                     // what comes in. Empty for a plain MCP server
+  events: EventKind[];                     // in
   receive: (raw: unknown) => Result<Event, "not_signed" | "not_ours" | "broken">;
-  actions: ActionSpec[]; skills: SkillId[]; // what goes out (by MCP, our own call or git), and how to use it well
-  thread: ThreadView | null;               // how a thread of it is drawn (14). None if nothing comes in
+  actions: ActionSpec[]; skills: SkillId[]; // out, and how to use it well
+  thread: ThreadView;                      // how a thread of it is drawn (14)
+}
+interface McpServer {                      // tools a manager can use, added without code (33). Nothing comes in
+  id: McpId; url: string; signIn: SecretId | null;
+  tools: Record<ToolName, "on" | "ask">;   // not listed: off. Handed on as a part, like a Grant
 }
 interface Account {                        // (9, 11)
   id: AccountId; connector: ConnectorId;

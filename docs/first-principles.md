@@ -45,7 +45,7 @@ In order of how much the product depends on it.
 | 3 | **An outcome with done-when and evidence** | Otherwise nothing can be checked, so a person must check everything |
 | 4 | **People do work too** | A co-worker that needs a password, a call or a decision gives *you* a task, with a date, and carries on when it is done |
 | 5 | **An inbox for everyone**: each person has one, and each co-worker has one | Yours: what needs you. Its: what reached it, and what became of it |
-| 6 | **Connections**: what it hears, what it can do, what it looks like from inside, with permissions per action | GitHub, email, Slack and MCP servers are one kind of thing |
+| 6 | **Connections**: what it hears, what it can do, what it looks like from inside, with permissions per action | GitHub, email and Slack are one kind of thing. MCP servers are another (33) |
 | 7 | **Knowledge**: mission, customers, decisions, corrections, with where each came from | Step 9. Also step 2: you cannot judge without it |
 | 8 | **Limits**: money, time, how many at once, how far it may go | Nobody leaves an unlimited thing running for a week |
 | 9 | **Trust that grows**: watch, then ask, then do, per kind of work, from its record | Today a fixed on, off, ask that nothing learns from |
@@ -116,7 +116,8 @@ Yours in 1 to 7, 9, 10 and 19 to 25; the rest proposed and agreed. 25 November 2
     request, the mail, the chat.
 32. **One thing: a connector.** GitHub, email, WhatsApp, Slack: a system that things come in from and go out to. App, source
     and gateway are the same thing under other words. It has four parts: set
-    up, in, out, know-how. MCP supplies the *out* where it is good, and nothing else: [connectors.md](connectors.md) (mine).
+    up, in, out, know-how. All of it is ours, in code: [connectors.md](connectors.md).
+33. **MCP servers are a separate layer**: tools a manager can use, added without code. Not connectors, not inside them.
 
 How I read 19 to 25, to be corrected:
 
@@ -144,7 +145,8 @@ Earlier idea dropped: person, manager and worker as one kind of thing ("member")
 | **Co-worker** | A manager. Has a mission, a board, its own identity and a scope. Decides, hands out, follows up, answers |
 | **Worker** | An agent a co-worker starts for one piece of work, with a part of its scope. Its report wakes the co-worker |
 | **Person** | Someone in the organisation, or outside it. May answer, do a piece of work, or lend an account |
-| **Connector** | GitHub, email, Slack, WhatsApp, an MCP server: events in, actions out, skills, a view |
+| **Connector** | GitHub, email, Slack, WhatsApp: set up, events in, actions out, skills and a view. Ours, in code |
+| **MCP server** | Tools a manager can use, added without code |
 | **Account** | One account of a connector. Someone holds it: a manager (its own), or a person who lends it. A holder can hand on a part of it, to a manager or a worker |
 | **Scope** | Which accounts, which actions on them, on, ask or off, within which limits |
 | **Work** | Mission, task, step. Done-when, who answers for it, who does it, evidence |
