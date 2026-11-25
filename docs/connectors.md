@@ -6,14 +6,15 @@ from their own docs on 25 November 2026, nothing was run. Names are proposals.
 ## The shape
 
 A connector is **ours, in code**, so that we control all of it. It does not wrap an MCP server. MCP servers are a separate
-layer, below. A connector has four parts:
+layer, below. A connector has five parts:
 
 | Part | What it is | Who uses it | How |
 |---|---|---|---|
 | **Set up** | Make an account, prove it, watch that it is alive, take it away | The root manager, and a person where only a person can | The system's admin API. Never a thread |
 | **In** | Events, made into one form: which conversation, who, what, when | The manager they are for | A signed webhook, or the mail handler |
 | **Out** | Actions, each on, ask or off, and only where it was handed | Threads | Our calls to the system's API, or git in the sandbox |
-| **Know-how** | Skills, and how one conversation is shown | Threads, and the console | Ours |
+| **Know-how** | Skills | Threads | Ours |
+| **View** | How its things are listed and opened, for the people who run the system | The console | One of four shapes, filled in. [Proposed](#the-view-proposed) |
 
 ```ts
 interface Connector {
@@ -135,8 +136,36 @@ write first.
 
 An app a person installs. Slack's Events API in, our calls to its Web API out, so it speaks as itself.
 
+## The view (proposed)
+
+Every connector says the same two things: a **thing** (a chat, a mail chain, a Slack thread, an issue, a deal) and an **entry** on
+it (a message, a change, a file). We keep both as they arrive, so a list, a page, filters and search need no code of the plug-in's.
+
+```ts
+interface Thing { id: ThingId; title: string; who: Actor; state: string; fields: Record<string, Value>; in?: ThingId }  // in: the channel, the company
+interface Entry { id: EntryId; thing: ThingId; at: Time; by: Actor; kind: "message" | "change" | "file" | "note"; body: unknown }
+
+interface View {
+  shape: "chats" | "mail" | "records" | "reviews";   // we draw these four
+  columns: FieldName[]; filters: Filter[];            // what its list shows and can be filtered by
+  box: ActionId[];                                    // what a person may do at the bottom of an open thing
+}
+```
+
+`receive` answers with a thing and an entry. An action that went out is an entry too. So the view never differs from what the manager saw.
+
+## A thread is a fork
+
+`tx.forkConversation(parent, at, …)` in pi-durable 1.6 makes "a history fork at one concrete visible entry". A Slack mention
+forks the manager's conversation with that channel, at that message. Work on it is forked again. Each is its own agent, with its
+own limits, and reports to what it was forked from.
+
+How others do it, read on 25 November 2026: OpenClaw gives each Slack thread its own session, fetches the last 20 messages of the
+thread, and does not take on the channel's session unless `thread.inheritParent` is set. Claude Tag keeps one session for the
+channel's top level and reads every reply in a thread it is in.
+
 ## What this decides
 
-1. All four parts of a connector are ours. We write each one.
+1. Every connector is a plug-in on one contract. The first ones are ours (first-principles 37).
 2. MCP servers are a separate layer that a manager can use, like skills, with the same permissions.
 3. Set-up actions are tools of the root manager only. Where only a person can do it, it asks for exactly that: click, scan.

@@ -3,7 +3,7 @@
 What stands between the spike and the agreement, and which Astryx template each screen adapts. Checked 25 November 2026
 by rendering all 58 page templates and capturing every screen. `pnpm exec astryx template <name>` prints one.
 
-44 screens: 3 kept, 27 adapted, 7 redone, 6 new, 1 dropped, from 25 templates.
+49 screens: 3 kept, 27 adapted, 7 redone, 11 new, 1 dropped, from 27 templates.
 
 ## Why the first ones look made up
 
@@ -33,7 +33,7 @@ has the same line. A screen that names none is refused.
 
 ## One look
 
-1. **One shell.** `shell-side-nav`, with the tree. Settings stay inside it.
+1. **One shell.** `shell-side-nav`: System, Inbox, Search and the tree. Everything managers are built from is in Settings, which has its own list beside the page.
 2. **One header.** Title, one line of status, actions on the right, tabs under it. 24 px gutter. Today there are three: edge to edge at 12 px (Board, Inbox, Events), 24 px (Agents, manager settings), and a centred column (Billing, a run).
 3. **Three bodies.** Panes (inbox, in and out, chat), a grid (the dashboards), a record (task, agent, connector). Nothing else.
 4. **Colour means something is wrong, or waits.** Soft tokens for states, a dot for who is working. Solid badges only for what needs a person.
@@ -45,7 +45,7 @@ has the same line. A screen that names none is refused.
 
 | Screen | | Template | Today | Take |
 |---|---|---|---|---|
-| Sidebar | Adapt | `shell-side-nav` | Six links under every manager, always open. With three managers the Build group is already off screen. No sign of who is working or stuck. A tree cannot fit. | The tree, folding out under the root to any depth, with a status dot per row. Names are yours. A manager’s views become tabs on its page. |
+| Sidebar | Adapt | `shell-side-nav` | Six links under every manager, always open. With three managers the Build group is already off screen. No sign of who is working or stuck. A tree cannot fit. | System, Inbox, Search, then the tree, folding out under the root to any depth. A mark only on a manager that is stuck or waits for you. A manager’s views become tabs on its page. Build moves into Settings. |
 | Home becomes System | Redo | `dashboard-scorecard` | Counts of open tasks. It says nothing about how the system does. | Scorecard tiles with change, goals per manager, and “What changed & why” written by the root manager. |
 | Root manager: the tree | New | `table-tree` | Does not exist. Managers are a flat list. | Managers as rows that roll up what is below them; the rail says what the root has and what it has handed out. |
 | Root manager: versions compared | New | `table-comparison` | Does not exist. A manager has no versions. | Old and new version of a manager side by side on the same past cases, best highlighted. |
@@ -65,8 +65,8 @@ has the same line. A screen that names none is refused.
 | Board: Inbox | Drop | `none` | The same tasks a fourth time. Dropped by you. | Templates that open on it open on List. |
 | Task | Redo | `work-item-detail` | A form. Six boxes and three Save buttons, where you came to read what is going on. | The record: properties in the header, done-when as the checklist with progress, linked items for the pull request and the thread, activity below. |
 | Mission | Adapt | `documentation-technical` | Two lines of text in an empty page. | The article with its outline, and the “AI assistance” card as “ask the manager to change this”. |
-| In and out (was Events) | Adapt | `incident-console` | Follows the template well. It only shows what came in. | Keep it. Add what went out, and a timeline from event to task to output in the pane. |
-| Threads | New | `table-filter` | Does not exist. A run is only reachable from its task. | Every thread, filtered and grouped by state or task, with saved views and a detail pane. |
+| In and out: All (was Events) | Adapt | `incident-console` | Follows the template well. It only shows what came in. | The All view, beside each connector’s own. Add what went out, and a timeline from event to task to output. |
+| Threads | New | `table-tree` | Does not exist. A run is only reachable from its task. | Every thread is a fork and its own agent, so they are a tree: the conversation, its forks, their forks. |
 | One thread, with its trace | Redo | `ai-chat` | A narrow column of text with no work in it. The calls it made are one grey line. | Turns with collapsible tool calls, and the panel for the diff, the files or the terminal. No composer: you talk to the manager. |
 | Talk to it | Adapt | `ai-chat` | Raw JSON in the answers, and no room for what it made. | The same template, so a thread and a chat read alike. The panel shows the task, page or change being discussed. |
 | Its connectors (was Sources) | Adapt | `table-collapsible` | A table, then the same three things again as cards. Nothing about accounts. | One group per connector, one row per account, with in, out and what came through. |
@@ -74,21 +74,31 @@ has the same line. A screen that names none is refused.
 | Who may ask | Adapt | `settings` | Headings, a radio list and two tables with no common layout. | Label and explanation on the left, control on the right. |
 | Its board’s set-up | Adapt | `settings` | Fine as tables, but a different page shape from the other three tabs. | The same settings layout. |
 
-## What it is built from
+## What a connector shows, in “In and out”
+
+| Screen | | Template | Today | Take |
+|---|---|---|---|---|
+| WhatsApp | New | `messaging-shell` | Does not exist. A chat is only known by its task. | Chats to filter and search, open one, tell the manager or write as it. |
+| Slack | New | `messaging-shell` | Does not exist. | Channels and direct messages, with the threads nested under them; the thread beside the channel. |
+| Email | New | `table-inbox` | A mail is a line in Events. | The mailbox, the chain, drafts that wait for a yes. |
+| A CRM: the list | New | `table-page` | Does not exist. | Deals, who changed them last, and the manager’s own task for each. |
+| A CRM: one deal | New | `detail-page` | Does not exist. | One timeline of what came in and what went out. |
+
+## Settings: what managers use
 
 | Screen | | Template | Today | Take |
 |---|---|---|---|---|
 | Connectors and accounts | New | `table-collapsible` | Does not exist. GitHub is a card on Keys, email a tab of a manager. | Every account, whose it is, which managers have a part of it, whether it works. |
 | Connect GitHub (or mail, or WhatsApp) | Redo | `form-wizard-inline` | Switches and checkboxes per repo, after you have left for GitHub and come back. | Steps that check themselves: install, choose repos, trial, enable. The sample is already about CI on pull requests. |
 | Email set-up | Adapt | `form-wizard-inline` | A table with one row and a paragraph in a box. | The same set-up as GitHub, so every connector looks alike. |
-| One connector | New | `detail-page` | Does not exist. | Tabs for its four parts: set up, in, out, know-how. Rail: accounts and managers using it. |
+| One connector | New | `detail-page` | Does not exist. | Tabs for its parts: set up, in, out, know-how, view. Rail: accounts and managers using it. |
 | MCP servers | New | `table, then detail-page` | Does not exist. | A list, then one server with its tools at on, ask or off. |
 | Agents | Adapt | `detail-page` | A grey block for a list and a long form with no header, status or history. | Record header and tabs: what it is, versions, where it is used. |
 | Skills | Redo | `ide` | Files in a text box, in a form. | File tree, code, properties and history at the side; the checks go in the drawer. |
 | Environments | Adapt | `table, then detail-page` | A table with the set-up script of one row hanging below it. | A list, then one environment with its script, secrets and last starts. |
 | Templates | Adapt | `library` | Four uneven cards with different heights. | Search, categories and even cards. The picture becomes a small drawing of the process. |
 
-## The workspace
+## Settings: the workspace
 
 | Screen | | Template | Today | Take |
 |---|---|---|---|---|

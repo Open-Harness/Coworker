@@ -121,6 +121,15 @@ Yours in 1 to 7, 9, 10 and 19 to 25; the rest proposed and agreed. 25 November 2
 
 34. **Managers are called whatever you like, and fold out under the root**, each under the one that looks after it, as deep as
     the tree goes. The sidebar shows that tree. A manager's own pages are tabs on its page.
+35. **The sidebar is for what runs.** System, Inbox, Search, the tree of managers. What managers use (connectors, MCP servers,
+    agents, skills, environments, templates) is in Settings, with the workspace and your own settings.
+36. **A connector brings its view.** What the manager sees on WhatsApp, email, Slack or a CRM, shown the way that system shows it:
+    a list to filter, things to open, all you can do there. No tool calls or code in it. It is on the manager's "In and out" tab.
+37. **A connector is a plug-in**, ours or anyone's, all on one contract. A CRM is the same kind of thing as WhatsApp: events come
+    in, actions go out. The board, the threads and the mission are ours and the same whatever the connector. (Takes back "we write
+    each one" in connectors.md.)
+38. **Every thread is a fork, and its own agent.** It starts with the conversation up to that point and goes its own way, so
+    threads nest: under the conversation they were forked from, as deep as it goes.
 
 How I read 19 to 25, to be corrected:
 
