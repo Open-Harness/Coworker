@@ -43,14 +43,15 @@ interface Person { id: PersonId; handles: Handle[]; standIn?: PersonId }   // (1
 ## Reach
 
 ```ts
-interface App {                            // GitHub, Email, Slack, WhatsApp, an MCP server (8)
-  id: AppId;
-  events: EventKind[]; actions: ActionSpec[]; skills: SkillId[];
-  thread: ThreadView;                      // how a thread of it is drawn (14)
+interface Connector {                      // GitHub, email, Slack, WhatsApp, an MCP server: all one thing (8, 32)
+  id: ConnectorId;
+  events: EventKind[];                     // what comes in. Empty for most MCP servers
+  actions: ActionSpec[]; skills: SkillId[]; // what goes out, and how to use it well
+  thread: ThreadView | null;               // how a thread of it is drawn (14). None if nothing comes in
   connect: ConnectSpec;                    // how an account is made
 }
 interface Account {                        // (9, 11)
-  id: AccountId; app: AppId;
+  id: AccountId; connector: ConnectorId;
   holder: { manager: ManagerId } | { person: PersonId; seenBy: "lender" | "shared" };
   as: string;                              // who the outside sees: always said
 }
@@ -125,14 +126,14 @@ interface Rule { allow: ActionId; when: string; from: EvidenceId[]; acceptedBy: 
 // Both are proposed by the manager and accepted by a person of the workspace. Nothing from outside can make one.
 ```
 
-`when` in a rule must be something code can check (a thread, a person, a kind of work, an app), or the rule is not offered: mine.
+`when` in a rule must be something code can check (a thread, a person, a kind of work, a connector), or the rule is not offered: mine.
 
 ## On pi-durable
 
 | Part | Piece |
 |---|---|
 | A manager, a worker | A conversation each, with its own agent and extensions |
-| An app | An extension: tools, prompt section, `beforeTool` check, namespace |
+| A connector | An extension: tools, prompt section, `beforeTool` check, namespace |
 | Scope | The extension's `beforeTool` reads the conversation's grants; off actions are not offered |
 | A worker's report wakes its manager | Background subagent with a reporter task (their example 22) |
 | A date | A task asleep until then |

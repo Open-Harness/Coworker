@@ -101,7 +101,7 @@ Yours in 1 to 7, 9, 10 and 19 to 25; the rest proposed and agreed. 25 November 2
     watches, refines and updates them. It mostly makes a new one from a template, or forks itself. *Meta-management, hill
     climbing.* It has the permission to do this, and scopes permissions to the others.
 
-**Restated by the user after the first GitHub drawings, which had drifted. To be confirmed. Where it differs, this wins:**
+**Restated by the user after the first GitHub drawings, which had drifted, and confirmed. Where it differs, this wins:**
 
 26. **A tree.** The root manager has all the authority there is. It does not do the jobs. It creates, manages, maintains and
     improves the managers that do, and so the whole system.
@@ -112,8 +112,10 @@ Yours in 1 to 7, 9, 10 and 19 to 25; the rest proposed and agreed. 25 November 2
 29. **A manager starts the threads that do the work.** They can be opened, with their reasoning trace, but people do not
     live in them. Whoever wants to talk, talks to the manager.
 30. **Mostly you look at it in aggregate**: what came in, what is in each step, what went out, how well, where it is stuck.
-31. **The console is for the people who configure and run the system.** Everyone else meets it in the gateway: the pull
+31. **The console is for the people who configure and run the system.** Everyone else meets it in the connector: the pull
     request, the mail, the chat.
+32. **One thing: a connector.** GitHub, email, WhatsApp, Slack: a system that things come in from and go out to. App, source
+    and gateway are the same thing under other words. An MCP server is one too (mine): mostly only things going out.
 
 How I read 19 to 25, to be corrected:
 
@@ -141,11 +143,11 @@ Earlier idea dropped: person, manager and worker as one kind of thing ("member")
 | **Co-worker** | A manager. Has a mission, a board, its own identity and a scope. Decides, hands out, follows up, answers |
 | **Worker** | An agent a co-worker starts for one piece of work, with a part of its scope. Its report wakes the co-worker |
 | **Person** | Someone in the organisation, or outside it. May answer, do a piece of work, or lend an account |
-| **App** | GitHub, Email, Slack, WhatsApp, an MCP server: events in, actions out, skills, a view |
-| **Account** | One account of an app. Someone holds it: a manager (its own), or a person who lends it. A holder can hand on a part of it, to a manager or a worker |
+| **Connector** | GitHub, email, Slack, WhatsApp, an MCP server: events in, actions out, skills, a view |
+| **Account** | One account of a connector. Someone holds it: a manager (its own), or a person who lends it. A holder can hand on a part of it, to a manager or a worker |
 | **Scope** | Which accounts, which actions on them, on, ask or off, within which limits |
 | **Work** | Mission, task, step. Done-when, who answers for it, who does it, evidence |
-| **Thread** | One conversation in an app: a mail chain, an issue, a Slack thread. What events belong to |
+| **Thread** | One conversation in a connector: a mail chain, an issue, a Slack thread. What events belong to |
 | **Knowledge** | What it knows and who said so |
 
 ## What we keep from the spike
