@@ -115,7 +115,8 @@ Yours in 1 to 7, 9, 10 and 19 to 25; the rest proposed and agreed. 25 November 2
 31. **The console is for the people who configure and run the system.** Everyone else meets it in the connector: the pull
     request, the mail, the chat.
 32. **One thing: a connector.** GitHub, email, WhatsApp, Slack: a system that things come in from and go out to. App, source
-    and gateway are the same thing under other words. An MCP server is one too (mine): mostly only things going out.
+    and gateway are the same thing under other words. It has four parts: set
+    up, in, out, know-how. MCP supplies the *out* where it is good, and nothing else: [connectors.md](connectors.md) (mine).
 
 How I read 19 to 25, to be corrected:
 
