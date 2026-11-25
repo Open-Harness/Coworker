@@ -1,0 +1,20 @@
+{
+  "name": "Co-worker (staging)",
+  "url": "https://REPLACE_AT_DEPLOY",
+  "hook_attributes": {
+    "url": "https://REPLACE_AT_DEPLOY/in/github",
+    "active": true
+  },
+  "redirect_url": "https://REPLACE_AT_DEPLOY/api/auth/callback/github",
+  "callback_urls": ["https://REPLACE_AT_DEPLOY/github/installed"],
+  "request_oauth_on_install": true,
+  "public": false,
+  "default_permissions": {
+    "issues": "write",
+    "pull_requests": "write",
+    "contents": "read",
+    "checks": "read",
+    "metadata": "read"
+  },
+  "default_events": ["issues", "issue_comment", "pull_request", "pull_request_review", "check_run", "push"]
+}

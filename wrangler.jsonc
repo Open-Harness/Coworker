@@ -1,0 +1,94 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "co-worker",
+  "main": "src/main.ts",
+  "compatibility_date": "2026-09-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      // The prototype's objects, until milestone 2 replaces them.
+      { "name": "DIRECTORY", "class_name": "Directory" },
+      { "name": "WORKSPACES", "class_name": "Workspace" },
+      // One per tenant: people, sources, vault, Inbox, audit log, list of managers.
+      { "name": "WORKSPACE", "class_name": "WorkspaceObject" },
+      // One per manager: the pi-durable harness, mission pages, board, runs.
+      { "name": "MANAGER", "class_name": "ManagerObject" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Directory", "Workspace"] },
+    { "tag": "v2", "new_sqlite_classes": ["WorkspaceObject", "ManagerObject"] }
+  ],
+  // Better Auth's tables and the workspace directory. The id is replaced per environment at deploy.
+  "d1_databases": [
+    { "binding": "AUTH", "database_name": "coworker-control", "database_id": "00000000-0000-4000-8000-000000000000", "migrations_dir": "migrations/control" }
+  ],
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "coworker-files" }],
+  // Email Service: what managers send. Inbound mail arrives at the `email` handler through Email Routing.
+  "send_email": [{ "name": "EMAIL" }],
+  // Wraps every workspace's data key. Locally, `wrangler secrets-store secret create` without --remote.
+  "secrets_store_secrets": [{ "binding": "VAULT_MASTER_KEY", "store_id": "dt-store", "secret_name": "vault-master-key" }],
+  // Staging: the live tier's world (docs/live-setup.md). Wrangler copies no binding from above into an environment, so
+  // each one is restated. Every value that says REPLACE_AT_DEPLOY is looked up by `pnpm staging --apply`, which runs the
+  // deploy steps only once none is left, and puts the placeholders back when it ends. Only this environment has containers. It is built with `CLOUDFLARE_ENV=staging pnpm build` and deployed with `wrangler deploy` (the build leaves wrangler
+  // the staging config); `pnpm staging` does both.
+  "env": {
+    "staging": {
+      "name": "coworker-staging",
+      "vars": {
+        "DT_APP_URL": "https://staging.co-worker.tech",
+        "DT_MAIL_DOMAIN": "co-worker.tech",
+        "DT_SEND_FROM": "hello@co-worker.tech",
+        "DT_AUTHSERV_ID": "mx.cloudflare.net",
+        "DT_MASTER_KEY_ID": "staging-v1"
+      },
+      "routes": [{ "pattern": "staging.co-worker.tech", "custom_domain": true }],
+      "durable_objects": {
+        "bindings": [
+          { "name": "DIRECTORY", "class_name": "Directory" },
+          { "name": "WORKSPACES", "class_name": "Workspace" },
+          { "name": "WORKSPACE", "class_name": "WorkspaceObject" },
+          { "name": "MANAGER", "class_name": "ManagerObject" },
+          // One object per container: a setup, or one command.
+          { "name": "BOXES", "class_name": "CommandBox" }
+        ]
+      },
+      "migrations": [
+        { "tag": "v1", "new_sqlite_classes": ["Directory", "Workspace"] },
+        { "tag": "v2", "new_sqlite_classes": ["WorkspaceObject", "ManagerObject"] },
+        { "tag": "v3", "new_sqlite_classes": ["SandboxBox"] },
+        // A class keeps its container app's scheduling policy for good, so the policy below came with a new class. The old
+        // one stays, empty and bound to nothing: Cloudflare refuses to delete it while BOXES moves off it in the same deploy.
+        { "tag": "v4", "new_sqlite_classes": ["CommandBox"] }
+      ],
+      // Snapshots need the `durable_object` policy, which starts only images in Cloudflare's own registry: Docker Hub's
+      // node:24.11.1-bookworm (linux/amd64) by its digest, put there by `scripts/sandbox-image.ts`, so nothing is built and
+      // Docker is not needed. Each command picks its instance type (1, 2 or 4 vCPU) when its container starts.
+      "containers": [
+        {
+          "name": "coworker-staging-commands",
+          "class_name": "CommandBox",
+          "scheduling_policy": "durable_object",
+          "images": {
+            "base": {
+              "image": "registry.cloudflare.com/REPLACE_AT_DEPLOY/coworker-sandbox@sha256:fe306151aeafaf7c94e03dd3aff2435c91621f71a58bba3a09579c89d3ba730e"
+            }
+          }
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "AUTH",
+          "database_name": "coworker-control-staging",
+          "database_id": "REPLACE_AT_DEPLOY:control database",
+          "migrations_dir": "migrations/control"
+        }
+      ],
+      "r2_buckets": [{ "binding": "FILES", "bucket_name": "coworker-files-staging" }],
+      "send_email": [{ "name": "EMAIL" }],
+      "secrets_store_secrets": [
+        { "binding": "VAULT_MASTER_KEY", "store_id": "REPLACE_AT_DEPLOY:secrets store", "secret_name": "coworker-staging-vault-master-key" }
+      ]
+    }
+  }
+}

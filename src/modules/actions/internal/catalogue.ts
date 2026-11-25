@@ -1,0 +1,130 @@
+import type { ActionSpec, Category, Permission } from "../types.ts";
+
+/** actions.md, as data. `{by}` is who acted; other slots are input keys, left out when the input has none. */
+type Row = readonly [id: string, label: string, screen: string, sentence: string, permission?: Permission];
+
+export const CATEGORY_DEFAULTS: Readonly<Record<Category, Permission>> = {
+  read: "on",
+  board: "on",
+  tasks: "on",
+  triage: "on",
+  runs: "on",
+  mission: "on",
+  outside: "ask",
+  "who-may-ask": "ask",
+  sources: "ask",
+  itself: "ask",
+  workspace: "off",
+};
+
+const ROWS: Readonly<Record<Category, readonly Row[]>> = {
+  read: [
+    ["board.read", "Read lanes, fields and tasks", "Board", "{by} read the board"],
+    ["task.read", "Read a task, its comments, runs and history", "Task", "{by} read {task}"],
+    ["run.read", "Read a run's transcript", "Agent run", "{by} read run {run}"],
+    ["mission.read", "Read the mission page and sub-pages", "Mission", "{by} read the mission"],
+    ["event.read", "Read events and past decisions", "Events", "{by} read the events"],
+    ["thread.read", "Read the thread a trigger came from", "Events, Task", "{by} read the thread of {trigger}"],
+    ["policy.read", "Read its own Policy and Permissions", "Settings", "{by} read the Policy"],
+  ],
+  board: [
+    ["lane.create", "Add a lane", "Board", "{by} added the lane {name}"],
+    ["lane.update", "Rename a lane, change its meaning, limit or approval", "Board", "{by} changed the lane {lane}"],
+    ["lane.reorder", "Reorder lanes", "Board", "{by} reordered the lanes"],
+    ["lane.delete", "Delete an empty lane", "Board", "{by} deleted the lane {lane}"],
+    ["field.create", "Add a field (severity, service, due)", "Board settings", "{by} added the field {label}"],
+    ["field.update", "Rename a field or change its options", "Board settings", "{by} changed the field {field}"],
+    ["field.delete", "Delete a field and its values", "Board settings", "{by} deleted the field {field} and its values", "ask"],
+    ["view.default", "Set the view the board opens on", "Board", "{by} made {view} the board's first view"],
+  ],
+  tasks: [
+    ["task.create", "Add a task", "Board, chat", "{by} added the task {title}"],
+    ["task.update", "Edit title, description, done-when", "Task", "{by} edited {task}"],
+    ["task.values", "Set field values", "Task, Board", "{by} set fields on {task}"],
+    ["task.move", "Move to another lane", "Board, Task", "{by} moved {task} to {lane}"],
+    ["task.approve", "Move out of a lane that needs approval", "Board, Task", "{by} approved {task} to leave {lane}", "ask"],
+    ["task.owner", "Set or change the owner", "Task", "{by} made {owner} the owner of {task}"],
+    ["task.subtask", "Add, tick or remove subtasks", "Task", "{by} changed the subtasks of {task}"],
+    ["task.comment", "Comment", "Task", "{by} commented on {task}"],
+    ["task.link", "Link or unlink dependencies", "Task", "{by} changed what {task} depends on"],
+    ["task.follow", "Follow or unfollow a thread", "Task", "{by} changed the threads {task} follows"],
+    ["task.archive", "Archive a task", "Task", "{by} archived {task}"],
+    ["task.delete", "Delete a task for good", "Task", "{by} deleted {task} for good", "ask"],
+  ],
+  triage: [
+    ["triage.accept", "Turn a candidate into a task", "Events", "{by} accepted {trigger} as a task"],
+    ["triage.attach", "Attach a candidate to an existing task", "Events", "{by} attached {trigger} to {task}"],
+    ["triage.ignore", "Decide a candidate is not work", "Events", "{by} decided {trigger} is not work"],
+    ["triage.stop", "Stop a task because someone asked", "Events, Task", "{by} stopped {task}"],
+    ["triage.requeue", "Look at a candidate again", "Events", "{by} looked at {trigger} again"],
+  ],
+  runs: [
+    ["run.start", "Start a workspace agent on a task, in a role", "Task", "{by} started {agent} as {role} on {task}"],
+    ["run.message", "Message a running agent", "Agent run", "{by} messaged run {run}"],
+    ["run.stop", "Stop a run", "Agent run", "{by} stopped run {run}"],
+    ["run.retry", "Start a new attempt", "Task", "{by} started a new attempt of run {run}"],
+    ["agent.create", "Make a throwaway agent for one job", "Task", "{by} made the agent {name} for one job"],
+    ["agent.save", "Save a throwaway agent to the workspace", "Agent run", "{by} saved the agent {agent} to the workspace", "ask"],
+    ["run.concurrency", "Change how many runs go at once", "Settings", "{by} let {limit} runs go at once", "ask"],
+  ],
+  mission: [
+    ["mission.update", "Edit the mission page", "Mission", "{by} edited the mission page"],
+    ["mission.post", "Post a latest update", "Mission", "{by} posted an update"],
+    ["page.create", "Add a sub-page", "Mission", "{by} added the page {title}"],
+    ["page.update", "Edit a sub-page", "Mission", "{by} edited the page {page}"],
+    ["page.delete", "Delete a sub-page", "Mission", "{by} deleted the page {page}", "ask"],
+  ],
+  outside: [
+    ["reply.thread", "Reply in the thread a request came from", "Task, chat", "{by} replied in the thread of {task}", "on"],
+    ["reply.ack", "Confirm it took a request", "—", "{by} confirmed it took {trigger}", "on"],
+    ["message.new", "Start a new conversation in a channel it listens to", "Chat", "{by} started a conversation in {channel}"],
+    ["message.direct", "Message a person directly (DM, new email)", "Chat", "{by} messaged {to} directly"],
+    ["message.elsewhere", "Post somewhere it doesn't listen", "Chat", "{by} posted in {channel}"],
+    ["question.ask", "Ask a person a question in their Inbox", "—", "{by} asked {to}: {question}", "on"],
+  ],
+  "who-may-ask": [
+    ["allow.add", "Add a person, group, domain or handle to the allowed list", "Policy", "{by} added {who} to who may ask"],
+    ["allow.remove", "Remove one", "Policy", "{by} removed {who} from who may ask", "on"],
+    ["admission.update", "Change the admission table", "Policy", "{by} changed who is admitted in {scope}"],
+    ["accept.mode", "Switch between off, observe and auto", "Policy", "{by} set accepting work to {mode}"],
+    ["rule.create", "Add a kind of proactive work", "Policy", "{by} added the rule {name}"],
+    ["rule.update", "Edit or turn a rule on or off", "Policy", "{by} changed the rule {name}"],
+    ["bots.update", "Change which bots may suggest work", "Policy", "{by} changed which bots may suggest work"],
+    ["person.create", "Add a person or a handle", "People", "{by} added {name}"],
+    ["person.link", "Link a handle to a person", "People", "{by} linked {handle} to {person}"],
+  ],
+  sources: [
+    ["source.add", "Listen to a new source (a Slack channel, a repo, a mailbox)", "Sources", "{by} started listening to {source}"],
+    ["source.scope", "Change what a source listens to", "Sources", "{by} changed what {source} listens to"],
+    ["source.pause", "Pause or resume a source", "Sources", "{by} paused or resumed {source}", "on"],
+    ["source.remove", "Stop listening to a source", "Sources", "{by} stopped listening to {source}"],
+    ["schedule.update", "Add or change a schedule", "Sources", "{by} changed the schedule {name}"],
+  ],
+  itself: [
+    ["self.prompt", "Edit its own instructions", "Agent editor", "{by} edited its own instructions"],
+    ["self.model", "Change its own model", "Agent editor", "{by} changed its model to {model}"],
+    ["self.tools", "Change its tools, skills or MCP connections", "Agent editor", "{by} changed its tools"],
+    ["self.permissions", "Change its own Permissions", "Settings", "{by} changed its own Permissions"],
+    ["self.budget", "Raise its spending limit", "Settings", "{by} raised its spending limit to {limit}"],
+    ["self.pause", "Pause itself", "Settings", "{by} paused itself", "on"],
+  ],
+  workspace: [
+    ["vault.write", "Add or replace a key", "Keys and vault", "{by} added or replaced the key {name}"],
+    ["connection.create", "Connect a new account (OAuth)", "Connections", "{by} connected {account}"],
+    ["member.invite", "Invite or remove a member", "Workspace", "{by} invited or removed {email}"],
+    ["manager.create", "Create another manager", "Managers", "{by} created the manager {name}"],
+    ["manager.delete", "Delete a manager", "Managers", "{by} deleted the manager {manager}"],
+    ["billing.update", "Change billing", "Workspace", "{by} changed billing"],
+  ],
+};
+
+export const CATALOGUE: readonly ActionSpec[] = (Object.entries(ROWS) as [Category, readonly Row[]][]).flatMap(([category, rows]) =>
+  rows.map(([id, label, screen, sentence, permission]) => ({
+    id,
+    category,
+    label,
+    screen,
+    sentence,
+    ...(permission === undefined ? {} : { permission }),
+  })),
+);

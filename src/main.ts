@@ -1,0 +1,247 @@
+import handler from "@tanstack/react-start/server-entry";
+import { createAuth } from "~/modules/auth/service.ts";
+import type { AuthSettings, OAuthClient } from "~/modules/auth/types.ts";
+import { randomIds, systemClock } from "~/modules/clock/service.ts";
+import { createAgent } from "~/modules/agent/service.ts";
+import type { Agent } from "~/modules/agent/types.ts";
+import { createAdminCheck, createDirectoryPort, DIRECTORY_NAME, DirectoryHost } from "~/modules/directory/service.ts";
+import { BoxHost } from "~/modules/sandboxes/service.ts";
+import { createHttp } from "~/modules/http/service.ts";
+import { createWorkspacePort, WorkspaceHost } from "~/modules/chat-host/service.ts";
+import type { Report } from "~/modules/chat-host/types.ts";
+import { durableManagerObjects, ManagerHost } from "~/modules/manager/service.ts";
+import type { ManagerApi, ManagerObjects } from "~/modules/manager/types.ts";
+import { email } from "~/modules/email/service.ts";
+import { triggers } from "~/modules/triggers/service.ts";
+import { WorkspaceHost as TenantHost } from "~/modules/workspace/service.ts";
+import { createWorkspaces, durableTenantObjects, gitHubInstallations, workspaceAt } from "~/modules/workspaces/service.ts";
+import { github } from "~/modules/github/service.ts";
+import {
+  FAKE_AUTHSERV,
+  fakeFetch,
+  fakeInbound,
+  fakeMail,
+  lapseInvite,
+  filesFrom,
+  gitHubApiFrom,
+  mailerFrom,
+  masterKeysFrom,
+  present,
+  sandboxHostFrom,
+  billingFrom,
+  brainFrom,
+  tenantClockFrom,
+} from "./world.ts";
+import { FAKE_APP_SLUG, FAKE_GITHUB_SECRET } from "~/modules/github/testing.ts";
+import { faultyObjects, localJurisdictions } from "~/modules/workspaces/testing.ts";
+
+/** Bindings and settings of the deployment. See README.md for what each setting does. */
+export interface Env {
+  readonly DIRECTORY: DurableObjectNamespace;
+  readonly WORKSPACES: DurableObjectNamespace;
+  readonly WORKSPACE: DurableObjectNamespace<WorkspaceObject>;
+  readonly MANAGER: DurableObjectNamespace<ManagerObject>;
+  readonly AUTH: D1Database;
+  readonly FILES: R2Bucket;
+  readonly EMAIL: SendEmail;
+  readonly VAULT_MASTER_KEY: SecretsStoreSecret;
+  /** One object per container, where Cloudflare Containers are bound (staging). Without it, sandboxes are unavailable. */
+  readonly BOXES?: DurableObjectNamespace<CommandBox>;
+  /** `fake` builds every outside service from its fake: tests and local runs without network. */
+  readonly DT_WORLD?: string;
+  /** Where the app is served. Defaults to the request's own origin. */
+  readonly DT_APP_URL?: string;
+  /** The address sign-in links and invites are sent from. */
+  readonly DT_SEND_FROM?: string;
+  /** `workspace` makes managers think with their workspace's model connection even in the fake world; the fast tier's script otherwise. */
+  readonly DT_MANAGER_MODEL?: string;
+  /** The domain managers' addresses are on. Defaults to `co-worker.tech`. */
+  readonly DT_MAIL_DOMAIN?: string;
+  /** The receiving MTA whose `Authentication-Results` decide DKIM. Cloudflare Email Routing by default. */
+  readonly DT_AUTHSERV_ID?: string;
+  readonly BETTER_AUTH_SECRET?: string;
+  /** The id recorded with each wrapped data key. Change it with the master key. */
+  readonly DT_MASTER_KEY_ID?: string;
+  readonly GOOGLE_CLIENT_ID?: string;
+  readonly GOOGLE_CLIENT_SECRET?: string;
+  readonly GITHUB_CLIENT_ID?: string;
+  readonly GITHUB_CLIENT_SECRET?: string;
+  /** The GitHub App: its id, its private key (PKCS #8 PEM), its webhook secret and its slug. */
+  readonly GITHUB_APP_ID?: string;
+  readonly GITHUB_APP_PRIVATE_KEY?: string;
+  readonly GITHUB_WEBHOOK_SECRET?: string;
+  readonly GITHUB_APP_SLUG?: string;
+  /** The App's own sign-in client, which proves who installed it. */
+  readonly GITHUB_APP_CLIENT_ID?: string;
+  readonly GITHUB_APP_CLIENT_SECRET?: string;
+  readonly OPENAI_API_KEY?: string;
+  readonly ANTHROPIC_API_KEY?: string;
+  readonly PI_EXP_PROXY_URL?: string;
+  readonly PI_EXP_PROXY_MODELS?: string;
+  readonly PI_EXP_PROXY_KEY?: string;
+  readonly PI_EXP_DEFAULT_MODEL?: string;
+  readonly PI_EXP_FAKE_MODEL?: string;
+  readonly PI_EXP_ADMINS?: string;
+}
+
+const mailDomainOf = (env: Env): string => present(env.DT_MAIL_DOMAIN) ?? "co-worker.tech";
+const sendFromOf = (env: Env): string => present(env.DT_SEND_FROM) ?? `hello@${mailDomainOf(env)}`;
+
+function proxyFrom(env: Env) {
+  const [url, key] = [present(env.PI_EXP_PROXY_URL), present(env.PI_EXP_PROXY_KEY)];
+  if (url === undefined) return undefined;
+  const models = (present(env.PI_EXP_PROXY_MODELS) ?? "gpt-6-luna").split(",").map((model) => model.trim());
+  return { url, models, ...(key === undefined ? {} : { key }) };
+}
+
+const agentFrom = (env: Env): Agent =>
+  createAgent({
+    openaiKey: present(env.OPENAI_API_KEY),
+    anthropicKey: present(env.ANTHROPIC_API_KEY),
+    proxy: proxyFrom(env),
+    defaultModel: present(env.PI_EXP_DEFAULT_MODEL),
+    fakeModel: env.PI_EXP_FAKE_MODEL === "1",
+    fetch: (input, init) => fetch(input, init),
+  });
+
+const report: Report = (message, error, details = {}) =>
+  console.error(JSON.stringify({ message, ...details, error: error instanceof Error ? (error.stack ?? error.message) : String(error) }));
+
+const clientOf = (clientId = "", clientSecret = ""): OAuthClient | undefined =>
+  clientId === "" || clientSecret === "" ? undefined : { clientId, clientSecret };
+
+function authSettings(env: Env, request: Request): AuthSettings {
+  const baseUrl = present(env.DT_APP_URL) ?? new URL(request.url).origin;
+  const secret = present(env.BETTER_AUTH_SECRET);
+  if (secret === undefined) throw new Error("BETTER_AUTH_SECRET is not set");
+  return {
+    baseUrl,
+    secret,
+    sendFrom: present(env.DT_SEND_FROM) ?? `hello@${new URL(baseUrl).hostname}`,
+    google: clientOf(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET),
+    github: clientOf(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET),
+  };
+}
+
+/** Where workspaces' objects are. The fake world keeps jurisdictions in memory, and `tenantsFrom` arms its faults. */
+const tenantObjectsFrom = (env: Env) => durableTenantObjects(env.DT_WORLD === "fake" ? localJurisdictions(env.WORKSPACE) : env.WORKSPACE);
+const tenantsFrom = (env: Env) => (env.DT_WORLD === "fake" ? faultyObjects(tenantObjectsFrom(env)) : tenantObjectsFrom(env));
+
+/** The control plane for one request. Auth's hooks (domain auto-join, Handles) run long after `workspaces` exists. */
+function controlFrom(env: Env, request: Request) {
+  const auth = createAuth({
+    database: env.AUTH,
+    mailer: mailerFrom(env),
+    settings: authSettings(env, request),
+    onSignUp: async (user) => void (await workspaces.joinByDomain(user)),
+    onPersonChanged: (change) => workspaces.personChanged(change),
+    now: systemClock.now,
+  });
+  const workspaces = createWorkspaces({ database: env.AUTH, auth, objects: tenantsFrom(env), clock: systemClock });
+  return { auth, workspaces, managers: managerObjectsFrom(env), github: gitHubApiFrom(env) };
+}
+
+export class Directory extends DirectoryHost<Env> {
+  constructor(ctx: DurableObjectState, env: Env) {
+    const { models, draft } = agentFrom(env);
+    const isAdmin = createAdminCheck((present(env.PI_EXP_ADMINS) ?? "").split(",").filter((email) => email.trim() !== ""));
+    super(ctx, env, { workspaces: createWorkspacePort(env.WORKSPACES), models, draft, isAdmin, report });
+  }
+}
+
+export class Workspace extends WorkspaceHost<Env> {
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env, { agent: agentFrom(env), directory: createDirectoryPort(env.DIRECTORY), report });
+  }
+}
+
+/** Where managers are made. The fake world keeps jurisdictions in memory, as for workspaces. */
+const managerObjectsFrom = (env: Env): ManagerObjects =>
+  durableManagerObjects(env.DT_WORLD === "fake" ? localJurisdictions<ManagerApi>(env.MANAGER) : env.MANAGER);
+
+/** One tenant. */
+export class WorkspaceObject extends TenantHost<Env> {
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env, {
+      clock: tenantClockFrom(env),
+      masterKeys: masterKeysFrom(env),
+      ids: randomIds,
+      fetch: env.DT_WORLD === "fake" ? fakeFetch : (input, init) => fetch(input, init),
+      managers: managerObjectsFrom(env),
+      mailDomain: mailDomainOf(env),
+      sandboxes: sandboxHostFrom(env),
+      billing: billingFrom(env),
+      github: gitHubApiFrom(env),
+      mailer: mailerFrom(env),
+      sendFrom: sendFromOf(env),
+    });
+  }
+}
+
+/** Where replies go out, per Source kind. */
+const channelFrom = (env: Env) => triggers.channels({ email: email.channel(mailerFrom(env)), github: github.channel(gitHubApiFrom(env)) });
+
+/** GitHub's webhooks, to the workspace that claimed the installation. */
+const gitHubIn = (request: Request, env: Env): Promise<Response> =>
+  github
+    .source({
+      secret: present(env.GITHUB_WEBHOOK_SECRET) ?? (env.DT_WORLD === "fake" ? FAKE_GITHUB_SECRET : ""),
+      appSlug: present(env.GITHUB_APP_SLUG) ?? FAKE_APP_SLUG,
+      installations: gitHubInstallations(env.AUTH, tenantsFrom(env)),
+      now: systemClock.now,
+    })
+    .webhook(request);
+
+/** Mail to `<manager>.<workspace>@<mail domain>`, from Email Routing, up to 25 MiB. */
+const emailSourceFrom = (env: Env) =>
+  email.source({
+    mailDomain: mailDomainOf(env),
+    sendFrom: sendFromOf(env),
+    maxBytes: 25 * 1_048_576,
+    authServId: present(env.DT_AUTHSERV_ID) ?? FAKE_AUTHSERV,
+    mailbox: workspaceAt(env.AUTH, tenantsFrom(env)),
+    files: filesFrom(env),
+    now: systemClock.now,
+  });
+
+/** One container's object: its container starts for one command and is destroyed after it. */
+export class CommandBox extends BoxHost<Env> {}
+
+/** Staging's first container class. Nothing binds it; Cloudflare keeps a class until a migration deletes it. */
+export class SandboxBox extends BoxHost<Env> {}
+
+/** One manager: the pi-durable harness, its mission pages, board and runs. */
+export class ManagerObject extends ManagerHost<Env> {
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env, {
+      clock: systemClock,
+      brain: brainFrom(env),
+      workspace: (objectId, region) => tenantObjectsFrom(env).get(objectId, region),
+      channel: channelFrom(env),
+      files: filesFrom(env),
+      report,
+    });
+  }
+}
+
+export default {
+  /** Mail to a manager's address becomes a Trigger; Email Routing bounces what is rejected, with the reason. */
+  email: async (message: ForwardableEmailMessage, env: Env): Promise<void> => {
+    const received = await emailSourceFrom(env).receive({ from: message.from, to: message.to, raw: message.raw, rawSize: message.rawSize });
+    // Awaited so a caller across RPC (a test) sees it land before the handler returns; a void result costs nothing.
+    if (received._tag === "Rejected") await Promise.resolve(message.setReject(received.reason));
+  },
+  fetch: async (request: Request, env: Env): Promise<Response> => {
+    const { pathname } = new URL(request.url);
+    if (pathname === "/in/github") return gitHubIn(request, env);
+    if (env.DT_WORLD === "fake" && pathname === "/api/test/mail") return fakeMail(request);
+    if (env.DT_WORLD === "fake" && pathname === "/api/test/inbound-mail") return fakeInbound(request, emailSourceFrom(env));
+    if (env.DT_WORLD === "fake" && pathname === "/api/test/lapse-invite") return lapseInvite(request, env.AUTH);
+    return createHttp({
+      directory: () => env.DIRECTORY.getByName(DIRECTORY_NAME),
+      workspace: (workspaceId) => env.WORKSPACES.getByName(workspaceId),
+      pages: async (page) => handler.fetch(page),
+      control: () => controlFrom(env, request),
+    })(request);
+  },
+};

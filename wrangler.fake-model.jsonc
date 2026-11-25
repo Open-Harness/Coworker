@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // The scripted OpenAI-compatible endpoint the staging test workspace uses as its own model (docs/live-setup.md).
+  // Deploy: `wrangler deploy --config wrangler.fake-model.jsonc`. https://fake-model.<test domain>/v1 is the endpoint address; `pnpm staging --apply` fills the domain in.
+  "name": "coworker-fake-model",
+  "main": "src/bin/fake-model.ts",
+  "compatibility_date": "2026-09-23",
+  "routes": [{ "pattern": "fake-model.co-worker.tech", "custom_domain": true }]
+}

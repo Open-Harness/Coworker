@@ -1,0 +1,564 @@
+{
+ "evals": {
+  "gate:repo": "pass",
+  "gate:size": "pass",
+  "gate:score": "pass",
+  "gate:ratchet": "pass",
+  "acc:worlds/fakes": "pass",
+  "gate:bindings": "pass",
+  "acc:auth/sign-up": "pass",
+  "acc:auth/google-github": "pass",
+  "flw:workspace/create": "pass",
+  "acc:workspace/address": "pass",
+  "flw:workspace/many": "pass",
+  "flw:workspace/delete": "pass",
+  "acc:auth/tailscale-gone": "pass",
+  "acc:vault/at-rest": "pass",
+  "acc:vault/use-once": "pass",
+  "acc:vault/rewrap": "pass",
+  "flw:models/test-key": "pass",
+  "flw:models/endpoint": "pass",
+  "flw:models/chatgpt": "pass",
+  "acc:models/none": "pass",
+  "flw:manager/create": "pass",
+  "acc:manager/tools-are-actions": "pass",
+  "flw:manager/chat-task": "pass",
+  "flw:manager/run": "pass",
+  "acc:board/stages": "pass",
+  "flw:manager/restart": "pass",
+  "flw:pages/mission": "pass",
+  "ui:manager/board": "pass",
+  "acc:permissions/check": "pass",
+  "flw:permissions/ask": "pass",
+  "flw:permissions/off": "pass",
+  "acc:audit/sentence": "pass",
+  "flw:inbox/question": "pass",
+  "flw:inbox/own-words": "pass",
+  "ui:needs-you/page": "pass",
+  "ui:chat/talk": "pass",
+  "ui:run/transcript": "pass",
+  "ui:mission/page": "pass",
+  "ui:search/open": "pass",
+  "ui:shell/phone": "pass",
+  "flw:email/new-request": "pass",
+  "flw:email/reply-follows": "pass",
+  "flw:email/threading": "pass",
+  "flw:email/dedupe": "pass",
+  "flw:email/auto-reply": "pass",
+  "flw:email/no-loop": "pass",
+  "flw:email/dkim": "pass",
+  "flw:email/unknown-address": "pass",
+  "flw:email/attachment": "pass",
+  "flw:email/too-big": "pass",
+  "live:email/round-trip": "pass",
+  "live:email/stranger": "pass",
+  "flw:github/install": "pass",
+  "flw:github/signature": "pass",
+  "flw:github/dedupe": "pass",
+  "flw:github/issue-allowed": "pass",
+  "flw:github/issue-unknown": "pass",
+  "flw:github/not-chosen": "pass",
+  "flw:github/own-comment": "pass",
+  "flw:github/pr-follows": "pass",
+  "flw:github/check-failed": "pass",
+  "flw:github/fork": "pass",
+  "flw:github/token": "pass",
+  "flw:github/uninstall": "pass",
+  "live:github/round-trip": "pass",
+  "ui:events/list": "pass",
+  "ui:sources/connect": "pass",
+  "flw:join/invite": "pass",
+  "flw:join/link": "pass",
+  "flw:join/domain": "pass",
+  "flw:join/request": "pass",
+  "flw:people/handles": "pass",
+  "ui:join/invite": "pass",
+  "ui:onboarding/first": "pass",
+  "ui:settings/all": "pass",
+  "ui:access/pages": "pass",
+  "flw:sandbox/run": "pass",
+  "flw:sandbox/hours": "pass",
+  "flw:billing/seats": "pass",
+  "live:sandbox/clone-test": "pass",
+  "spike:chat-sdk/slack-in-do": "pass"
+ },
+ "history": [
+  {
+   "at": "2026-11-23T22:02:08.007Z",
+   "pass": 3,
+   "fail": 0,
+   "missing": 70,
+   "total": 73,
+   "score": 3,
+   "commit": "366207a"
+  },
+  {
+   "at": "2026-11-23T22:05:20.520Z",
+   "pass": 3,
+   "fail": 0,
+   "missing": 70,
+   "total": 73,
+   "score": 3,
+   "commit": "74ab4b2"
+  },
+  {
+   "at": "2026-11-23T22:09:34.218Z",
+   "pass": 4,
+   "fail": 0,
+   "missing": 69,
+   "total": 73,
+   "score": 4,
+   "commit": "9da22b7"
+  },
+  {
+   "at": "2026-11-23T22:10:02.943Z",
+   "pass": 4,
+   "fail": 0,
+   "missing": 69,
+   "total": 73,
+   "score": 4,
+   "commit": "009b425"
+  },
+  {
+   "at": "2026-11-23T22:16:50.239Z",
+   "pass": 6,
+   "fail": 0,
+   "missing": 67,
+   "total": 73,
+   "score": 6,
+   "commit": "009b425"
+  },
+  {
+   "at": "2026-11-23T22:19:28.069Z",
+   "pass": 6,
+   "fail": 0,
+   "missing": 67,
+   "total": 73,
+   "score": 6,
+   "commit": "9217926"
+  },
+  {
+   "at": "2026-11-23T22:25:59.361Z",
+   "pass": 9,
+   "fail": 0,
+   "missing": 64,
+   "total": 73,
+   "score": 9,
+   "commit": "cf95de0"
+  },
+  {
+   "at": "2026-11-23T22:31:28.164Z",
+   "pass": 13,
+   "fail": 0,
+   "missing": 60,
+   "total": 73,
+   "score": 13,
+   "commit": "da0587c"
+  },
+  {
+   "at": "2026-11-23T22:37:45.616Z",
+   "pass": 16,
+   "fail": 0,
+   "missing": 57,
+   "total": 73,
+   "score": 16,
+   "commit": "b8ffbed"
+  },
+  {
+   "at": "2026-11-23T22:42:21.449Z",
+   "pass": 17,
+   "fail": 0,
+   "missing": 56,
+   "total": 73,
+   "score": 17,
+   "commit": "15ede50"
+  },
+  {
+   "at": "2026-11-23T22:50:02.050Z",
+   "pass": 18,
+   "fail": 0,
+   "missing": 55,
+   "total": 73,
+   "score": 18,
+   "commit": "85265f4"
+  },
+  {
+   "at": "2026-11-23T22:56:00.220Z",
+   "pass": 21,
+   "fail": 0,
+   "missing": 52,
+   "total": 73,
+   "score": 21,
+   "commit": "6661bd5"
+  },
+  {
+   "at": "2026-11-23T23:04:24.828Z",
+   "pass": 24,
+   "fail": 0,
+   "missing": 49,
+   "total": 73,
+   "score": 24,
+   "commit": "d410c64"
+  },
+  {
+   "at": "2026-11-23T23:14:15.485Z",
+   "pass": 27,
+   "fail": 0,
+   "missing": 46,
+   "total": 73,
+   "score": 27,
+   "commit": "fe0bbc1"
+  },
+  {
+   "at": "2026-11-23T23:22:46.826Z",
+   "pass": 30,
+   "fail": 0,
+   "missing": 43,
+   "total": 73,
+   "score": 30,
+   "commit": "d0e3378"
+  },
+  {
+   "at": "2026-11-23T23:36:35.681Z",
+   "pass": 34,
+   "fail": 0,
+   "missing": 39,
+   "total": 73,
+   "score": 34,
+   "commit": "daf5773"
+  },
+  {
+   "at": "2026-11-23T23:49:16.122Z",
+   "pass": 35,
+   "fail": 0,
+   "missing": 38,
+   "total": 73,
+   "score": 35,
+   "commit": "eb9ba8e"
+  },
+  {
+   "at": "2026-11-23T23:53:19.179Z",
+   "pass": 36,
+   "fail": 0,
+   "missing": 37,
+   "total": 73,
+   "score": 36,
+   "commit": "fd9d1f9"
+  },
+  {
+   "at": "2026-11-24T00:09:25.388Z",
+   "pass": 46,
+   "fail": 0,
+   "missing": 27,
+   "total": 73,
+   "score": 46,
+   "commit": "366aeb7"
+  },
+  {
+   "at": "2026-11-24T00:10:59.994Z",
+   "pass": 46,
+   "fail": 0,
+   "missing": 27,
+   "total": 73,
+   "score": 46,
+   "commit": "2c8d96f"
+  },
+  {
+   "at": "2026-11-24T00:24:59.079Z",
+   "pass": 57,
+   "fail": 1,
+   "missing": 15,
+   "total": 73,
+   "score": 0,
+   "commit": "2c8d96f"
+  },
+  {
+   "at": "2026-11-24T00:27:11.285Z",
+   "pass": 58,
+   "fail": 0,
+   "missing": 15,
+   "total": 73,
+   "score": 58,
+   "commit": "2c8d96f"
+  },
+  {
+   "at": "2026-11-24T00:33:54.487Z",
+   "pass": 59,
+   "fail": 0,
+   "missing": 14,
+   "total": 73,
+   "score": 59,
+   "commit": "b165ea8"
+  },
+  {
+   "at": "2026-11-24T00:42:09.837Z",
+   "pass": 57,
+   "fail": 3,
+   "missing": 13,
+   "total": 73,
+   "score": 0,
+   "commit": "6a8a42e"
+  },
+  {
+   "at": "2026-11-24T00:47:29.358Z",
+   "pass": 60,
+   "fail": 0,
+   "missing": 13,
+   "total": 73,
+   "score": 60,
+   "commit": "6a8a42e"
+  },
+  {
+   "at": "2026-11-24T05:11:30.735Z",
+   "pass": 63,
+   "fail": 0,
+   "missing": 10,
+   "total": 73,
+   "score": 63,
+   "commit": "1809b0a"
+  },
+  {
+   "at": "2026-11-24T07:14:03.415Z",
+   "pass": 64,
+   "fail": 0,
+   "missing": 9,
+   "total": 73,
+   "score": 64,
+   "commit": "ab6af0f"
+  },
+  {
+   "at": "2026-11-24T08:51:44.431Z",
+   "pass": 64,
+   "fail": 0,
+   "missing": 9,
+   "total": 73,
+   "score": 64,
+   "commit": "84318a5"
+  },
+  {
+   "at": "2026-11-24T10:18:37.536Z",
+   "pass": 65,
+   "fail": 1,
+   "missing": 7,
+   "total": 73,
+   "score": 65,
+   "commit": "9aee0fb"
+  },
+  {
+   "at": "2026-11-24T10:43:19.825Z",
+   "pass": 65,
+   "fail": 1,
+   "missing": 7,
+   "total": 73,
+   "score": 65,
+   "commit": "09c4bf4"
+  },
+  {
+   "at": "2026-11-24T11:06:39.062Z",
+   "pass": 67,
+   "fail": 1,
+   "missing": 5,
+   "total": 73,
+   "score": 67,
+   "commit": "024c76b"
+  },
+  {
+   "at": "2026-11-24T11:15:38.421Z",
+   "pass": 67,
+   "fail": 1,
+   "missing": 5,
+   "total": 73,
+   "score": 67,
+   "commit": "9b21342"
+  },
+  {
+   "at": "2026-11-24T11:35:26.130Z",
+   "pass": 67,
+   "fail": 1,
+   "missing": 5,
+   "total": 73,
+   "score": 67,
+   "commit": "a253dca"
+  },
+  {
+   "at": "2026-11-24T11:46:31.983Z",
+   "pass": 67,
+   "fail": 1,
+   "missing": 5,
+   "total": 73,
+   "score": 67,
+   "commit": "487f35a"
+  },
+  {
+   "at": "2026-11-24T12:18:14.785Z",
+   "pass": 67,
+   "fail": 1,
+   "missing": 5,
+   "total": 73,
+   "score": 67,
+   "commit": "ed3f3f7"
+  },
+  {
+   "at": "2026-11-24T12:24:25.877Z",
+   "pass": 67,
+   "fail": 1,
+   "missing": 5,
+   "total": 73,
+   "score": 67,
+   "commit": "cf0f1a5"
+  },
+  {
+   "at": "2026-11-24T12:35:13.606Z",
+   "pass": 67,
+   "fail": 1,
+   "missing": 5,
+   "total": 73,
+   "score": 67,
+   "commit": "64977ab"
+  },
+  {
+   "at": "2026-11-24T12:51:32.305Z",
+   "pass": 67,
+   "fail": 1,
+   "missing": 5,
+   "total": 73,
+   "score": 67,
+   "commit": "7c2ba36"
+  },
+  {
+   "at": "2026-11-24T13:03:55.807Z",
+   "pass": 68,
+   "fail": 1,
+   "missing": 4,
+   "total": 73,
+   "score": 68,
+   "commit": "fef1bee"
+  },
+  {
+   "at": "2026-11-24T13:14:57.786Z",
+   "pass": 68,
+   "fail": 1,
+   "missing": 4,
+   "total": 73,
+   "score": 68,
+   "commit": "77e5a1a"
+  },
+  {
+   "at": "2026-11-24T16:11:54.560Z",
+   "pass": 68,
+   "fail": 1,
+   "missing": 4,
+   "total": 73,
+   "score": 68,
+   "commit": "1938986"
+  },
+  {
+   "at": "2026-11-24T16:22:14.994Z",
+   "pass": 69,
+   "fail": 0,
+   "missing": 12,
+   "total": 81,
+   "score": 69,
+   "commit": "4cfbfd9"
+  },
+  {
+   "at": "2026-11-24T16:30:36.397Z",
+   "pass": 69,
+   "fail": 0,
+   "missing": 12,
+   "total": 81,
+   "score": 69,
+   "commit": "ff3e018"
+  },
+  {
+   "at": "2026-11-24T16:54:57.147Z",
+   "pass": 69,
+   "fail": 0,
+   "missing": 12,
+   "total": 81,
+   "score": 69,
+   "commit": "fb12ee1"
+  },
+  {
+   "at": "2026-11-24T18:05:29.527Z",
+   "pass": 75,
+   "fail": 0,
+   "missing": 6,
+   "total": 81,
+   "score": 75,
+   "commit": "a8cb0e8"
+  },
+  {
+   "at": "2026-11-24T18:41:08.583Z",
+   "pass": 75,
+   "fail": 0,
+   "missing": 6,
+   "total": 81,
+   "score": 75,
+   "commit": "b37dc7e"
+  },
+  {
+   "at": "2026-11-24T19:25:24.390Z",
+   "pass": 75,
+   "fail": 0,
+   "missing": 6,
+   "total": 81,
+   "score": 75,
+   "commit": "aa168be"
+  },
+  {
+   "at": "2026-11-24T20:14:24.315Z",
+   "pass": 75,
+   "fail": 0,
+   "missing": 6,
+   "total": 81,
+   "score": 75,
+   "commit": "dc6e9f6"
+  },
+  {
+   "at": "2026-11-24T20:48:08.282Z",
+   "pass": 75,
+   "fail": 0,
+   "missing": 6,
+   "total": 81,
+   "score": 75,
+   "commit": "3699398"
+  },
+  {
+   "at": "2026-11-24T21:46:49.799Z",
+   "pass": 77,
+   "fail": 0,
+   "missing": 4,
+   "total": 81,
+   "score": 77,
+   "commit": "0f26b40"
+  },
+  {
+   "at": "2026-11-25T05:16:35.743Z",
+   "pass": 77,
+   "fail": 0,
+   "missing": 4,
+   "total": 81,
+   "score": 77,
+   "commit": "094a98e"
+  },
+  {
+   "at": "2026-11-25T05:31:15.235Z",
+   "pass": 77,
+   "fail": 0,
+   "missing": 4,
+   "total": 81,
+   "score": 77,
+   "commit": "af21c74"
+  },
+  {
+   "at": "2026-11-25T05:55:30.618Z",
+   "pass": 81,
+   "fail": 0,
+   "missing": 0,
+   "total": 81,
+   "score": 81,
+   "commit": "d83e554"
+  }
+ ]
+}
