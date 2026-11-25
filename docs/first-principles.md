@@ -172,7 +172,7 @@ One decision at a time, biggest first. Each is written here once agreed. No prod
 3. **What wakes whom?** Agreed (16, 17)
 4. **How does it reach the outside?** Agreed (7 to 14)
 5. **What does it know, and how does it learn?** Agreed (18). Limits go with scope: money, time, how many at once
-6. **What do you see?** First the GitHub screens, see [github-journey.md](github-journey.md)
+6. **What do you see?** Every screen and the template it adapts: [screens.md](screens.md)
 7. **The thinnest true slice**: GitHub, for us: [github-journey.md](github-journey.md)
 
 The measure is step 7's job done end to end without anyone looking, and how many minutes it asked of you.
