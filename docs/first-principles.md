@@ -119,6 +119,9 @@ Yours in 1 to 7, 9, 10 and 19 to 25; the rest proposed and agreed. 25 November 2
     up, in, out, know-how. All of it is ours, in code: [connectors.md](connectors.md).
 33. **MCP servers are a separate layer**: tools a manager can use, added without code. Not connectors, not inside them.
 
+34. **Managers are called whatever you like, and fold out under the root**, each under the one that looks after it, as deep as
+    the tree goes. The sidebar shows that tree. A manager's own pages are tabs on its page.
+
 How I read 19 to 25, to be corrected:
 
 - **One instance per thing.** An issue, or a lead, has one instance of the co-worker that stays with it for weeks and holds

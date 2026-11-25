@@ -143,6 +143,7 @@ the canvas drew and the build left out.
 |---|---|---|---|---|---|
 | F21 | staging.co-worker.tech opens the old prototype chat | Your workspaces | hurts | code | known: `routes/_app/_chat/index.tsx:4` |
 | F22 | Staging hears GitHub events from all six repos (200 in seven minutes) | Only the test repo | rough | code | known: the App is installed on all of them |
+| F79 | “Create your workspace” has an “Ask to join a workspace instead” button bottom left, across from Create. It is odd and clunky | No join on that page. Joining is its own step after signing up, only when there is a team to join; otherwise by the invite or the link a team gives you | hurts | you | known: `team-start/internal/CreateWorkspacePage.tsx:106` |
 
 ## How we test
 

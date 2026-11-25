@@ -3,7 +3,7 @@
 What stands between the spike and the agreement, and which Astryx template each screen adapts. Checked 25 November 2026
 by rendering all 58 page templates and capturing every screen. `pnpm exec astryx template <name>` prints one.
 
-42 screens: 5 kept, 23 adapted, 7 redone, 6 new, 1 dropped, from 24 templates.
+44 screens: 3 kept, 27 adapted, 7 redone, 6 new, 1 dropped, from 25 templates.
 
 ## Why the first ones look made up
 
@@ -45,7 +45,7 @@ has the same line. A screen that names none is refused.
 
 | Screen | | Template | Today | Take |
 |---|---|---|---|---|
-| Sidebar | Adapt | `shell-side-nav` | Six links under every manager, always open. With three managers the Build group is already off screen. No sign of who is working or stuck. A tree cannot fit. | The collapsible tree with a status dot per row. A manager’s views become tabs on its page. |
+| Sidebar | Adapt | `shell-side-nav` | Six links under every manager, always open. With three managers the Build group is already off screen. No sign of who is working or stuck. A tree cannot fit. | The tree, folding out under the root to any depth, with a status dot per row. Names are yours. A manager’s views become tabs on its page. |
 | Home becomes System | Redo | `dashboard-scorecard` | Counts of open tasks. It says nothing about how the system does. | Scorecard tiles with change, goals per manager, and “What changed & why” written by the root manager. |
 | Root manager: the tree | New | `table-tree` | Does not exist. Managers are a flat list. | Managers as rows that roll up what is below them; the rail says what the root has and what it has handed out. |
 | Root manager: versions compared | New | `table-comparison` | Does not exist. A manager has no versions. | Old and new version of a manager side by side on the same past cases, best highlighted. |
@@ -61,7 +61,8 @@ has the same line. A screen that names none is refused.
 | Overview | Adapt | `dashboard-alert-rail` | Charts float without cards at three widths, legends are badges, and the only list is at the far right. Home already follows this template; the manager’s page does not. | Tiles with sparklines (in, out, waiting, quality), charts in cards, a rail of what is stuck and of its connectors. |
 | Board | Adapt | `kanban-board` | Cards hold an id, a title and a badge. No description, menu, search, filter, sort or add. Empty lanes say “Nothing here”. | The card, the lane header with its tip, the empty lane, the toolbar. Plus one line for the thread working on it. |
 | Board as a list | Adapt | `table-grouped` | A table per lane, and a heading with “Nothing here” for each empty one. | One table grouped by lane, with filter and view options. This template passes our check as it is. |
-| Board: Console and Inbox views | Drop | `incident-console` | Three columns, two nearly empty. It shows the same tasks a third and a fourth time. | Nothing here. The console template is used for In and out, where it fits. |
+| Board: Console | Adapt | `incident-console` | Three columns, two nearly empty. No timeline, and no way to the task. | Rows grouped by state, the pane with actions and the timeline. |
+| Board: Inbox | Drop | `none` | The same tasks a fourth time. Dropped by you. | Templates that open on it open on List. |
 | Task | Redo | `work-item-detail` | A form. Six boxes and three Save buttons, where you came to read what is going on. | The record: properties in the header, done-when as the checklist with progress, linked items for the pull request and the thread, activity below. |
 | Mission | Adapt | `documentation-technical` | Two lines of text in an empty page. | The article with its outline, and the “AI assistance” card as “ask the manager to change this”. |
 | In and out (was Events) | Adapt | `incident-console` | Follows the template well. It only shows what came in. | Keep it. Add what went out, and a timeline from event to task to output in the pane. |
@@ -104,6 +105,7 @@ has the same line. A screen that names none is refused.
 
 | Screen | | Template | Today | Take |
 |---|---|---|---|---|
-| Sign in, join | Keep | `login-card` | Follows the template. | Nothing. |
-| Set up a workspace | Keep | `form-wizard` | Follows the template. | Steps change: the first manager is the root, and it makes the next one. |
+| Sign in, sign up | Adapt | `login-card` | I had called this kept. It is not the template: white page, boxed card, one page for both. | The grey page, the mark above the card, the same three ways in. Two pages: sign in, create your account. |
+| Check your email; your team is already here | Adapt | `login-sso` | A green banner over the form, and a button on another page (F79). | Its step for an organisation it knows. |
+| Create workspace | Adapt | `form-wizard` | Another stepper, no fixed footer, no Cancel, six steps, and “Ask to join a workspace instead” beside Create (F79). | Four steps: workspace, model, connector, review. Root is made, and makes the rest. No join here. |
 | Your workspaces | Keep | `a list` | A list of cards. Fine. | Nothing. |
