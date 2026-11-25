@@ -42,7 +42,7 @@ for a manager.
 |---|---|
 | Set up | **A person** installs our GitHub App and picks the repos (two clicks). Then: hand a repo to a manager, choose its events, check the App is still installed |
 | In | The App's webhook, signed: issues, comments, line comments, reviews, checks, merges. Conversation: the issue, and the pull requests that close it |
-| Out | GitHub's MCP server (about 85 tools), **and git in the sandbox** for clone, commit and push, which MCP is the wrong tool for |
+| Out | GitHub's MCP server (about 100 tools), **and git in the sandbox** for clone, commit and push, which MCP is the wrong tool for |
 | Know-how | How this repo tests, how to answer a review. Shown as an issue with its pull request |
 
 ```jsonc
