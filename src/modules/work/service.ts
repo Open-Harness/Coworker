@@ -1,14 +1,9 @@
+import { columns } from "./internal/columns.ts";
+import { isDone } from "./internal/evidence.ts";
+import { move } from "./internal/move.ts";
+import { says } from "./internal/says.ts";
+import { stepOf } from "./internal/steps.ts";
+import { take } from "./internal/take.ts";
 import type { Works } from "./types.ts";
 
-function notBuilt(what: string): never {
-  throw new Error(`Not built: ${what}`);
-}
-
-export const works: Works = {
-  take: () => notBuilt("work.take"),
-  move: () => notBuilt("work.move"),
-  columns: () => notBuilt("work.columns"),
-  stepOf: () => notBuilt("work.stepOf"),
-  isDone: () => notBuilt("work.isDone"),
-  says: () => notBuilt("work.says"),
-};
+export const works: Works = { take, move, columns, stepOf, isDone, says };
