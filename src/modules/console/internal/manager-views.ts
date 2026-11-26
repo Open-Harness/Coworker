@@ -3,6 +3,7 @@ import type { Comment, IntakeView, PlaybookView } from "~/modules/views-manager/
 import type { Decision } from "~/modules/intake/types.ts";
 import type { ConsoleDeps } from "../types.ts";
 import { problem, ok } from "./around.ts";
+import { lineOf } from "./intake-line.ts";
 import { managerModel } from "./model-choice.ts";
 import { headOf, openManager, type Open } from "./managers.ts";
 
@@ -126,7 +127,7 @@ export async function intakeView(c: ConsoleDeps, id: string, query: URLSearchPar
                     ? { id: decision.work, title: item.title }
                     : null,
               from: item.actor.name,
-              line: [{ did: "Found", says: `${item.actor.name} on ${item.place}`, at: item.at }],
+              line: lineOf(item, decision),
               said: saidOf(corrected.get(`${id}:${item.id}`), decision),
               versions: { [id]: head.version },
               mandate: null,

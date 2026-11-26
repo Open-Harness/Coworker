@@ -53,6 +53,26 @@ export const outsideFor =
       github: root.github,
       git: root.git,
       fetch: root.fetch,
+      audit: async (line) => {
+        const object = await workspace();
+        await object?.consoleStore({
+          op: "audit.add",
+          row: {
+            at: line.at,
+            by: record.name,
+            byId: record.id,
+            kind: "manager",
+            doing: line.action,
+            group: "Managers",
+            says: line.says,
+            outcome: line.outcome,
+            why: line.why,
+            permission: "ask",
+            role: "Member",
+            approvedBy: line.approvedBy,
+          },
+        });
+      },
       // The workspace keeps what is asked of a person. A workspace that is gone keeps nothing, and says so.
       asks: async (op) => {
         const asked = await (await workspace())?.asked(op);

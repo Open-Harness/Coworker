@@ -2,6 +2,7 @@ import { threads } from "~/modules/threads/service.ts";
 import { connectors } from "~/modules/connectors/service.ts";
 import { answeredOf, askIdOf, DAY, openAsk, optionsOf, saidOf, type Spec, waitsFor } from "../asking.ts";
 import { threadKey } from "../take.ts";
+import { pullOf } from "./github.ts";
 import { type Call, said, type Tool, type Result, wrong } from "../tool.ts";
 
 /*
@@ -44,12 +45,40 @@ export async function ask(call: Call, args: unknown): Promise<Result> {
   });
 }
 
+/** What an action is done to: the pull request, for what is done to one and the work has one; else the conversation it came from. */
+function whereOf(call: Call, action: string): string {
+  const pull = /^github\.(merge|update_pull_request|reply_on_line|rebase|rerun_checks)$/u.test(action) ? pullOf(call) : undefined;
+  return pull === undefined ? threadKey(call.work.from) : `github:${call.work.from.place}#${pull}`;
+}
+
 /** What the action will do, in the words it is done in: what it says it does, and each thing it is given. */
 function showsOf(call: Call, action: string, args: unknown): Spec["shows"] {
   const does = connectors.all.flatMap((one) => one.actions).find((one) => one.id === action)?.does ?? action;
   const given = typeof args === "object" && args !== null ? Object.entries(args as Record<string, unknown>) : [];
   const lines = given.map(([name, value]) => `${name}: ${typeof value === "string" ? value : JSON.stringify(value)}`);
-  return { action, where: threadKey(call.work.from), text: [does, ...lines].join("\n") };
+  return { action, where: whereOf(call, action), text: [does, ...lines].join("\n") };
+}
+
+/** What a person said to an action that waited for them: a yes does it, and either is a line in the audit log with who said it. */
+async function answered(call: Call, action: string, args: unknown, answer: NonNullable<ReturnType<typeof answeredOf>>, tool: Tool): Promise<Result> {
+  const yes = answer.option === "yes";
+  const result = yes ? await tool.run(call, args) : wrong(`${saidOf(answer)} It was not done.`);
+  const shows = showsOf(call, action, args);
+  const outcome = !yes ? "refused" : result._tag === "Said" && !result.ok ? "failed" : "done";
+  const line = shows?.text.split("\n")[0] ?? action;
+  // Once, however often the thread goes on from this call.
+  const key = `audited:${idOfCall(call)}`;
+  if (call.c.store.once(key) !== undefined) return result;
+  call.c.store.keepOnce(key, "yes");
+  await call.c.outside.audit?.({
+    at: call.c.clock.now(),
+    says: `${call.c.manager.name}: ${line.replace(/\.$/u, "")} on ${shows?.where ?? ""}`,
+    action,
+    outcome,
+    why: result._tag === "Said" && !result.ok ? result.text : null,
+    approvedBy: answer.person,
+  });
+  return result;
 }
 
 /** An action that is set to ask: a person says yes first, once, or "always" for this thread, this person or this kind. A no is told to the agent. */
@@ -57,7 +86,7 @@ export function guarded(tool: Tool, action: string): Tool {
   const run = async (call: Call, args: unknown): Promise<Result> => {
     const id = idOfCall(call);
     const answer = answeredOf(call.c, id);
-    if (answer !== undefined) return answer.option === "yes" ? tool.run(call, args) : wrong(`${saidOf(answer)} It was not done.`);
+    if (answer !== undefined) return answered(call, action, args, answer, tool);
     if (call.c.store.once(`asked:${id}`) === undefined) {
       const use = { action, thread: threadKey(call.work.from), person: call.work.asked, kind: call.work.kind };
       const covered = await call.c.outside.asks({ op: "covered", use });

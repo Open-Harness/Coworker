@@ -42,6 +42,7 @@ export interface AuditRow {
   readonly why: string | null;
   readonly permission: "on" | "ask" | "off";
   readonly role: Role;
+  readonly approvedBy?: string | null; // who said yes, when it waited for one
 }
 
 /** A manager of this workspace: its place in the tree, and where its own object is. */
@@ -154,12 +155,9 @@ export interface Store {
   readonly claim: (key: string, doing: string) => Promise<{ readonly is: "yours" | "busy" } | { readonly is: "done"; readonly did: Did }>;
   readonly settle: (key: string, did: Did) => Promise<void>;
   readonly audit: (row: Omit<AuditRow, "id">) => Promise<void>;
-  readonly auditLines: (query: {
-    readonly by: string | null;
-    readonly outcome: string | null;
-    readonly before: string | null;
-    readonly limit: number;
-  }) => Promise<{ readonly lines: readonly AuditRow[]; readonly next: string | null }>;
+  readonly auditLines: (
+    query: Omit<Extract<StoreOp, { readonly op: "audit.list" }>, "op">,
+  ) => Promise<{ readonly lines: readonly AuditRow[]; readonly next: string | null }>;
   readonly setting: (name: string) => Promise<unknown>;
   readonly set: (name: string, value: unknown) => Promise<void>;
   readonly managers: () => Promise<readonly ManagerRow[]>;

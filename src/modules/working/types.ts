@@ -129,6 +129,19 @@ export interface Outside {
   readonly asks: (op: AskOp) => Promise<AskAnswer>;
   /** The workspace's mailbox: what a manager reads of it and sends from it, once by its key. */
   readonly mail: (call: MailCall) => Promise<MailAnswer>;
+  /** A line in the workspace's audit log: what the manager did that a person had to say yes to. */
+  readonly audit?: (line: AuditLine) => Promise<void>;
+}
+
+export interface AuditLine {
+  readonly at: number;
+  /** What was done, in words that say who did it. */
+  readonly says: string;
+  /** The action's id. */
+  readonly action: string;
+  readonly outcome: "done" | "refused" | "failed";
+  readonly why: string | null;
+  readonly approvedBy: string;
 }
 
 /** What was asked of a person for a piece of work was answered, anywhere: `answer` in the words it is known by, `option` its id. */

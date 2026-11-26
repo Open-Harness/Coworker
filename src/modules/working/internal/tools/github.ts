@@ -16,7 +16,7 @@ const issueOf = ({ work }: Call): number => Number(work.from.id);
 const cannot = (why: string): Result => wrong(why);
 
 /** The pull request of this work: the one it opened, else the one it follows that is not its issue. */
-function pullOf({ c, work }: Call): number | undefined {
+export function pullOf({ c, work }: Call): number | undefined {
   const kept = c.store.once(`pull:${work.id}`);
   if (kept !== undefined) return Number(kept);
   const found = work.follows.find((one) => one.connector === "github" && one.id !== work.from.id);
@@ -116,6 +116,17 @@ async function update(call: Call, args: unknown): Promise<Result> {
   return done._tag === "Cannot" ? waits(done.why) : said("Changed.");
 }
 
+/** Merges the pull request of this work, as the merge button does: only ever done after a person said yes, or the action is on. */
+async function merge(call: Call): Promise<Result> {
+  const number = pullOf(call);
+  if (number === undefined) return cannot("This work has no pull request yet.");
+  const done = await gh(call.c.outside, repoOf(call), { pull_requests: "write", contents: "write" }, "PUT", `/pulls/${number}/merge`, {
+    merge_method: "squash",
+  });
+  if (done._tag === "Cannot") return waits(done.why);
+  return done.status === 200 ? said(`Merged pull request #${number}.`) : wrong(`It was not merged: GitHub answered ${done.status}.`);
+}
+
 async function reply(call: Call, args: unknown): Promise<Result> {
   const read = connectors.checked("github.reply_on_line", args);
   const number = pullOf(call);
@@ -140,6 +151,7 @@ const RUN: Readonly<Record<string, (call: Call, args: unknown) => Promise<Result
   "github.open_pull_request": openPull,
   "github.update_pull_request": update,
   "github.label": label,
+  "github.merge": merge,
 };
 
 /** A number said as text ("1037") is the number: a model writes what it read, and it read it in text. */
