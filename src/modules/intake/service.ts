@@ -1,15 +1,9 @@
+import { afterCorrection, mayWiden } from "./internal/corrections.ts";
+import { decide } from "./internal/decide.ts";
+import { gate } from "./internal/gate.ts";
+import { question } from "./internal/question.ts";
+import { settled } from "./internal/settled.ts";
+import { verdicts } from "./internal/verdicts.ts";
 import type { Intake } from "./types.ts";
 
-function notBuilt(what: string): never {
-  throw new Error(`Not built: ${what}`);
-}
-
-export const intake: Intake = {
-  gate: () => notBuilt("intake.gate"),
-  settled: () => notBuilt("intake.settled"),
-  question: () => notBuilt("intake.question"),
-  verdicts: () => notBuilt("intake.verdicts"),
-  decide: () => notBuilt("intake.decide"),
-  afterCorrection: () => notBuilt("intake.afterCorrection"),
-  mayWiden: () => notBuilt("intake.mayWiden"),
-};
+export const intake: Intake = { gate, settled, question, verdicts, decide, afterCorrection, mayWiden };
