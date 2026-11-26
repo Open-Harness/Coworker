@@ -24,6 +24,20 @@ const num = (text: string): number => {
   return Number.isFinite(value) && value >= 0 ? value : 0;
 };
 
+/** Who sits under whom among the managers that have a part, said from the shell's tree: "A and B work under C, and D under E. " */
+function underNote(managers: readonly string[], words: ReturnType<typeof useWords>): string {
+  const byParent = new Map<string, string[]>();
+  for (const id of managers) {
+    const parent = words.above(id);
+    if (parent !== null) byParent.set(parent, [...(byParent.get(parent) ?? []), words.manager(id)]);
+  }
+  const clauses = [...byParent].map(([parent, names], at) => {
+    const who = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : (names[0] ?? "");
+    return `${who} ${at === 0 ? "work " : ""}under ${words.manager(parent)}`;
+  });
+  return clauses.length === 0 ? "" : `${clauses.join(", and ")}. `;
+}
+
 /** The whole limit is the one in Settings. Juno hands it out in parts, and the parts cannot come to more than the whole. */
 export function Spending({ view, onDirty }: JunoPage) {
   const [go, act, words] = [useGo(), useDoing(), useWords()];
@@ -38,6 +52,7 @@ export function Spending({ view, onDirty }: JunoPage) {
       used: p.used,
     })),
   );
+  const under = underNote(view.spending.parts.map((p) => p.manager), words);
   const handed = rows.reduce((sum, r) => sum + num(r.part), 0);
   const over = handed - whole;
   const edit = (id: string, key: "part" | "piece", text: string) => {
@@ -123,8 +138,7 @@ export function Spending({ view, onDirty }: JunoPage) {
       )}
       <Table<Row> data={rows} columns={columns} idKey="id" density="balanced" dividers="rows" />
       <Text type="supporting" color="secondary">
-        Docs and Releases work under Coding, and WhatsApp desk under Support. Each has a part of its own, and a manager above cannot spend a
-        part below it.
+        {`${under}Each has a part of its own, and a manager above cannot spend a part below it.`}
       </Text>
     </VStack>
   );

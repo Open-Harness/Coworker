@@ -14,6 +14,7 @@ import { EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
 import { useGo } from "~/modules/page/service.ts";
 import type { CoworkerView } from "~/modules/views-workspace/types.ts";
 import { useDoing } from "./act.ts";
+import { AddTrigger } from "./add-trigger.tsx";
 import { KIND, triggerWhen, useWords } from "./words.ts";
 
 type Line = CoworkerView["triggers"][number];
@@ -36,6 +37,7 @@ const WORD = { done: "Done", asked: "Asked a person", failed: "Failed" } as cons
 export function Triggers({ view }: { readonly view: CoworkerView }) {
   const [go, act, words] = [useGo(), useDoing(), useWords()];
   const isNarrow = useMediaQuery("(max-width: 768px)");
+  const [adding, setAdding] = useState(false);
   const [off, setOff] = useState<ReadonlySet<string>>(new Set());
   const rowOf = ({ trigger, of, next, last }: Line): Row => ({
     id: trigger.id,
@@ -171,6 +173,7 @@ export function Triggers({ view }: { readonly view: CoworkerView }) {
   ];
   const columns = isNarrow ? all.filter((c) => ["name", "on", "more"].includes(c.key as string)) : all;
   return (
+    <>
     <Layout
       height="fill"
       header={
@@ -181,7 +184,7 @@ export function Triggers({ view }: { readonly view: CoworkerView }) {
                 What makes something come in, for all managers. Each is changed in the playbook it belongs to.
               </Text>
             </StackItem>
-            <Button label="Add one" size="sm" variant="secondary" onClick={() => go("/")} />
+            <Button label="Add one" size="sm" variant="secondary" onClick={() => setAdding(true)} />
           </HStack>
         </LayoutHeader>
       }
@@ -200,5 +203,7 @@ export function Triggers({ view }: { readonly view: CoworkerView }) {
         </LayoutContent>
       }
     />
+      <AddTrigger isOpen={adding} onClose={() => setAdding(false)} />
+    </>
   );
 }

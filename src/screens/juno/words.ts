@@ -85,13 +85,20 @@ export function triggerWhen(trigger: Trigger): string {
 }
 
 /** Times in the workspace's zone, and a manager's name by its id, both read from the shell that is already there. */
-export function useWords(): Words & { readonly manager: (id: string) => string; readonly clock: Clock } {
+export function useWords(): Words & {
+  readonly manager: (id: string) => string;
+  /** The id of the manager above this one, or null at the top. */
+  readonly above: (id: string) => string | null;
+  readonly clock: Clock;
+} {
   const clock = useClock();
   const shell = useRead("/shell");
   const zone = shell._tag === "Ok" ? shell.value.workspace.zone : "UTC";
   const tree = shell._tag === "Ok" ? shell.value.tree : NONE;
   return useMemo(
-    () => ({ ...createWords(clock, zone), clock, manager: (id: string) => tree.find((node) => node.id === id)?.name ?? id }),
+    () => ({ ...createWords(clock, zone), clock, manager: (id: string) => tree.find((node) => node.id === id)?.name ?? id,
+      above: (id: string) => tree.find((node) => node.id === id)?.above ?? null,
+    }),
     [clock, zone, tree],
   );
 }

@@ -15,10 +15,10 @@ const OPTIONS = [
   { value: "ask", label: "Ask" },
   { value: "off", label: "Off" },
 ];
-/** What each group of lines is for; the view names the group and these say what it is. */
-const ABOUT: Readonly<Record<string, string>> = {
-  "On this console": "What it does to the workspace itself.",
-  Outside: "What it does as itself on the connectors, not as a manager.",
+/** What a group holds, counted from its own lines. */
+const holds = (lines: readonly MayDo[]): string => {
+  const count = (is: MayDo["is"]) => lines.filter((one) => one.is === is).length;
+  return `${lines.length} ${lines.length === 1 ? "line" : "lines"}: ${count("on")} on, ${count("ask")} ask, ${count("off")} off.`;
 };
 
 /** What Juno itself may do, as itself. It may ask for more here, and never gives itself more: a person says yes. */
@@ -76,7 +76,7 @@ export function MayDoPage({ view, onDirty }: JunoPage) {
       {groups.map((group, at) => (
         <VStack key={group} gap={4}>
           {at > 0 && <Divider />}
-          <Part title={group} about={ABOUT[group] ?? ""}>
+          <Part title={group} about={holds(view.may.filter((one) => one.group === group))}>
             <Table<Row>
               data={view.may.filter((one) => one.group === group).map((one) => ({ ...one }))}
               columns={cols}

@@ -6,19 +6,19 @@ import { Markdown } from "@astryxdesign/core/Markdown";
 import { MetadataList, MetadataListItem } from "@astryxdesign/core/MetadataList";
 import { TextArea } from "@astryxdesign/core/TextArea";
 import { Heading, Text } from "@astryxdesign/core/Text";
-import { useToast } from "@astryxdesign/core/Toast";
 import { TreeList, type TreeListItemData } from "@astryxdesign/core/TreeList";
 import type { CoworkerView } from "~/modules/views-workspace/types.ts";
+import { useDoing } from "./act.ts";
 import { useWords } from "./words.ts";
 
 type SetUp = CoworkerView["setUp"];
 const percent = (share: number): string => `${Math.round(share * 100)}%`;
 const gone = (count: number): string => (count === 1 ? "It is" : count === 2 ? "Both are" : "All are");
 
-/** A comment on a file is tried on every draft there has been, and Juno answers with a change. */
-function Say({ file, drafts }: { readonly file: string; readonly drafts: number }) {
+/** A comment on a file is sent as a comment on that file; the page says what came of it, and keeps the text when it did not go. */
+function Say({ skill, file }: { readonly skill: string; readonly file: string }) {
   const [text, setText] = useState("");
-  const showToast = useToast();
+  const act = useDoing();
   return (
     <VStack gap={2} paddingBlockStart={5}>
       <TextArea label={`Say something about ${file}`} rows={3} value={text} onChange={(next: string) => setText(next)} />
@@ -28,10 +28,7 @@ function Say({ file, drafts }: { readonly file: string; readonly drafts: number 
           size="sm"
           variant="secondary"
           isDisabled={text.trim() === ""}
-          onClick={() => {
-            setText("");
-            showToast({ body: `Juno tries a change on the ${drafts} drafts there have been, and answers here.`, uniqueID: "skill" });
-          }}
+          onClick={() => void act("line.comment", { manager: skill, line: file, text: text.trim() }).then((done) => done && setText(""))}
         />
       </HStack>
     </VStack>
@@ -75,7 +72,7 @@ export function Skills({ view }: { readonly view: CoworkerView }) {
         <StackItem size="fill">
           <VStack maxWidth={760}>
             <Markdown headingLevelStart={3}>{text}</Markdown>
-            <Say file={chosen} drafts={set.drafts} />
+            <Say skill={set.skill} file={chosen} />
           </VStack>
         </StackItem>
       </HStack>

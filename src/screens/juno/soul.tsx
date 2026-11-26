@@ -6,10 +6,9 @@ import { useDoing } from "./act.ts";
 import { Part } from "./part.tsx";
 import type { JunoPage } from "./types.ts";
 
-/** Who Juno is in its own words, and the lines it does not cross. Only the soul's words are saved: a person says yes to a change. */
+/** Who Juno is in its own words, and the lines it does not cross. Only the soul's words are saved: the console has no doing for the lines or for the suggestion switch, so those are shown and not edited. */
 export function Soul({ view, onDirty }: JunoPage) {
   const [soul, setSoul] = useState(view.soul);
-  const [ask, setAsk] = useState(view.mayPropose);
   const act = useDoing();
   return (
     <>
@@ -24,13 +23,13 @@ export function Soul({ view, onDirty }: JunoPage) {
         <CheckboxInput
           label="Juno may suggest a change to this"
           description="You see the old and the new beside each other, and say yes or no."
-          value={ask}
-          onChange={(next: boolean) => setAsk(next)}
+          value={view.mayPropose}
+          isReadOnly
         />
       </Part>
       <Divider />
       <Part title="Never" about="Lines it does not cross, whoever asks.">
-        <TextArea label="Never" isLabelHidden rows={4} value={view.never.join("\n")} onChange={() => undefined} />
+        <TextArea label="Never" isLabelHidden rows={4} value={view.never.join("\n")} isReadOnly />
       </Part>
     </>
   );

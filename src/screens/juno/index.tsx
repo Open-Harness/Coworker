@@ -38,7 +38,7 @@ const FORMS: Readonly<Record<string, (page: JunoPage) => React.ReactNode>> = {
   Spending: (page) => <Spending {...page} />,
 };
 /** Pages that have something to save: the others change by a button of their own. */
-const SAVES = new Set(["About", "Soul", "Talking", "May do", "Spending"]);
+const SAVES = new Set(["Soul", "Talking", "May do", "Spending"]);
 
 /** Juno's own pages: who it is, what it keeps, what it may do and what it did. Each is a part of one read, `/coworker`. */
 function Juno({ view, current }: { readonly view: CoworkerView; readonly current: string }) {

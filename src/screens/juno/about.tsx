@@ -1,9 +1,7 @@
-import { useState } from "react";
 import { CheckboxInput } from "@astryxdesign/core/CheckboxInput";
 import { Divider } from "@astryxdesign/core/Divider";
 import { Selector } from "@astryxdesign/core/Selector";
 import { TextInput } from "@astryxdesign/core/TextInput";
-import { useToast } from "@astryxdesign/core/Toast";
 import { Part } from "./part.tsx";
 import type { JunoPage } from "./types.ts";
 import { useWords } from "./words.ts";
@@ -21,20 +19,14 @@ const PLACES = [
   { connector: "github", label: "GitHub" },
 ] as const;
 
-/** Who Juno is, where it is reached, and how it sounds. There is no doing on the console yet that changes these. */
-export function About({ view, onDirty }: JunoPage) {
-  const [name, setName] = useState(view.identity.name);
-  const [role, setRole] = useState(view.identity.role);
-  const [voice, setVoice] = useState<string>(view.voice);
-  const [aloud, setAloud] = useState(view.aloud);
-  const showToast = useToast();
+/** Who Juno is, where it is reached, and how it sounds. There is no doing on the console that changes these, so the page shows them and has nothing to save. */
+export function About({ view }: JunoPage) {
   const { clock } = useWords();
-  const edited = () => onDirty(async () => (showToast({ body: "This cannot be changed here yet.", uniqueID: "about" }), false));
   return (
     <>
       <Part title="Who it is" about="The one name everybody speaks to. Managers stay inside.">
-        <TextInput label="Name" value={name} onChange={(next: string) => (setName(next), edited())} />
-        <TextInput label="What it says it is" value={role} onChange={(next: string) => (setRole(next), edited())} />
+        <TextInput label="Name" value={view.identity.name} onChange={() => undefined} isReadOnly />
+        <TextInput label="What it says it is" value={view.identity.role} onChange={() => undefined} isReadOnly />
       </Part>
       <Divider />
       <Part
@@ -59,12 +51,12 @@ export function About({ view, onDirty }: JunoPage) {
       </Part>
       <Divider />
       <Part title="Its voice" about="When it reads aloud, or picks up a call.">
-        <Selector label="Voice" value={voice} onChange={(next: string) => (setVoice(next), edited())} options={VOICES} />
+        <Selector label="Voice" value={view.voice} onChange={() => undefined} options={VOICES} isReadOnly />
         <CheckboxInput
           label="Say aloud what it is doing on the screen"
           description="You can switch it on and off while it works."
-          value={aloud}
-          onChange={(next: boolean) => (setAloud(next), edited())}
+          value={view.aloud}
+          isReadOnly
         />
       </Part>
     </>
