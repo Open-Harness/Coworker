@@ -5,6 +5,11 @@ export type Probe =
   | { readonly _tag: "Works"; readonly models: readonly string[]; readonly prices: Readonly<Record<string, ModelPrice>> }
   | { readonly _tag: "Failed"; readonly error: string };
 
+/** OpenAI-style servers refuse a limit under 16 output tokens, so their test call asks for the least they accept. */
+const LEAST_OPENAI_TOKENS = 16;
+/** A list may hold models that cannot chat, or that a key may not use: the test call tries this many before it calls the provider failed. */
+const TRIES = 4;
+
 const PING = [{ role: "user", content: "Reply with one word." }];
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> => typeof value === "object" && value !== null;
@@ -43,26 +48,39 @@ function priced(model: Readonly<Record<string, unknown>>): readonly (readonly [s
   return [[id, { input, output, ...(cached === undefined ? {} : { cached }) }]];
 }
 
-/** Lists the models, then asks the smallest one for a single token. */
+/** Lists the models, then asks the smallest one for a single token; if it cannot answer, the next, up to TRIES. */
 async function probe(
   list: () => Promise<Response>,
   call: (model: string) => Promise<Response>,
-  smallest: (models: readonly string[]) => string | undefined,
+  order: (models: readonly string[]) => readonly string[],
 ): Promise<Probe> {
   try {
     const listed = await list();
     if (!listed.ok) return { _tag: "Failed", error: await providerError(listed) };
     const { models, prices } = await listing(listed);
-    const model = smallest(models);
-    if (model === undefined) return { _tag: "Failed", error: "The provider lists no models" };
-    const answered = await call(model);
-    return answered.ok ? { _tag: "Works", models, prices } : { _tag: "Failed", error: await providerError(answered) };
+    const asked = order(models).slice(0, TRIES);
+    if (asked.length === 0) return { _tag: "Failed", error: "The provider lists no models" };
+    let first: string | undefined;
+    for (const model of asked) {
+      const answered = await call(model);
+      if (answered.ok) return { _tag: "Works", models, prices };
+      first ??= await providerError(answered);
+    }
+    return { _tag: "Failed", error: first ?? "The provider did not answer" };
   } catch (error) {
     return { _tag: "Failed", error: error instanceof Error ? error.message : String(error) };
   }
 }
 
-const preferring = (word: string) => (models: readonly string[]) => models.find((model) => model.includes(word)) ?? models[0];
+/** Models that do not chat: asked last. */
+const NOT_CHAT = /embed|whisper|tts|image|audio|moderation|realtime|transcribe|search|dall-e/u;
+
+/** The models containing the word first, then those that chat, then the rest. */
+const preferring = (word: string) => (models: readonly string[]) => [
+  ...models.filter((model) => model.includes(word)),
+  ...models.filter((model) => !model.includes(word) && !NOT_CHAT.test(model)),
+  ...models.filter((model) => !model.includes(word) && NOT_CHAT.test(model)),
+];
 
 export function probeAnthropic(send: typeof fetch, baseUrl: string, key: string): Promise<Probe> {
   const headers = { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" };
@@ -81,7 +99,7 @@ export function probeOpenAICompatible(send: typeof fetch, baseUrl: string, key: 
   return probe(
     () => send(`${baseUrl}/models`, { headers }),
     (model) =>
-      send(`${baseUrl}/chat/completions`, { method: "POST", headers, body: JSON.stringify({ model, max_tokens: 1, messages: PING }) }),
+      send(`${baseUrl}/chat/completions`, { method: "POST", headers, body: JSON.stringify({ model, max_tokens: LEAST_OPENAI_TOKENS, messages: PING }) }),
     preferring("mini"),
   );
 }

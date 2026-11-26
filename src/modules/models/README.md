@@ -5,7 +5,7 @@ sign-in. Kept in the Workspace object (`model_connection`); every key or token i
 
 **Invariants**
 
-- Adding a connection runs a test call (list the models, then one token from the smallest) and keeps the result:
+- Adding a connection runs a test call (list the models, then a few tokens from the smallest that chats, trying the next if one cannot; OpenAI-style servers refuse fewer than 16) and keeps the result:
   "works, checked at" or the provider's own error message. The Keys screen shows exactly that.
 - A key is read from the vault only for the test call. Nothing returned by this module carries it.
 - `readiness()` is what a manager checks before it starts: `Ready` with a working connection, or `NoModel` with the
