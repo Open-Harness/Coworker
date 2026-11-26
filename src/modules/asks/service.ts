@@ -1,14 +1,15 @@
+import { answerAsk } from "./internal/answer.ts";
+import { makeAsk } from "./internal/ask.ts";
+import { dueAsk } from "./internal/due.ts";
+import { afterUseOf, coversUse } from "./internal/rules.ts";
+import { whomOf } from "./internal/whom.ts";
 import type { Asks } from "./types.ts";
 
-function notBuilt(what: string): never {
-  throw new Error(`Not built: ${what}`);
-}
-
 export const asks: Asks = {
-  ask: () => notBuilt("asks.ask"),
-  answer: () => notBuilt("asks.answer"),
-  due: () => notBuilt("asks.due"),
-  whom: () => notBuilt("asks.whom"),
-  covers: () => notBuilt("asks.covers"),
-  afterUse: () => notBuilt("asks.afterUse"),
+  ask: makeAsk,
+  answer: answerAsk,
+  due: dueAsk,
+  whom: whomOf,
+  covers: coversUse,
+  afterUse: afterUseOf,
 };

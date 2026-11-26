@@ -1,12 +1,11 @@
+import { clash } from "./internal/clash.ts";
+import { stale } from "./internal/stale.ts";
+import { tell } from "./internal/tell.ts";
 import type { Knowledge } from "./types.ts";
 
-function notBuilt(what: string): never {
-  throw new Error(`Not built: ${what}`);
-}
-
 export const knowledge: Knowledge = {
-  tell: () => notBuilt("knowledge.tell"),
-  mayPropose: () => notBuilt("knowledge.mayPropose"),
-  clash: () => notBuilt("knowledge.clash"),
-  stale: () => notBuilt("knowledge.stale"),
+  tell,
+  mayPropose: (correction) => correction.inside,
+  clash,
+  stale,
 };
