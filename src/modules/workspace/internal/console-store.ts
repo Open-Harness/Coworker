@@ -115,7 +115,13 @@ function spokenTwice(sql: StorePlace["sql"], item: Omit<Item, "id" | "trigger">)
     .toArray()
     .find((row) => {
       const kept = parsed<Item>(row["item"]);
-      return kept.event !== item.event && (kept.event === "issue" || kept.event === "label") && kept.at === item.at && kept.actor.address === item.actor.address && kept.text === item.text;
+      return (
+        kept.event !== item.event &&
+        (kept.event === "issue" || kept.event === "label") &&
+        kept.at === item.at &&
+        kept.actor.address === item.actor.address &&
+        kept.text === item.text
+      );
     });
 }
 

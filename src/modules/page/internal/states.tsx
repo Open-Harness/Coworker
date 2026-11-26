@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Center } from "@astryxdesign/core/Center";
@@ -51,21 +51,28 @@ export function Missing({ title, description, actions }: GoneWords) {
   );
 }
 
+/** The page already says it is offline, once, so what is read inside it does not say it again. */
+const Told = createContext(false);
+
 /** The connection is gone: what was read stays, dimmed, and what is changed waits. */
 export function Offline({ children }: { readonly children: ReactNode }) {
   const clock = useClock();
+  const isShown = useContext(Told);
+  if (isShown) return <>{children}</>;
   return (
-    <VStack gap={0} height="100%">
-      <Banner
-        container="section"
-        status="error"
-        title="You are offline"
-        description={`This is how it was at ${clock.time(clock.now())}. What you change waits here, and goes when the connection is back.`}
-      />
-      <VStack height="100%" style={DIMMED} aria-disabled>
-        {children}
+    <Told value>
+      <VStack gap={0} height="100%">
+        <Banner
+          container="section"
+          status="error"
+          title="You are offline"
+          description={`This is how it was at ${clock.time(clock.now())}. What you change waits here, and goes when the connection is back.`}
+        />
+        <VStack height="100%" style={DIMMED} aria-disabled>
+          {children}
+        </VStack>
       </VStack>
-    </VStack>
+    </Told>
   );
 }
 
