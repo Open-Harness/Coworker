@@ -38,7 +38,7 @@ export async function born(c: ConsoleDeps, input: { readonly id: string; readonl
   const { objectId, store } = c.managers.mint(c.workspace.region);
   await store.open({ id: node.id, workspace: c.workspace.id, name: node.name, template: null, by: c.who.id, at, files: input.files });
   const hears = playbook.triggers.flatMap((trigger) =>
-    trigger.on && trigger.by === "event" && trigger.account === "github" ? [trigger.place] : [],
+    trigger.on && trigger.by === "event" && (trigger.account === "github" || trigger.account === "email") ? [trigger.place] : [],
   );
   await c.store.addManager({ node, objectId, region: c.workspace.region, by: c.who.id, at, hears: [...new Set(hears)] });
   return { _tag: "Born", id: node.id };

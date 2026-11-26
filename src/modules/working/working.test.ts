@@ -137,6 +137,7 @@ function deps(answer: Response) {
       git: { push: async () => ({ _tag: "Refused", why: "no" }) },
       fetch: async () => new Response("", { status: 502 }),
       asks: async () => ({ op: "gone" }),
+      mail: async () => ({ is: "refused", why: "no mailbox" }),
     },
     clock: { now: () => 1_000 },
     playbook: () => playbook,

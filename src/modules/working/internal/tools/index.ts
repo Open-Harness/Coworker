@@ -3,12 +3,13 @@ import type { Mandate } from "~/modules/reach/types.ts";
 import type { AgentRole } from "~/modules/playbook/types.ts";
 import type { ToolSpec } from "~/modules/completion/types.ts";
 import { BOX_TOOLS } from "./box.ts";
+import { EMAIL_TOOLS } from "./email.ts";
 import { GITHUB_TOOLS } from "./github.ts";
 import { SAID_TOOLS } from "./said.ts";
 import { guarded } from "./asked.ts";
 import type { Tool } from "../tool.ts";
 
-const ALL: readonly Tool[] = [...BOX_TOOLS, ...SAID_TOOLS, ...GITHUB_TOOLS];
+const ALL: readonly Tool[] = [...BOX_TOOLS, ...SAID_TOOLS, ...GITHUB_TOOLS, ...EMAIL_TOOLS];
 const byName = new Map(ALL.map((tool) => [tool.name, tool]));
 const nameOf = (id: string): string => id.replaceAll(".", "_");
 

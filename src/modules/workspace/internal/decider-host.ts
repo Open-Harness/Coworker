@@ -3,9 +3,12 @@ import type { Item } from "~/modules/intake/types.ts";
 import type { NotProvisioned } from "../types.ts";
 import { askingOf } from "./asks-host.ts";
 import type { StoreAnswer, StoreOp } from "~/modules/console/types.ts";
+import type { MailAnswer, MailCall } from "~/modules/mailing/types.ts";
 import { runStore } from "./console-store.ts";
 import { decidingOf } from "./deciding-host.ts";
 import { followingOf } from "./following-host.ts";
+import { mailingOf } from "./mailing-host.ts";
+import { readProfile } from "./store.ts";
 import { SettingsHost } from "./settings-host.ts";
 
 /** What came in is decided from the object's alarm, so that an object that was lost decides it when it is back. */
@@ -41,9 +44,18 @@ export abstract class DecidingHost<Env> extends SettingsHost<Env> {
     if (set === null || set > at) await this.ctx.storage.setAlarm(at);
   }
 
+  /** What the mailbox owes: what became true is told to the work, and the quiet that is owed becomes an item. */
+  protected async mailRun(): Promise<void> {
+    const profile = readProfile(this.ctx.storage.sql);
+    if (profile === undefined) return;
+    const { again } = await mailingOf(this.ctx.storage.sql, this.dependencies, profile.address).run();
+    if (again !== null) await this.wakeFor(again - this.dependencies.clock.now());
+  }
+
   /** What is due now is done: what came in is decided, and what a judge did not answer is asked again. */
   async tick(): Promise<void> {
     if (!this.provisioned()) return;
+    await this.mailRun();
     await this.decide();
     await this.askTick();
   }
@@ -106,6 +118,7 @@ export abstract class DecidingHost<Env> extends SettingsHost<Env> {
     if (!this.provisioned()) return;
     // The sign-ins first: it sets or clears the one alarm, and what is owed after it is set again by `decide`.
     await super.alarm();
+    await this.mailRun();
     await this.decide();
     await this.askTick();
   }
@@ -118,6 +131,7 @@ export abstract class DecidingHost<Env> extends SettingsHost<Env> {
       await this.wakeFor(0);
       return { op: "github.hear" };
     }
+    if (op.op === "mail") return { op: "mail", answer: await this.#mail(op.call) };
     const answer = runStore({ sql, now: this.dependencies.clock.now(), id: this.dependencies.ids.next }, op);
     if (op.op === "item.keep" && answer.op === "item.keep" && answer.isNew) {
       await this.wakeFor(0);
@@ -126,6 +140,22 @@ export abstract class DecidingHost<Env> extends SettingsHost<Env> {
     }
     if (answer.op === "item.reopen") await this.wakeFor(0);
     if (op.op === "changed") this.tell(op.reads);
+    return answer;
+  }
+
+  /** One call of the workspace's mailbox. A mail that came in, or a mail that left, may owe something to the work: it is done before this answers. */
+  async #mail(call: MailCall): Promise<MailAnswer> {
+    const profile = readProfile(this.ctx.storage.sql);
+    if (profile === undefined) return { is: "refused", why: "The workspace has no mailbox." };
+    const answer = await mailingOf(this.ctx.storage.sql, this.dependencies, profile.address).handle(call);
+    if (call.is === "view" || call.is === "conversation" || call.is === "search") return answer;
+    await this.wakeFor(0);
+    await this.mailRun();
+    const managers = runStore(
+      { sql: this.ctx.storage.sql, now: this.dependencies.clock.now(), id: this.dependencies.ids.next },
+      { op: "manager.list" },
+    );
+    this.tell(["/shell", "/tree", ...(managers.op === "manager.list" ? managers.rows.map(({ node }) => `/m/${node.id}`) : [])]);
     return answer;
   }
 

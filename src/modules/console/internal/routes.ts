@@ -29,6 +29,7 @@ import { threadsView } from "./threads-view.ts";
 import { coworkerView, homeView, shellView } from "./shell.ts";
 import { fillView, templatesView } from "./templates.ts";
 import { readSetUp, sayInSetUp, startSetUp } from "./set-up.ts";
+import { conversationView, mailView, writeIn } from "./mail.ts";
 
 /* The paths of `api/types.ts`, each to the view it answers. A path that is not here is 404 in words. */
 
@@ -65,6 +66,8 @@ const READS: readonly (readonly [RegExp, Part])[] = [
   [/^\/m\/([^/]+)\/threads$/u, (c, [id]) => threadsView(c, id ?? "")],
   [/^\/m\/([^/]+)\/playbook$/u, (c, [id], q) => playbookView(c, id ?? "", Number(q.get("version")) || undefined)],
   [/^\/m\/([^/]+)\/intake$/u, (c, [id], q) => intakeView(c, id ?? "", q)],
+  [/^\/m\/([^/]+)\/connectors\/email$/u, (c, [id]) => mailView(c, id ?? "")],
+  [/^\/m\/([^/]+)\/connectors\/email\/(.+)$/u, (c, [id, conversation]) => conversationView(c, id ?? "", conversation ?? "")],
 ];
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
@@ -94,6 +97,8 @@ export async function write({ path, body }: Call, c: ConsoleDeps): Promise<Answe
   if (tried !== null) return tryTemplate(c, decodeURIComponent(tried[1] ?? ""), body);
   const asked = /^\/inbox\/([^/]+)$/u.exec(path);
   if (asked !== null) return answerAsk(c, decodeURIComponent(asked[1] ?? ""), body);
+  const inMail = /^\/m\/([^/]+)\/connectors\/([^/]+)\/(.+)$/u.exec(path);
+  if (inMail !== null) return writeIn(c, decodeURIComponent(inMail[1] ?? ""), inMail[2] ?? "", decodeURIComponent(inMail[3] ?? ""), body);
   if (path === "/set-up") return startSetUp(c, body);
   const inSetUp = /^\/set-up\/([^/]+)$/u.exec(path);
   if (inSetUp !== null) return sayInSetUp(c, decodeURIComponent(inSetUp[1] ?? ""), body);

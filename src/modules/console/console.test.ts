@@ -35,6 +35,7 @@ function memoryStore(): Store {
     kept: async () => [],
     messages: async () => [],
     addMessage: async () => undefined,
+    mail: async () => ({ is: "refused", why: "no mailbox" }),
   };
 }
 

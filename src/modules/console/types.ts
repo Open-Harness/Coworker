@@ -3,6 +3,7 @@ import type { Ask } from "~/modules/asks/types.ts";
 import type { AskAnswer, AskOp } from "~/modules/asking/types.ts";
 import type { Role } from "~/modules/doings/types.ts";
 import type { Heard } from "~/modules/following/types.ts";
+import type { MailAnswer, MailCall } from "~/modules/mailing/types.ts";
 import type { Decision, Item } from "~/modules/intake/types.ts";
 import type { GitHubConnection, LostConnection } from "~/modules/github/types.ts";
 import type { BillingView } from "~/modules/billing/types.ts";
@@ -81,6 +82,7 @@ export type StoreOp =
   | { readonly op: "item.keep"; readonly item: Omit<Item, "id" | "trigger">; readonly trigger: string; readonly hears: readonly string[] }
   /** A delivery of GitHub was heard: what follows a conversation keeps its records, and what became true is made news. */
   | { readonly op: "github.hear"; readonly heard: Heard }
+  | { readonly op: "mail"; readonly call: MailCall }
   | { readonly op: "ask.list" }
   | {
       readonly op: "item.list";
@@ -135,15 +137,14 @@ export type MoreAnswer =
 
 export type StoreAnswer =
   | { readonly op: "claim"; readonly is: "yours" | "busy" | "done"; readonly did?: Did }
-  | { readonly op: "settle" | "audit.add" | "setting.set" | "manager.add" }
+  | { readonly op: "settle" | "audit.add" | "setting.set" | "manager.add" | "github.hear" | "kept.put" | "message.add" }
+  | { readonly op: "mail"; readonly answer: MailAnswer }
   | { readonly op: "audit.list"; readonly lines: readonly AuditRow[]; readonly next: string | null }
   | { readonly op: "setting.get"; readonly value: unknown }
   | { readonly op: "manager.list"; readonly rows: readonly ManagerRow[] }
   | { readonly op: "item.keep"; readonly row: ItemRow; readonly isNew: boolean }
-  | { readonly op: "github.hear" }
   | { readonly op: "ask.list"; readonly asks: readonly Ask[] }
   | { readonly op: "item.list"; readonly rows: readonly ItemRow[]; readonly next: string | null }
-  | { readonly op: "kept.put" | "message.add" }
   | { readonly op: "kept.list"; readonly values: readonly unknown[] }
   | { readonly op: "message.list"; readonly messages: readonly unknown[] }
   | MoreAnswer;
@@ -183,6 +184,7 @@ export interface Store {
   readonly kept: (kind: string) => Promise<readonly unknown[]>;
   readonly messages: (thread: string) => Promise<readonly unknown[]>;
   readonly addMessage: (thread: string, message: unknown) => Promise<void>;
+  readonly mail: (call: MailCall) => Promise<MailAnswer>;
 }
 
 /** What is outside the workspace's object that the console needs of it. */

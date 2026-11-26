@@ -27,7 +27,12 @@ export async function look(h: Looking): Promise<void> {
     who: { id: "coworker", email: "", name: "Juno", role: "Owner" },
     people: [],
     store: remoteStore(
-      async (op) => (op.op === "github.hear" ? { op: "github.hear" } : runStore({ sql: h.sql, now: clock.now(), id: ids.next }, op)),
+      async (op) =>
+        op.op === "github.hear"
+          ? { op: "github.hear" }
+          : op.op === "mail"
+            ? { op: "mail", answer: { is: "refused", why: "The co-worker does not write mail in its weekly look." } }
+            : runStore({ sql: h.sql, now: clock.now(), id: ids.next }, op),
       clock,
     ),
     outside: {

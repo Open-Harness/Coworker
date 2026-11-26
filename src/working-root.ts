@@ -59,5 +59,11 @@ export const outsideFor =
         if (asked === undefined || "_tag" in asked) throw new Error(`The workspace ${record.workspace} is not there to be asked.`);
         return asked;
       },
+      mail: async (call) => {
+        const answer = await (await workspace())?.consoleStore({ op: "mail", call });
+        return answer !== undefined && "op" in answer && answer.op === "mail"
+          ? answer.answer
+          : { is: "failed", why: `The workspace ${record.workspace} is not there to be written from.` };
+      },
     };
   };
