@@ -67,7 +67,7 @@ export function MetricChart({
           </Text>
         </VStack>
         <VStack role="application" style={{ position: "relative", height: HEIGHT + GUTTER.top + GUTTER.bottom }}>
-          <div style={{ position: "absolute", inset: `${GUTTER.top}px ${GUTTER.right}px ${GUTTER.bottom}px ${GUTTER.left}px` }}>
+          <VStack gap={0} style={{ position: "absolute", inset: `${GUTTER.top}px ${GUTTER.right}px ${GUTTER.bottom}px ${GUTTER.left}px` }}>
             <svg width="100%" height="100%" viewBox={`0 0 ${WIDE} ${HEIGHT}`} preserveAspectRatio="none" aria-hidden>
               {ticks.map((tick) => (
                 <path
@@ -97,7 +97,8 @@ export function MetricChart({
               ))}
             </svg>
             {shown.map((i) => (
-              <div
+              <VStack
+                gap={0}
                 key={i}
                 style={{
                   ...TEXT,
@@ -108,10 +109,11 @@ export function MetricChart({
                 }}
               >
                 {labels[i]}
-              </div>
+              </VStack>
             ))}
             {ticks.map((tick) => (
-              <div
+              <VStack
+                gap={0}
                 key={tick}
                 style={{
                   ...TEXT,
@@ -122,9 +124,9 @@ export function MetricChart({
                 }}
               >
                 {tick}
-              </div>
+              </VStack>
             ))}
-          </div>
+          </VStack>
         </VStack>
         <HStack gap={6} vAlign="center" wrap="wrap">
           {lines.map((line) => (
