@@ -20,12 +20,15 @@ export const openOf = (all: readonly Work[]): readonly OpenWork[] =>
     .map((work) => ({ id: work.id, manager: work.manager, kind: work.kind, title: work.title, follows: work.follows.map(threadKey) }));
 
 /** What intake decided on becomes a piece of work, once per item: its first step starts. */
-export async function take(c: WorkingDeps, { item, took, answers }: TakeInput): Promise<{ readonly work: string }> {
+export async function take(
+  c: WorkingDeps,
+  { item, took, answers }: TakeInput,
+): Promise<{ readonly work: string } | { readonly _tag: "NoSuchKind"; readonly why: string }> {
   const id = `work_${item.id}`;
   if (c.store.work(id) !== undefined) return { work: id };
   const from = refOf(item.thread) ?? { connector: item.account, account: item.account, place: item.place, id: item.thread };
   const kind = c.playbook(took.version)?.kinds.find((one) => one.id === took.kind);
-  if (kind === undefined) throw new Error(`There is no kind ${took.kind} in version ${took.version}.`);
+  if (kind === undefined) return { _tag: "NoSuchKind", why: `There is no kind ${took.kind} in version ${took.version}.` };
   const at = c.clock.now();
   const made = works.take({
     id,

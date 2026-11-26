@@ -9,7 +9,7 @@ import type { Billing } from "~/modules/billing/types.ts";
 import { eml, FAKE_AUTHSERV, fakeFiles } from "~/modules/email/testing.ts";
 import type { EmailSource } from "~/modules/email/types.ts";
 import { appApi } from "~/modules/github/service.ts";
-import { gitHubWorld } from "~/modules/github/testing.ts";
+import { FAKE_APP_SLUG, gitHubWorld } from "~/modules/github/testing.ts";
 import type { GitHubApi } from "~/modules/github/types.ts";
 import { workspaceBrain } from "~/modules/brain/service.ts";
 import { scriptedBrain } from "~/modules/manager/testing.ts";
@@ -41,7 +41,11 @@ export const present = (value: string | undefined): string | undefined => (value
 export { FAKE_AUTHSERV };
 
 /** `DT_OUTSIDE=http`: the fake world's own people, clock and mail, but the real adapters over the network, which the evals answer. */
-export const overHttp = (env: Env): boolean => env.DT_OUTSIDE === "http";
+export const overHttp = (env: Env): boolean => env.DT_WORLD === "fake" && env.DT_OUTSIDE === "http";
+
+/** The App's slug: its own setting, and only in the fake world the fake's. Where it is not set and not the fake world, there is none. */
+export const appSlugFrom = (env: Env): string | undefined =>
+  present(env.GITHUB_APP_SLUG) ?? (env.DT_WORLD === "fake" ? FAKE_APP_SLUG : undefined);
 
 /** The fast tier's fixed key, or the Secrets Store one. Rotation adds the old one to `retired` until `rewrap` runs. */
 export const masterKeysFrom = (env: Env): MasterKeys => ({

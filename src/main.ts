@@ -41,9 +41,10 @@ import {
   agentFrom,
   boxHostFrom,
   gitPortFrom,
+  appSlugFrom,
   passTime,
 } from "./world.ts";
-import { FAKE_APP_SLUG, FAKE_GITHUB_SECRET } from "~/modules/github/testing.ts";
+import { FAKE_GITHUB_SECRET } from "~/modules/github/testing.ts";
 import { faultyObjects, localJurisdictions } from "~/modules/workspaces/testing.ts";
 import { consoleFrom } from "./console-root.ts";
 import { gitHubIn } from "./github-root.ts";
@@ -138,7 +139,7 @@ const channelFrom = (env: Env) => triggers.channels({ email: email.channel(maile
 const gitHubInFrom = (request: Request, env: Env): Promise<Response> =>
   gitHubIn(request, {
     secret: present(env.GITHUB_WEBHOOK_SECRET) ?? (env.DT_WORLD === "fake" ? FAKE_GITHUB_SECRET : ""),
-    slug: present(env.GITHUB_APP_SLUG) ?? FAKE_APP_SLUG,
+    slug: appSlugFrom(env) ?? "",
     objectOf: installedObject(env.AUTH, tenantsFrom(env)),
     removed: (installation) => gitHubInstallations(env.AUTH, tenantsFrom(env)).removed(installation),
   });
@@ -220,7 +221,7 @@ export default {
         managers: managerStoresFrom(env),
         ours,
         clock: tenantClockFrom(env),
-        app: present(env.GITHUB_APP_SLUG) ?? (env.DT_WORLD === "fake" ? FAKE_APP_SLUG : null),
+        app: appSlugFrom(env) ?? null,
         mailDomain: mailDomainOf(env),
       }),
       control: () => controlFrom(env, request),

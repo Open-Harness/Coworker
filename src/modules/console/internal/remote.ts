@@ -1,7 +1,12 @@
 import type { Clock } from "~/modules/clock/types.ts";
 import type { Store, StoreAnswer, StoreOp } from "../types.ts";
 
-/** The workspace's object as the console's store: each call is one op, and its answer must be the op's own. */
+/**
+ * The workspace's object as the console's store: each call is one op, and its answer must be the op's own. `ask` throws
+ * only for an answer that is not the op's own, or for an object that says it is not provisioned: both are bugs, because the
+ * route that builds a console has had the object answer `describe` as found, and the object answers its own ops. The
+ * `Store` has no place for a failure in its calls (they answer rows), so a console never sees a half-answer.
+ */
 export type Send = (op: StoreOp) => Promise<StoreAnswer | { readonly _tag: "NotProvisioned" }>;
 
 export function remoteStore(send: Send, clock: Clock): Store {

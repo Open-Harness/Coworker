@@ -108,7 +108,7 @@ export interface Outside {
 
 export interface WorkingDeps {
   readonly store: Store;
-  readonly boxes: Boxes;
+  readonly boxes: Boxes & BoxPut;
   readonly outside: Outside;
   readonly clock: Clock;
   /** A playbook, as it was at a version. */
@@ -120,6 +120,16 @@ export interface WorkingDeps {
   readonly later: (running: Promise<unknown>) => void;
 }
 
+/** A write in the box that answers in a value when it could not be done: `Boxes.write` answers nothing, so it has no way to say so. */
+export interface BoxPut {
+  readonly put: (
+    work: string,
+    call: string,
+    path: string,
+    text: string,
+  ) => Promise<{ readonly _tag: "Unavailable"; readonly why: string } | undefined>;
+}
+
 export interface TakeInput {
   readonly item: Item;
   readonly took: Extract<Decision, { readonly _tag: "Took" }>;
@@ -129,7 +139,7 @@ export interface TakeInput {
 
 export interface Working {
   /** Takes what intake decided on as a piece of work, once per item. */
-  readonly take: (input: TakeInput) => Promise<{ readonly work: string }>;
+  readonly take: (input: TakeInput) => Promise<{ readonly work: string } | { readonly _tag: "NoSuchKind"; readonly why: string }>;
   /** What came in on a conversation that work follows goes to that work. */
   readonly heard: (input: { readonly work: string; readonly item: Item }) => Promise<void>;
   /** Open work, as intake counts it. */

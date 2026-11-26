@@ -68,7 +68,9 @@ export interface ManagerStoreApi {
   copy(): Promise<{ readonly template: ManagerRecord["template"]; readonly given: Files; readonly now: Files } | undefined>;
   hearing(): Promise<Hearing | undefined>;
   /** What intake decided on becomes a piece of work, once per item; its first step starts. */
-  take(input: TakeInput): Promise<{ readonly work: string }>;
+  take(
+    input: TakeInput,
+  ): Promise<{ readonly work: string } | { readonly _tag: "NeverOpened" } | { readonly _tag: "NoSuchKind"; readonly why: string }>;
   /** What came in on a conversation that work follows. */
   heard(input: { readonly work: string; readonly item: TakeInput["item"] }): Promise<void>;
   board(): Promise<readonly BoardRow[]>;

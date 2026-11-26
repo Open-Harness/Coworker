@@ -1,6 +1,7 @@
 import type { Clock } from "~/modules/clock/types.ts";
 import { bundleOf } from "./internal/bundle.ts";
 import { checkBundle } from "./internal/check.ts";
+import { attempt } from "./internal/attempt.ts";
 import { type Found, ready } from "./internal/open.ts";
 import { answerOf, BOXES_MIGRATIONS, forgetCalls, keepAnswer, readBox, writeBox } from "./internal/tables.ts";
 import type { Boxes, BoxHost, GitPort, Ran } from "./types.ts";
@@ -18,55 +19,78 @@ export interface BoxesOver {
   readonly place: (work: string) => Promise<Found>;
 }
 
-const UNAVAILABLE = (why: string) => ({ _tag: "Unavailable" as const, why });
-const wasLost = (error: unknown): boolean => error instanceof Error && /gone|410/iu.test(error.message);
+export interface Unavailable {
+  readonly _tag: "Unavailable";
+  readonly why: string;
+}
+const UNAVAILABLE = (why: string): Unavailable => ({ _tag: "Unavailable", why });
+
+/** The contract's `Boxes`, and the write that says in a value when it could not be done: `Boxes.write` has no place for one. */
+export type BoxesWithPut = Boxes & {
+  readonly put: (work: string, call: string, path: string, text: string) => Promise<Unavailable | undefined>;
+};
 
 /** Over the manager object's own storage, so that a call that was answered is never run again. */
-export function createBoxes(over: BoxesOver): Boxes {
+export function createBoxes(over: BoxesOver): BoxesWithPut {
   const { sql, host, clock } = over;
-  /** One try, and one more when the box turns out to be gone: it is started again from what was saved, or cloned. */
+  /**
+   * One try, and one more when the box turns out to be gone: it is started again from what was saved, or cloned. Gone is
+   * what the host says when asked after a call failed (it finds no box), never what the failure's words were.
+   */
   async function withBox<T>(
     work: string,
     use: (box: Awaited<ReturnType<typeof ready>> & { _tag: "Ready" }) => Promise<T>,
-  ): Promise<T | ReturnType<typeof UNAVAILABLE>> {
-    for (const attempt of [1, 2]) {
+  ): Promise<{ readonly _tag: "Used"; readonly value: T } | Unavailable> {
+    for (const attempts of [1, 2]) {
       const opened = await ready(over, work);
       if (opened._tag === "Unavailable") return UNAVAILABLE(opened.why);
-      try {
-        return await use(opened);
-      } catch (error) {
-        if (attempt === 2 || !wasLost(error)) return UNAVAILABLE(error instanceof Error ? error.message : String(error));
-        await host.destroy(work).catch(() => undefined);
-      }
+      const tried = await attempt(() => use(opened));
+      if (tried._tag === "Done") return { _tag: "Used", value: tried.value };
+      const stillThere = await host.find(work).then(
+        (found) => found !== undefined,
+        () => true,
+      );
+      if (stillThere || attempts === 2) return UNAVAILABLE(tried.why);
+      await host.destroy(work).catch(() => undefined);
     }
     return UNAVAILABLE("The box could not be reached.");
+  }
+
+  async function put(work: string, call: string, path: string, text: string): Promise<Unavailable | undefined> {
+    if (answerOf(sql, call) !== undefined) return undefined;
+    const used = await withBox(work, ({ box }) => box.write(path, text));
+    if (used._tag === "Unavailable") return used;
+    keepAnswer(sql, work, call, "{}");
+    return undefined;
   }
 
   return {
     run: async (work, call, command, seconds) => {
       const kept = answerOf(sql, call);
       if (kept !== undefined) return JSON.parse(kept) as Ran;
-      const ran = await withBox(work, ({ box }) => box.exec(command, { seconds }));
-      if ("_tag" in ran) return ran;
+      const used = await withBox(work, ({ box }) => box.exec(command, { seconds }));
+      if (used._tag === "Unavailable") return used;
+      const ran = used.value;
       keepAnswer(sql, work, call, JSON.stringify(ran));
       writeBox(sql, work, { seconds: readBox(sql, work).seconds + ran.seconds }, clock.now());
       return ran;
     },
     read: async (work, path) => {
-      const text = await withBox(work, ({ box }) => box.read(path));
-      return typeof text === "object" && text !== null ? undefined : text;
+      const used = await withBox(work, ({ box }) => box.read(path));
+      return used._tag === "Used" ? used.value : undefined;
     },
+    put,
     write: async (work, call, path, text) => {
-      if (answerOf(sql, call) !== undefined) return;
-      const wrote = await withBox(work, ({ box }) => box.write(path, text));
-      if (wrote !== undefined) throw new Error(wrote.why);
-      keepAnswer(sql, work, call, "{}");
+      const refused = await put(work, call, path, text);
+      // The contract's `write` answers nothing, so it has no way to say so but this: the product calls `put`.
+      if (refused !== undefined) throw new Error(refused.why);
     },
     bundle: async (work, branch) => {
-      const bundled = await withBox(work, ({ box, place }) => bundleOf(box, place, branch));
-      if ("_tag" in bundled) return bundled;
-      writeBox(sql, work, { bundle: bundled.head }, clock.now());
-      return bundled;
+      const used = await withBox(work, ({ box, place }) => bundleOf(box, place, branch));
+      if (used._tag === "Unavailable") return used;
+      if ("_tag" in used.value) return used.value;
+      writeBox(sql, work, { bundle: used.value.head }, clock.now());
+      return used.value;
     },
     state: async (work) => readBox(sql, work),
     pause: async (work) => {

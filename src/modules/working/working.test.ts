@@ -105,6 +105,7 @@ function deps(answer: Response) {
       run: async () => ({ _tag: "Unavailable", why: "No containers are free" }),
       read: async () => undefined,
       write: async () => undefined,
+      put: async () => undefined,
       bundle: async () => ({ _tag: "Unavailable", why: "none" }),
       state: async () => ({ state: "none", seconds: 0, snapshot: null, bundle: null, lastUsed: 0 }),
       pause: async () => undefined,
@@ -151,13 +152,25 @@ describe("working", () => {
     const taken = createWorking(working);
     const [one, again] = [await taken.take(input("i1")), await taken.take(input("i1"))];
     expect(again).toEqual(one);
+    if ("_tag" in one) throw new Error(one.why);
     expect(taken.open()).toEqual([{ id: one.work, manager: "m", kind: "bug", title: "It breaks", follows: ["github:a/b#7"] }]);
+  });
+
+  it("does not take an item whose kind the playbook does not have, and says so", async () => {
+    const { working } = deps(new Response("", { status: 503 }));
+    const taken = createWorking(working);
+    const asked = input("i3");
+    const refused = await taken.take({ ...asked, took: { ...asked.took, kind: "nothing-like-it" } });
+    expect(refused).toMatchObject({ _tag: "NoSuchKind" });
+    expect(taken.open()).toEqual([]);
   });
 
   it("says why work waits when the model does not answer, and keeps what it was to do", async () => {
     const { working, store, later } = deps(new Response("overloaded", { status: 503 }));
     const taken = createWorking(working);
-    const { work } = await taken.take(input("i2"));
+    const took = await taken.take(input("i2"));
+    if ("_tag" in took) throw new Error(took.why);
+    const { work } = took;
     await Promise.all(later);
     expect(store.hold(work)?.why).toMatch(/did not answer \(503\)/u);
     expect(store.nextJob(work)?.job.do).toBe("start");

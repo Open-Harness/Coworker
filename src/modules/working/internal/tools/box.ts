@@ -31,7 +31,8 @@ async function read({ c, work }: Call, args: unknown): Promise<Result> {
 async function write({ c, work, id }: Call, args: unknown): Promise<Result> {
   const [path, content] = [field(args, "path"), field(args, "content")];
   if (path === undefined || content === undefined) return wrong("write needs a path and the content.");
-  await c.boxes.write(work.id, id, path, content);
+  const refused = await c.boxes.put(work.id, id, path, content);
+  if (refused !== undefined) return out(refused.why);
   return said(`Wrote ${path}.`);
 }
 
@@ -42,12 +43,13 @@ async function edit({ c, work, id }: Call, args: unknown): Promise<Result> {
   const found = await c.boxes.read(work.id, path);
   if (found === undefined) return wrong(`There is no file ${path} in the clone.`);
   if (!found.includes(was)) return wrong(`${path} does not hold that text, so nothing was changed.`);
-  await c.boxes.write(
+  const refused = await c.boxes.put(
     work.id,
     id,
     path,
     found.replace(was, () => becomes),
   );
+  if (refused !== undefined) return out(refused.why);
   return said(`Changed ${path}.`);
 }
 

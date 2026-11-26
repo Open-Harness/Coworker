@@ -24,6 +24,7 @@ export function createWorking(c: WorkingDeps): Working {
   return {
     take: async (input) => {
       const taken = await take(c, input);
+      if ("_tag" in taken) return taken;
       c.later(run());
       return taken;
     },

@@ -135,10 +135,11 @@ export class ManagerStoreHost<Env = unknown> extends DurableObject<Env> implemen
     return { record, version, open: working.open(), spent };
   }
 
-  async take(input: TakeInput): Promise<{ readonly work: string }> {
+  async take(
+    input: TakeInput,
+  ): Promise<{ readonly work: string } | { readonly _tag: "NeverOpened" } | { readonly _tag: "NoSuchKind"; readonly why: string }> {
     const working = this.#works();
-    if (working === undefined) throw new Error("This manager was never opened.");
-    return working.take(input);
+    return working === undefined ? { _tag: "NeverOpened" } : working.take(input);
   }
 
   async heard(input: { readonly work: string; readonly item: TakeInput["item"] }): Promise<void> {

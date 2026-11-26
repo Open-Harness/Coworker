@@ -10,8 +10,9 @@ async function signed(secret: string, delivery: Delivery): Promise<boolean> {
   return verify(secret, delivery.body, delivery.signature).catch(() => false);
 }
 
+/** A name that is not known (an App with no slug set) is mentioned by no one. */
 const mentions = (text: string, name: string): boolean =>
-  new RegExp(`(^|[^\\w@])@${name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}(?![\\w-])`, "iu").test(text);
+  name !== "" && new RegExp(`(^|[^\\w@])@${name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}(?![\\w-])`, "iu").test(text);
 
 interface Context {
   readonly delivery: Delivery;

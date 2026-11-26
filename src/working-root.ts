@@ -27,23 +27,26 @@ function choiceOf(value: unknown): Models["choice"] {
 export const outsideFor =
   (root: WorkingRoot) =>
   (record: ManagerRecord): Outside => {
-    let found: Promise<WorkspaceApi> | undefined;
-    const workspace = (): Promise<WorkspaceApi> =>
-      (found ??= root.workspace(record.workspace).then((one) => {
-        if (one === undefined) throw new Error(`The workspace ${record.workspace} is gone.`);
-        return one;
-      }));
+    let found: Promise<WorkspaceApi | undefined> | undefined;
+    /** Undefined when the workspace is not there (deleted while its manager still had work): what it would have given, nothing gives. */
+    const workspace = (): Promise<WorkspaceApi | undefined> => (found ??= root.workspace(record.workspace));
     return {
       models: async () => {
         const object = await workspace();
+        if (object === undefined) return { connections: [], choice: null };
         const [connections, setting] = await Promise.all([
           object.modelConnections(),
           object.consoleStore({ op: "setting.get", name: "choice" }),
         ]);
         return { connections, choice: "op" in setting && setting.op === "setting.get" ? choiceOf(setting.value) : null };
       },
-      call: async (path, body) => (await workspace()).modelCall({ path, body, headers: { accept: "text/event-stream" } }),
-      installation: async () => (await (await workspace()).gitHub()).installation?.id,
+      call: async (path, body) => {
+        const object = await workspace();
+        return object === undefined
+          ? Response.json({ error: { message: `The workspace ${record.workspace} is gone.` } }, { status: 404 })
+          : object.modelCall({ path, body, headers: { accept: "text/event-stream" } });
+      },
+      installation: async () => (await (await workspace())?.gitHub())?.installation?.id,
       github: root.github,
       git: root.git,
       fetch: root.fetch,

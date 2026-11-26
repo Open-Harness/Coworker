@@ -25,29 +25,32 @@ async function decide(c: DecidingDeps, item: Item, heard: readonly Listener[], n
   return intake.decide({ item, hears, open, judgement, now });
 }
 
-/** What follows from a decision: a manager takes it on, or the work that follows it hears it. */
-async function act(c: DecidingDeps, item: Item, decision: Decision, heard: readonly Listener[]): Promise<void> {
+/** What follows from a decision: a manager takes it on, or the work that follows it hears it. `NotTaken`: the manager is not there to take it. */
+async function act(c: DecidingDeps, item: Item, decision: Decision, heard: readonly Listener[]): Promise<"Acted" | "NotTaken"> {
   if (decision._tag === "Took") {
     const taker = heard.find(({ row }) => row.node.id === decision.manager);
-    if (taker === undefined) return;
-    await c.manager(taker.row).take({ item, took: decision, answers: taker.playbook.objective.owner });
+    if (taker === undefined) return "Acted";
+    const taken = await c.manager(taker.row).take({ item, took: decision, answers: taker.playbook.objective.owner });
+    if ("_tag" in taken) return "NotTaken";
   }
   if (decision._tag === "Joined") {
     const owner = heard.find(({ hearing }) => hearing.open.some(({ id }) => id === decision.work));
     if (owner !== undefined) await c.manager(owner.row).heard({ work: decision.work, item });
   }
+  return "Acted";
 }
 
-async function one(c: DecidingDeps, { item, hears }: Pending): Promise<{ readonly retry: number | null }> {
+/** `retry`: when this item is asked again. `held`: nothing was decided, and nothing after it is decided before it. */
+async function one(c: DecidingDeps, { item, hears }: Pending): Promise<{ readonly retry: number | null; readonly held: boolean }> {
   const now = c.clock.now();
   const standing = await c.standing(item).catch(() => undefined);
   const known: Item = standing === undefined ? item : { ...item, actor: { ...item.actor, standing } };
   const heard = await listeners(c, hears);
   const decision = await decide(c, known, heard, now);
-  await act(c, known, decision, heard);
+  if ((await act(c, known, decision, heard)) === "NotTaken") return { retry: now + 5_000, held: true };
   const retry = decision._tag === "CouldNot" ? now + AGAIN : null;
   c.store.decided(item.id, decision, retry);
-  return { retry };
+  return { retry, held: false };
 }
 
 /** Everything that came in and is not decided, in the order it came: one at a time, so that the second finds the work the first made. */
@@ -55,7 +58,8 @@ export async function run(c: DecidingDeps): Promise<{ readonly again: number | n
   let again: number | null = null;
   for (const pending of c.store.pending(c.clock.now())) {
     try {
-      const { retry } = await one(c, pending);
+      const { retry, held } = await one(c, pending);
+      if (held && retry !== null) return { again: retry };
       if (retry !== null) again = Math.min(again ?? retry, retry);
     } catch {
       // Nothing was decided: it is tried again soon, and nothing after it is decided before it.
