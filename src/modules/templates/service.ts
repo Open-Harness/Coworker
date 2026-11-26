@@ -1,12 +1,12 @@
+import { fillTemplate } from "./internal/fill.ts";
+import { newerOf } from "./internal/newer.ts";
+import { readTemplate } from "./internal/read.ts";
+import { saveAsTemplate } from "./internal/save.ts";
 import type { Templates } from "./types.ts";
 
-function notBuilt(what: string): never {
-  throw new Error(`Not built: ${what}`);
-}
-
 export const templates: Templates = {
-  read: () => notBuilt("templates.read"),
-  fill: () => notBuilt("templates.fill"),
-  saveAs: () => notBuilt("templates.saveAs"),
-  newer: () => notBuilt("templates.newer"),
+  read: readTemplate,
+  fill: fillTemplate,
+  saveAs: saveAsTemplate,
+  newer: newerOf,
 };
