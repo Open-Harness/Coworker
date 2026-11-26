@@ -53,7 +53,7 @@ async function act(c: DecidingDeps, item: Item, decision: Decision, heard: reado
     const taken = await c.manager(taker.row).take({ item, took: decision, answers: taker.playbook.objective.owner });
     if ("_tag" in taken) return "NotTaken";
   }
-  if (decision._tag === "Asked" && decision.between.length > 1) await askWhich(c, item, decision, heard);
+  if (decision._tag === "Asked" && decision.between.length > 0) await askWhich(c, item, decision, heard);
   if (decision._tag === "Joined") {
     const owner = heard.find(({ hearing }) => hearing.open.some(({ id }) => id === decision.work));
     if (owner !== undefined) await c.manager(owner.row).heard({ work: decision.work, item });
