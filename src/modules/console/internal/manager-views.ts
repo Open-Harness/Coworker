@@ -1,5 +1,5 @@
 import { templates } from "~/modules/templates/service.ts";
-import type { IntakeView, PlaybookView } from "~/modules/views-manager/types.ts";
+import type { Comment, IntakeView, PlaybookView } from "~/modules/views-manager/types.ts";
 import type { ConsoleDeps } from "../types.ts";
 import { problem, ok } from "./around.ts";
 import { headOf, openManager, type Open } from "./managers.ts";
@@ -40,7 +40,7 @@ export async function playbookView(c: ConsoleDeps, id: string, wanted: number | 
     files: open.version.files,
     version: open.version.number,
     problems: open.problems,
-    comments: [],
+    comments: (await open.store.kept("comment")) as readonly Comment[],
     because: playbook.because,
     evals: playbook.evals.map((one) => ({
       eval: one,

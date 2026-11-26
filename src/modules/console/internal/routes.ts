@@ -21,6 +21,7 @@ import {
 } from "./settings.ts";
 import { chatsView, coworkerView, homeView, inboxView, shellView } from "./shell.ts";
 import { fillView, templatesView } from "./templates.ts";
+import { readSetUp, sayInSetUp, startSetUp } from "./set-up.ts";
 
 /* The paths of `api/types.ts`, each to the view it answers. A path that is not here is 404 in words. */
 
@@ -47,6 +48,7 @@ const READS: readonly (readonly [RegExp, Part])[] = [
   [/^\/settings\/mcp-servers$/u, () => ok(mcpView())],
   [/^\/settings\/shared$/u, () => ok(sharedView())],
   [/^\/settings\/me$/u, async (c) => ok(await meView(c))],
+  [/^\/set-up\/([^/]+)$/u, (c, [id]) => readSetUp(c, id ?? "")],
   [/^\/m\/([^/]+)\/board$/u, (c, [id]) => boardView(c, id ?? "")],
   [/^\/m\/([^/]+)\/playbook$/u, (c, [id], q) => playbookView(c, id ?? "", Number(q.get("version")) || undefined)],
   [/^\/m\/([^/]+)\/intake$/u, (c, [id], q) => intakeView(c, id ?? "", q)],
@@ -74,5 +76,8 @@ export async function read({ path, query }: Call, c: ConsoleDeps): Promise<Answe
 export async function write({ path, body }: Call, c: ConsoleDeps): Promise<Answer<unknown>> {
   if (path === "/do") return run(c, body);
   if (path === "/walk") return walk(body);
+  if (path === "/set-up") return startSetUp(c, body);
+  const inSetUp = /^\/set-up\/([^/]+)$/u.exec(path);
+  if (inSetUp !== null) return sayInSetUp(c, decodeURIComponent(inSetUp[1] ?? ""), body);
   return problem(404, `There is nothing to send to ${path}.`);
 }

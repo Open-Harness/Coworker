@@ -1,3 +1,4 @@
+import { parse } from "yaml";
 import type { Because, Files, Line } from "~/modules/playbook/types.ts";
 
 const FILE = "because.yaml";
@@ -39,8 +40,36 @@ function toBecause(fields: Readonly<Record<string, string>>): Because | null {
   };
 }
 
+/** What the file says as YAML, in whichever style it is written (a block of fields, or `{ why: …, where: … }`). Nothing when it is not YAML. */
+function parsed(text: string): Map<Line, Because> | undefined {
+  let value: unknown;
+  try {
+    value = parse(text);
+  } catch {
+    return undefined;
+  }
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return value === null ? new Map() : undefined;
+  const out = new Map<Line, Because>();
+  for (const [line, fields] of Object.entries(value)) {
+    if (typeof fields !== "object" || fields === null) return undefined;
+    const text = (name: string): string | undefined => {
+      const one: unknown = (fields as Record<string, unknown>)[name];
+      return typeof one === "string" ? one : undefined;
+    };
+    const entry = toBecause({
+      ...(text("why") === undefined ? {} : { why: text("why") ?? "" }),
+      ...(text("by") === undefined ? {} : { by: text("by") ?? "" }),
+      ...(text("where") === undefined ? {} : { where: text("where") ?? "" }),
+    });
+    if (entry !== null) out.set(line, entry);
+  }
+  return out;
+}
+
 /** `because.yaml` as a map of lines to why they are there. */
 export function readBecause(draft: Files | null): Map<Line, Because> {
+  const found = parsed(draft?.[FILE] ?? "");
+  if (found !== undefined) return found;
   const out = new Map<Line, Because>();
   const lines = (draft?.[FILE] ?? "").split(/\r?\n/u);
   let key: string | null = null;

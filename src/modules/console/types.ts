@@ -82,7 +82,13 @@ export type StoreOp =
       readonly from: string | null;
       readonly before: string | null;
       readonly limit: number;
-    };
+    }
+  /** What people read and answer later (set-ups, asks, corrections): put by id, oldest first. */
+  | { readonly op: "kept.put"; readonly kind: string; readonly id: string; readonly value: unknown }
+  | { readonly op: "kept.list"; readonly kind: string }
+  /** The co-worker's own conversations: messages as a model is sent them. */
+  | { readonly op: "message.list"; readonly thread: string }
+  | { readonly op: "message.add"; readonly thread: string; readonly message: unknown };
 
 export type StoreAnswer =
   | { readonly op: "claim"; readonly is: "yours" | "busy" | "done"; readonly did?: Did }
@@ -91,7 +97,10 @@ export type StoreAnswer =
   | { readonly op: "setting.get"; readonly value: unknown }
   | { readonly op: "manager.list"; readonly rows: readonly ManagerRow[] }
   | { readonly op: "item.keep"; readonly row: ItemRow; readonly isNew: boolean }
-  | { readonly op: "item.list"; readonly rows: readonly ItemRow[]; readonly next: string | null };
+  | { readonly op: "item.list"; readonly rows: readonly ItemRow[]; readonly next: string | null }
+  | { readonly op: "kept.put" | "message.add" }
+  | { readonly op: "kept.list"; readonly values: readonly unknown[] }
+  | { readonly op: "message.list"; readonly messages: readonly unknown[] };
 
 /** The same, with each call named. */
 export interface Store {
@@ -112,6 +121,10 @@ export interface Store {
     manager: string,
     query: { readonly from: string | null; readonly before: string | null; readonly limit: number },
   ) => Promise<{ readonly rows: readonly ItemRow[]; readonly next: string | null }>;
+  readonly keep: (kind: string, id: string, value: unknown) => Promise<void>;
+  readonly kept: (kind: string) => Promise<readonly unknown[]>;
+  readonly messages: (thread: string) => Promise<readonly unknown[]>;
+  readonly addMessage: (thread: string, message: unknown) => Promise<void>;
 }
 
 /** What is outside the workspace's object that the console needs of it. */
@@ -123,6 +136,8 @@ export interface Outside {
   readonly billing: () => Promise<BillingView | null>;
   /** Owners: the workspace's name changes in the directory, the object and the organization together. */
   readonly rename: (name: string) => Promise<{ readonly _tag: "Renamed" } | { readonly _tag: "Refused"; readonly why: string }>;
+  /** One call to a model, made for the workspace with its credential: the co-worker thinks with it. */
+  readonly call: (path: string, body: string) => Promise<Response>;
 }
 
 export interface ConsoleDeps {

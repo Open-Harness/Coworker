@@ -77,6 +77,9 @@ export interface ManagerStoreApi {
   usage(): Promise<readonly UsageRow[]>;
   /** Does what is due now, and goes on with what was waiting. Answers when nothing can go further. */
   tick(): Promise<void>;
+  /** What people read and answer later: comments on its playbook, cases, proposals. Put by id; oldest first. */
+  keep(kind: string, id: string, value: unknown): Promise<void>;
+  kept(kind: string): Promise<readonly unknown[]>;
   /** A new version on top: the one authoritative path for a change of the playbook. Its number is the one after the newest. */
   save(input: {
     readonly files: Files;

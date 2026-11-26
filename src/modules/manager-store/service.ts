@@ -161,6 +161,14 @@ export class ManagerStoreHost<Env = unknown> extends DurableObject<Env> implemen
     await this.#works()?.due();
   }
 
+  async keep(kind: string, id: string, value: unknown): Promise<void> {
+    workStore(this.ctx.storage).keep(kind, id, value);
+  }
+
+  async kept(kind: string): Promise<readonly unknown[]> {
+    return workStore(this.ctx.storage).kept(kind);
+  }
+
   override async alarm(): Promise<void> {
     try {
       await this.#works()?.due();

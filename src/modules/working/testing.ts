@@ -3,6 +3,7 @@ import type { Hold, Job, Message, Spend, Store, StoredJob, ThreadRow } from "./t
 
 /** What a manager keeps, in memory: for tests of what it does, beside the real one in its Durable Object. */
 export function memoryStore(): Store {
+  const rows = new Map<string, unknown>();
   const [works, seen, jobs, threads, messages, spends, holds, once] = [
     new Map<string, Work>(),
     new Set<string>(),
@@ -48,5 +49,7 @@ export function memoryStore(): Store {
     setHold: (work, hold) => void (hold === null ? holds.delete(work) : holds.set(work, hold)),
     once: (key) => once.get(key),
     keepOnce: (key, value) => void (once.has(key) || once.set(key, value)),
+    keep: (kind, id, value) => void rows.set(`${kind}\u0000${id}`, value),
+    kept: (kind) => [...rows].filter(([key]) => key.startsWith(`${kind}\u0000`)).map(([, value]) => value),
   };
 }

@@ -15,6 +15,12 @@ export const CONSOLE_MIGRATIONS: readonly string[] = [
      hears TEXT NOT NULL, item TEXT NOT NULL, decision TEXT)`,
 ];
 
+/** What people read and answer later, and the co-worker's own conversations. Added after the others, so that objects already made take only these. */
+export const KEPT_MIGRATIONS: readonly string[] = [
+  `CREATE TABLE console_kept (kind TEXT NOT NULL, id TEXT NOT NULL, seq INTEGER NOT NULL, json TEXT NOT NULL, PRIMARY KEY (kind, id))`,
+  `CREATE TABLE console_message (thread TEXT NOT NULL, n INTEGER NOT NULL, json TEXT NOT NULL, PRIMARY KEY (thread, n))`,
+];
+
 /** A press that was begun and never settled is let go of after this long: its object was lost before it could say. */
 const STALE = 60_000;
 
@@ -167,5 +173,38 @@ export function runStore(place: StorePlace, op: StoreOp): StoreAnswer {
       return keepItem(place, op);
     case "item.list":
       return listItems(place, op);
+    case "kept.put":
+      sql.exec(
+        `INSERT INTO console_kept (kind, id, seq, json) VALUES (?, ?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM console_kept), ?)
+         ON CONFLICT (kind, id) DO UPDATE SET json = excluded.json`,
+        op.kind,
+        op.id,
+        JSON.stringify(op.value),
+      );
+      return { op: "kept.put" };
+    case "kept.list":
+      return {
+        op: "kept.list",
+        values: sql
+          .exec("SELECT json FROM console_kept WHERE kind = ? ORDER BY seq", op.kind)
+          .toArray()
+          .map((row) => parsed<unknown>(row["json"])),
+      };
+    case "message.list":
+      return {
+        op: "message.list",
+        messages: sql
+          .exec("SELECT json FROM console_message WHERE thread = ? ORDER BY n", op.thread)
+          .toArray()
+          .map((row) => parsed<unknown>(row["json"])),
+      };
+    case "message.add":
+      sql.exec(
+        "INSERT INTO console_message (thread, n, json) VALUES (?, (SELECT COALESCE(MAX(n), -1) + 1 FROM console_message WHERE thread = ?), ?)",
+        op.thread,
+        op.thread,
+        JSON.stringify(op.message),
+      );
+      return { op: "message.add" };
   }
 }

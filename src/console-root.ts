@@ -31,6 +31,7 @@ export const consoleFrom =
           const billed = await object.billing();
           return "_tag" in billed ? null : billed;
         },
+        call: (path, body) => object.modelCall({ path, body, headers: { accept: "text/event-stream" } }),
         rename: async (name) => {
           const renamed = await workspaces.updateGeneral(person.userId, entry.workspaceId, { name });
           return renamed._tag === "Updated"

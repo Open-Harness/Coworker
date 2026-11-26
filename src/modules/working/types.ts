@@ -90,6 +90,9 @@ export interface Store {
   /** What an outside act did, by a key made for it, so that doing it again finds it. */
   readonly once: (key: string) => string | undefined;
   readonly keepOnce: (key: string, value: string) => void;
+  /** Rows of a kind that people read and answer later (comments, cases, proposals, what was heard): put by id, oldest first. */
+  readonly keep: (kind: string, id: string, value: unknown) => void;
+  readonly kept: (kind: string) => readonly unknown[];
 }
 
 export type { Models } from "~/modules/completion/types.ts";

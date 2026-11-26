@@ -10,8 +10,11 @@ function endRead(walk: Walkthrough): Walkthrough["wants"] {
   return walk.wants.map((want) => (want.state === "connected" ? { ...want, state: "ended" } : want));
 }
 
+/** After the questions: from a template, or when nothing needed reading, the second round and the finding are left out. */
+const DRAFTABLE = new Set(["first questions", "found", "second questions"]);
+
 export function drafted(walk: Walkthrough, event: Is<"drafted">): Walked {
-  if (walk.stage !== "second questions") return refuse("The draft comes after the second round of questions.");
+  if (!DRAFTABLE.has(walk.stage)) return refuse("The draft comes after the questions, and after what it found when it was connected.");
   const ids = event.cases.map((one) => one.id);
   if (new Set(ids).size !== ids.length) return refuse("Two of the cases have the same id.");
   const cases = event.cases.map((one) => ({ ...one, said: null }));

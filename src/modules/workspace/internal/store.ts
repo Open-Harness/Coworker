@@ -8,7 +8,7 @@ import { BILLING_MIGRATIONS } from "~/modules/billing/service.ts";
 import { AGENT_ENVIRONMENT_MIGRATIONS, SETTINGS_MIGRATIONS } from "~/modules/settings/service.ts";
 import { NOTICE_MIGRATIONS } from "./notices.ts";
 import { ASK_MIGRATIONS } from "./person-asks.ts";
-import { CONSOLE_MIGRATIONS } from "./console-store.ts";
+import { CONSOLE_MIGRATIONS, KEPT_MIGRATIONS } from "./console-store.ts";
 import { DECIDING_MIGRATIONS } from "./deciding-host.ts";
 
 /** The object's own tables. Each migration runs once, in order, inside the object's storage. */
@@ -47,6 +47,7 @@ const MIGRATIONS: readonly string[] = [
   ...AGENT_ENVIRONMENT_MIGRATIONS,
   ...CONSOLE_MIGRATIONS,
   ...DECIDING_MIGRATIONS,
+  ...KEPT_MIGRATIONS,
 ];
 
 export function migrate(sql: SqlStorage): void {

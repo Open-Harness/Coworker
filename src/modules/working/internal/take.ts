@@ -3,6 +3,7 @@ import type { Item, OpenWork } from "~/modules/intake/types.ts";
 import type { ThreadRef, Work } from "~/modules/work/types.ts";
 import type { TakeInput, WorkingDeps } from "../types.ts";
 import { apply, rearm } from "./events.ts";
+import { heardOf, isInside } from "./proposing.ts";
 
 /** `github:acme/web#412` is the conversation 412 of acme/web in GitHub. */
 export function refOf(thread: string): ThreadRef | undefined {
@@ -57,5 +58,6 @@ export async function take(
 export async function heard(c: WorkingDeps, workId: string, item: Item): Promise<void> {
   const from = refOf(item.thread);
   if (from === undefined) return;
+  if (isInside(item)) c.store.keep("heard", `${workId}:${item.id}`, heardOf(workId, item, c.clock.now()));
   apply(c, workId, { key: `heard:${workId}:${item.id}`, at: c.clock.now(), is: "heard", from, event: item.event, item: item.text });
 }

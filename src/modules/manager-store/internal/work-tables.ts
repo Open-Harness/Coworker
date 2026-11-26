@@ -166,5 +166,18 @@ export function workStore(storage: DurableObjectStorage): Store {
       return row === undefined ? undefined : String(row["value"]);
     },
     keepOnce: (key, value) => void sql.exec("INSERT OR IGNORE INTO once (key, value) VALUES (?, ?)", key, value),
+    keep: (kind, id, value) =>
+      void sql.exec(
+        `INSERT INTO kept (kind, id, seq, json) VALUES (?, ?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM kept), ?)
+         ON CONFLICT (kind, id) DO UPDATE SET json = excluded.json`,
+        kind,
+        id,
+        JSON.stringify(value),
+      ),
+    kept: (kind) =>
+      sql
+        .exec("SELECT json FROM kept WHERE kind = ? ORDER BY seq", kind)
+        .toArray()
+        .map((row) => parsed<unknown>(row["json"])),
   };
 }

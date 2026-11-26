@@ -23,6 +23,10 @@ function memoryStore(): Store {
     managers: async () => managers,
     addManager: async (row) => void managers.push(row),
     items: async () => ({ rows: items, next: null }),
+    keep: async () => undefined,
+    kept: async () => [],
+    messages: async () => [],
+    addMessage: async () => undefined,
   };
 }
 
@@ -40,6 +44,8 @@ const nobody: ManagerStoreApi = {
   board: async () => [],
   usage: async () => [],
   tick: async () => undefined,
+  keep: async () => undefined,
+  kept: async () => [],
   save: async () => {
     throw new Error("not used");
   },
@@ -61,6 +67,7 @@ function deps(role: "Owner" | "Member" = "Owner"): ConsoleDeps {
       github: async () => ({ sources: [] }),
       billing: async () => null,
       rename: async () => ({ _tag: "Renamed" }),
+      call: async () => new Response("no model", { status: 503 }),
     },
     managers: { mint: () => ({ objectId: "o", store: nobody }), get: () => nobody },
     ours: [],
