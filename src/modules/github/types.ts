@@ -85,8 +85,8 @@ export interface Hub {
 /** Which workspace claimed an installation; and what happens when the App is uninstalled. */
 export interface Installations {
   readonly hubOf: (installation: number) => Promise<Hub | undefined>;
-  /** Stops the workspace's GitHub sources and tells its Owners. */
-  readonly removed: (installation: number) => Promise<void>;
+  /** Stops the workspace's GitHub sources and tells its Owners. `suspended`: it is the same installation when it is back, so it stays claimed. */
+  readonly removed: (installation: number, how?: "suspended") => Promise<void>;
 }
 
 export type Received =

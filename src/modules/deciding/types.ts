@@ -27,7 +27,7 @@ export interface DecidingStore {
 
 export interface DecidingDeps {
   readonly store: DecidingStore;
-  readonly manager: (row: ManagerRow) => Pick<ManagerStoreApi, "hearing" | "take" | "heard">;
+  readonly manager: (row: ManagerRow) => Pick<ManagerStoreApi, "hearing" | "take" | "heard" | "news">;
   /** What the workspace's models are, and a call to one of them made with its credential. */
   readonly models: () => Promise<Models>;
   readonly call: Call;

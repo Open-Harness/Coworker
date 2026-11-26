@@ -74,6 +74,7 @@ export const faultyObjects = (real: TenantObjects, armed: ObjectFaults = faults)
         gitHubLost: () => minted.object.gitHubLost(),
         setRepoSources: (managerId, sources) => minted.object.setRepoSources(managerId, sources),
         gitHubRemoved: (installation, owners) => minted.object.gitHubRemoved(installation, owners),
+        gitHubBack: (installation, us) => minted.object.gitHubBack(installation, us),
         setPolicy: (managerId, policy) => minted.object.setPolicy(managerId, policy),
         environments: () => minted.object.environments(),
         saveEnvironment: (input) => minted.object.saveEnvironment(input),

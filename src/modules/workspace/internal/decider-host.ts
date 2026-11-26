@@ -1,4 +1,5 @@
 import { decidingOf } from "./deciding-host.ts";
+import { followingOf } from "./following-host.ts";
 import { SettingsHost } from "./settings-host.ts";
 
 /** What came in is decided from the object's alarm, so that an object that was lost decides it when it is back. */
@@ -23,7 +24,11 @@ export abstract class DecidingHost<Env> extends SettingsHost<Env> {
       connections: () => this.modelConnections(),
       modelCall: (call) => this.modelCall(call),
     });
-    const { again } = await deciding.run().catch(() => ({ again: this.dependencies.clock.now() + 30_000 }));
+    const soon = (): { readonly again: number } => ({ again: this.dependencies.clock.now() + 30_000 });
+    const decided = await deciding.run().catch(soon);
+    // What became true of a conversation that work follows is told to that work, after what people said is decided.
+    const followed = await followingOf(this.ctx.storage.sql, this.dependencies).run().catch(soon);
+    const again = [decided.again, followed.again].reduce<number | null>((least, one) => (one === null ? least : Math.min(least ?? one, one)), null);
     if (again !== null) await this.wakeFor(again - this.dependencies.clock.now());
     return again;
   }

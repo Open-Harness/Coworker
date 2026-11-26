@@ -31,14 +31,26 @@ export const githubConnector: GithubConnector = {
       }
     })();
     const installation = installationOf(payload);
-    const read = githubEvents.read(raw.headers["x-github-event"] ?? "", payload, await usFor(installation));
+    const us = await usFor(installation);
+    const read = githubEvents.read(raw.headers["x-github-event"] ?? "", payload, us);
     switch (read._tag) {
       case "Heard":
-        return { _tag: "Item", item: itemOf(read), follows: [], installation: read.installation ?? installation };
+        return {
+          _tag: "Item",
+          item: itemOf(read),
+          follows: [],
+          installation: read.installation ?? installation,
+          heard: { repo: read.repo, event: read.event, records: read.records, numbers: read.numbers, sha: read.sha, us },
+        };
       case "Account":
         return { _tag: "Account", says: read.says, works: read.works, installation: read.installation };
       case "Noise":
-        return { _tag: "Noise", why: read.why, installation };
+        return {
+          _tag: "Noise",
+          why: read.why,
+          installation,
+          ...(read.repo === null ? {} : { heard: { repo: read.repo, event: "noise", records: read.records, numbers: [], sha: null, us } }),
+        };
       case "Broken":
         return refused("broken", installation);
     }

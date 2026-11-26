@@ -22,6 +22,7 @@ function memoryStore(): Store {
     set: async (name, value) => void settings.set(name, value),
     managers: async () => managers,
     addManager: async (row) => void managers.push(row),
+    asks: async () => [],
     items: async () => ({ rows: items, next: null }),
   };
 }
@@ -38,6 +39,7 @@ const nobody: ManagerStoreApi = {
   },
   heard: async () => undefined,
   board: async () => [],
+  news: async () => undefined,
   work: async () => undefined,
   asks: async () => [],
   usage: async () => [],
@@ -61,6 +63,7 @@ function deps(role: "Owner" | "Member" = "Owner"): ConsoleDeps {
         { name: "deploy", updatedAt: 2 },
       ],
       github: async () => ({ sources: [] }),
+      lost: async () => undefined,
       billing: async () => null,
       rename: async () => ({ _tag: "Renamed" }),
     },

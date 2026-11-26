@@ -115,7 +115,7 @@ function listItems({ sql }: StorePlace, op: Extract<StoreOp, { op: "item.list" }
 }
 
 /** One call of the console's store. Everything it holds is here and nowhere else. */
-export function runStore(place: StorePlace, op: StoreOp): StoreAnswer {
+export function runStore(place: StorePlace, op: Exclude<StoreOp, { readonly op: "github.hear" | "ask.list" }>): StoreAnswer {
   const { sql, now } = place;
   switch (op.op) {
     case "claim":

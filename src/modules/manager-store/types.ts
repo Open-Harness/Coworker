@@ -1,6 +1,6 @@
 import type { OpenWork } from "~/modules/intake/types.ts";
 import type { Files, Version } from "~/modules/playbook/types.ts";
-import type { Work } from "~/modules/work/types.ts";
+import type { Work, WorkEvent } from "~/modules/work/types.ts";
 import type { ActivityLine, Hold, TakeInput, ThreadRow } from "~/modules/working/types.ts";
 import type { Ask } from "~/modules/asks/types.ts";
 import type { Region } from "~/modules/workspace/types.ts";
@@ -79,6 +79,8 @@ export interface ManagerStoreApi {
   ): Promise<{ readonly work: string } | { readonly _tag: "NeverOpened" } | { readonly _tag: "NoSuchKind"; readonly why: string }>;
   /** What came in on a conversation that work follows. */
   heard(input: { readonly work: string; readonly item: TakeInput["item"] }): Promise<void>;
+  /** Something happened to a work: what a conversation it follows said, or what a person decided. Once by the event's key. */
+  news(input: { readonly work: string; readonly event: WorkEvent; readonly says?: string }): Promise<void>;
   board(): Promise<readonly BoardRow[]>;
   /** One piece of work, with what happened to it. Undefined when this manager has none by that id. */
   work(id: string): Promise<WorkRow | undefined>;

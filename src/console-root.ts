@@ -27,6 +27,7 @@ export const consoleFrom =
         connections: () => object.modelConnections(),
         secrets: () => object.secrets(),
         github: () => object.gitHub(),
+        lost: () => object.gitHubLost(),
         billing: async () => {
           const billed = await object.billing();
           return "_tag" in billed ? null : billed;

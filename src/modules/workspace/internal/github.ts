@@ -87,3 +87,18 @@ export function removed(sql: SqlStorage, id: number, owners: readonly string[], 
   const title = `The GitHub App was uninstalled from ${installation.account}. Managers no longer hear its repos; install it again to reconnect them.`;
   for (const owner of owners) notify(sql, { id: `github-removed:${id}:${owner}:${now}`, to: owner, title }, now);
 }
+
+/** The App is back, as the same installation: what it was on is connected again, and each manager hears what it heard. */
+export function restored(sql: SqlStorage, id: number): boolean {
+  const lost = lostConnection(sql);
+  if (lost === undefined) return false;
+  connect(sql, { id, account: lost.account, repos: [...new Set(lost.sources.map(({ repo }) => repo))] });
+  for (const managerId of new Set(lost.sources.map((source) => source.managerId))) {
+    setSources(
+      sql,
+      managerId,
+      lost.sources.filter((source) => source.managerId === managerId).map(({ repo, events }) => ({ repo, events })),
+    );
+  }
+  return true;
+}

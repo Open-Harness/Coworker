@@ -159,7 +159,7 @@ export async function connectorsView(c: ConsoleDeps): Promise<ConnectorsView> {
       as: account.as,
       holder: { workspace: true },
       works: account.works,
-      says: "Works",
+      says: account.says ?? "Works",
       since: account.since,
       steps: steps.map((step) => ({ step, state: { _tag: "Works", says: "Done" } })),
       places: account.places,

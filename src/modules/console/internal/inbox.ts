@@ -6,11 +6,11 @@ import type { ConsoleDeps } from "../types.ts";
 
 /** Every ask addressed to this person, newest first, with the name of the manager that asked. */
 async function mineOf(c: ConsoleDeps): Promise<readonly { readonly ask: Ask; readonly manager: string }[]> {
-  const rows = await c.store.managers();
+  const [rows, own] = await Promise.all([c.store.managers(), c.store.asks()]);
   const found = await Promise.all(
     rows.map(async (row) => (await c.managers.get(row.objectId, row.region).asks()).map((ask) => ({ ask, manager: row.node.name }))),
   );
-  return found.flat().filter(({ ask }) => ask.to === c.who.id).toSorted((a, b) => b.ask.at - a.ask.at);
+  return [...found.flat(), ...own.map((ask) => ({ ask, manager: "Co-worker" }))].filter(({ ask }) => ask.to === c.who.id).toSorted((a, b) => b.ask.at - a.ask.at);
 }
 
 function itemOf({ ask, manager }: { readonly ask: Ask; readonly manager: string }): InboxItem {

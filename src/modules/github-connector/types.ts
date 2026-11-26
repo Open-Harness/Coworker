@@ -1,4 +1,5 @@
 import type { Received, Raw } from "~/modules/connectors/types.ts";
+import type { Heard } from "~/modules/following/types.ts";
 import type { Us } from "~/modules/github-events/types.ts";
 
 /*
@@ -7,7 +8,11 @@ import type { Us } from "~/modules/github-events/types.ts";
  */
 
 /** What `receive` made of a delivery, and which installation it says it is for: the workspace is found by it. */
-export type Delivered = Received & { readonly installation: number | null };
+export type Delivered = Received & {
+  readonly installation: number | null;
+  /** The records the delivery carried, for what follows a conversation to keep: its item, or noise that still said something. */
+  readonly heard?: Heard;
+};
 
 export interface GithubConnector {
   /**

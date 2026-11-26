@@ -11,6 +11,7 @@ import { migrate, pushVersion, readRecord, versionAt, versionsOf, writeRecord } 
 import { workStore } from "./internal/work-tables.ts";
 import { usageOf } from "./internal/usage.ts";
 import type { Ask } from "~/modules/asks/types.ts";
+import type { WorkEvent } from "~/modules/work/types.ts";
 import type { BoardRow, Hearing, ManagerRecord, ManagerStoreApi, ManagerStores, OpenManager, Opened, UsageRow, WorkRow } from "./types.ts";
 
 const DAY = 86_400_000;
@@ -145,6 +146,10 @@ export class ManagerStoreHost<Env = unknown> extends DurableObject<Env> implemen
 
   async heard(input: { readonly work: string; readonly item: TakeInput["item"] }): Promise<void> {
     await this.#works()?.heard(input);
+  }
+
+  async news(input: { readonly work: string; readonly event: WorkEvent; readonly says?: string }): Promise<void> {
+    await this.#works()?.news(input);
   }
 
   async board(): Promise<readonly BoardRow[]> {

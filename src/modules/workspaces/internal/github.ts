@@ -52,12 +52,12 @@ export const gitHubInstallations = (database: D1Database, objects: TenantObjects
     const row = workspaceId === undefined ? undefined : await findRow(database, workspaceId);
     return row === undefined ? undefined : objects.get(row.objectId, row.region);
   },
-  removed: async (installation) => {
+  removed: async (installation, how) => {
     const workspaceId = await claimed(database, installation);
     const row = workspaceId === undefined ? undefined : await findRow(database, workspaceId);
     if (workspaceId === undefined || row === undefined) return;
     await objects.get(row.objectId, row.region).gitHubRemoved(installation, await ownersOf(database, workspaceId));
-    await database.prepare(`DELETE FROM "github_installation" WHERE "installationId" = ?`).bind(installation).run();
+    if (how !== "suspended") await database.prepare(`DELETE FROM "github_installation" WHERE "installationId" = ?`).bind(installation).run();
   },
 });
 

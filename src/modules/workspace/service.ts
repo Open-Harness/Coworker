@@ -6,9 +6,11 @@ import { requestJoin } from "./internal/requests.ts";
 import { createManager, destroyManagers, listManagers } from "./internal/managers.ts";
 import { migrate, readProfile, writeProfile } from "./internal/store.ts";
 import { DecidingHost } from "./internal/decider-host.ts";
+import { followingOf } from "./internal/following-host.ts";
 import { allowsJoin, readJoinSettings, setApprovedDomains, setInviteLinks } from "./internal/joining.ts";
 import { eventsOf, follow, logEvent, readPolicy, writePolicy } from "./internal/hearing.ts";
 import type { Handle, Policy, Routed, Trigger } from "~/modules/triggers/types.ts";
+import type { Us } from "~/modules/github-events/types.ts";
 import { addHandle, people } from "./internal/people.ts";
 import type { GitHubConnection, Installation, LostConnection, RepoSource } from "~/modules/github/types.ts";
 import type { BillingView, SpendLimit } from "~/modules/billing/types.ts";
@@ -17,7 +19,8 @@ import type { CommandRequest, EnvironmentView, ExecOutcome, SaveEnvironment, Sav
 import { commandToken } from "./internal/token.ts";
 import { runStore } from "./internal/console-store.ts";
 import type { StoreAnswer, StoreOp } from "~/modules/console/types.ts";
-import { connect, connection, lostConnection, removed, setSources } from "./internal/github.ts";
+import { connect, connection, lostConnection, removed, restored, setSources } from "./internal/github.ts";
+import { askToInstall, installedAgain, workspaceAsks } from "./internal/github-asks.ts";
 import type {
   AddHandleResult,
   AnswerResult,
@@ -172,8 +175,20 @@ export class WorkspaceHost<Env = unknown> extends DecidingHost<Env> implements W
   }
 
   async gitHubRemoved(installation: number, owners: readonly string[]): Promise<void> {
-    removed(this.ctx.storage.sql, installation, owners, this.dependencies.clock.now());
+    const { sql } = this.ctx.storage;
+    const was = connection(sql).installation;
+    const now = this.dependencies.clock.now();
+    removed(sql, installation, owners, now);
+    if (was?.id === installation) askToInstall(sql, installation, was.account, owners, now);
     await this.offer();
+  }
+
+  async gitHubBack(installation: number, us: Us): Promise<void> {
+    const { sql } = this.ctx.storage;
+    if (!restored(sql, installation)) return;
+    installedAgain(sql, installation);
+    followingOf(sql, this.dependencies).back(us);
+    await this.wakeFor(0);
   }
 
   async environments(): Promise<readonly EnvironmentView[]> {
@@ -218,6 +233,12 @@ export class WorkspaceHost<Env = unknown> extends DecidingHost<Env> implements W
   async consoleStore(op: StoreOp): Promise<StoreAnswer | NotProvisioned> {
     if (!this.provisioned()) return { _tag: "NotProvisioned" };
     const { ids, clock } = this.dependencies;
+    if (op.op === "ask.list") return { op: "ask.list", asks: workspaceAsks(this.ctx.storage.sql) };
+    if (op.op === "github.hear") {
+      followingOf(this.ctx.storage.sql, this.dependencies).hear(op.heard);
+      await this.wakeFor(0);
+      return { op: "github.hear" };
+    }
     const answer = runStore({ sql: this.ctx.storage.sql, now: clock.now(), id: ids.next }, op);
     // What came in is decided from the object's alarm, so that a lost object still decides it when it is back.
     if (answer.op === "item.keep" && answer.isNew) await this.wakeFor(0);
