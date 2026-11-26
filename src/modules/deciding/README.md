@@ -6,6 +6,8 @@ For each item: who it is (the connector says whether they may write where it cam
 nobody lets it in), else a judge, then `intake.decide`. A manager that took it is given it (`take`, once per item); work that follows it hears it
 (`heard`). The decision is kept with the item, and so is the time to ask again when the judge did not answer.
 
+An item that says one of the options of an ask made on its thread (`answered`, given) is that answer and not a new thing: it is kept as `Joined` to the work that asked, and is not handed on.
+
 Given: the store of what is pending, the managers' objects, the models and a call to one, `standing`, a clock. Nothing is read from anywhere.
 
 ## Invariants

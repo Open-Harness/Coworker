@@ -13,7 +13,7 @@ Pure over `AskStore` (the workspace's object keeps the rows, `workspace/internal
 - An answer from the inbox (`answer`), from a comment on the thread it was asked on (`heard`: the words, without who they speak to and the
   stop at the end, are an option's label or id), or from silence (`else`, a decision only) is the same answer: the first counts, the next is `Late`.
 - A comment answers for the one asked when the place proves who wrote it; where it cannot (a GitHub login is not a person here), whoever the
-  place says may act there. Everything else in the comment is outside words and grants nothing.
+  place says may act there, except for an approval, which only a proven person or the inbox may give. Everything else in the comment is outside words and grants nothing.
 - `tick` does each step once: a reminder, then each stand-in, then `else`. After any number of days an ask has been reminded once.
 - `always` makes a rule (`covers`) only for an approved action: an approval has the answers `yes` and `no`, and only `yes` is repeated.
 

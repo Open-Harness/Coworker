@@ -26,7 +26,8 @@ export async function heard(c: AskingDeps, said: Heard): Promise<{ readonly ask:
     const { ask } = kept;
     if (ask.about.thread?.toLowerCase() !== said.thread.toLowerCase()) continue;
     const option = optionOf(ask, words);
-    const theirs = said.person === null ? said.mayAct : isFor(ask, said.person);
+    // Who wrote it is proven when the place proves a person. Otherwise whoever may act there may answer, but never approve: a login is not a person.
+    const theirs = said.person === null ? said.mayAct && ask.need !== "approve" : isFor(ask, said.person);
     if (option === undefined || !theirs) continue;
     const answered = await answerOnce(c, kept, { by: said.name, answer: option, where: "github", may: true });
     if (answered._tag === "Answered") return { ask: ask.id, work: ask.about.work ?? null };

@@ -64,7 +64,7 @@ export async function drain(c: WorkingDeps, workId: string): Promise<void> {
     if (outcome._tag === "Held" && outcome.model !== undefined)
       outcome = await askAboutModel(c, workId, next.job, outcome.model, outcome.why).catch(() => outcome);
     if (outcome._tag === "Held") {
-      c.store.setHold(workId, { why: outcome.why, retry: c.clock.now() + RETRY });
+      c.store.setHold(workId, { why: outcome.why, retry: outcome.retry ?? c.clock.now() + RETRY });
       rearm(c);
       return;
     }

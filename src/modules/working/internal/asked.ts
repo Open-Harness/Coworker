@@ -1,6 +1,6 @@
 import type { Job, WorkingDeps } from "../types.ts";
 import { answered } from "./answered.ts";
-import { askIdOf, DAY, type Spec, nextAskId, openAsk, waitsFor } from "./asking.ts";
+import { answeredOf, askIdOf, DAY, type Spec, nextAskId, openAsk, waitsFor } from "./asking.ts";
 import { done, held, type Outcome } from "./start.ts";
 
 /* What the work asks of a person that the work itself decides to ask: it reached a limit, it was sent back too often, nobody could say. */
@@ -68,6 +68,8 @@ export async function askAboutModel(c: WorkingDeps, workId: string, job: Job, mo
     c.store.keepOnce(`modelask:${job.key}`, id);
     waitsFor(c, work, spec);
   }
+  // Answered while it was being asked: it is tried again now, and not at the usual time.
+  if (answeredOf(c, id) !== undefined) return { _tag: "Held", why: says, retry: c.clock.now() };
   return held(opened._tag === "Held" ? opened.why : says);
 }
 

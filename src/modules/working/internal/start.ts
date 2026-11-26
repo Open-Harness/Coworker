@@ -12,7 +12,10 @@ type Start = Extract<ToDo, { readonly do: "start" }>;
 const threadIdOf = (key: string): string => idOf("th", key);
 
 /** How a job went: it is done, or it waits for something that is not here, and says what. */
-export type Outcome = { readonly _tag: "Done" } | { readonly _tag: "Held"; readonly why: string; readonly model?: string };
+export type Outcome =
+  | { readonly _tag: "Done" }
+  /** `retry`: when to try again, if not at the usual time. */
+  | { readonly _tag: "Held"; readonly why: string; readonly model?: string; readonly retry?: number };
 export const done: Outcome = { _tag: "Done" };
 export const held = (why: string, model?: string): Outcome => ({ _tag: "Held", why, ...(model === undefined ? {} : { model }) });
 

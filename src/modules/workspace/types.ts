@@ -219,7 +219,7 @@ export interface WorkspaceApi {
   membersChanged(members: number): Promise<void>;
   /** The console's own rows: what each doing did, the audit log, settings, the tree, what came in. See `console`. */
   consoleStore(op: StoreOp): Promise<StoreAnswer | NotProvisioned>;
-  /** What waits for a person: asked by a manager, shown and answered by the console. See `asking`. */
+  /** What waits for a person: asked by a manager, answered by the console. See `asking`. */
   asked(op: AskOp): Promise<AskAnswer | NotProvisioned>;
   /** Does what is due now: what came in is decided, and what a judge did not answer is asked again. */
   tick(): Promise<void>;

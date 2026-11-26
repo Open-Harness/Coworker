@@ -75,7 +75,9 @@ function words(spec: Spec): string {
 
 /** Asked once by its id: the workspace keeps it, the issue says it, and the manager keeps how to go on. Doing it again finds it. */
 export async function openAsk(c: WorkingDeps, work: Work, spec: Spec): Promise<Opened> {
-  if (parkedOf(c, spec.id) !== undefined) return { _tag: "Asked" };
+  if (c.store.once(`opened:${spec.id}`) !== undefined) return { _tag: "Asked" };
+  // How to go on is kept before anyone can answer: the answer may be told here before the issue has the question.
+  c.store.keepOnce(`asked:${spec.id}`, JSON.stringify(spec.parked));
   const ask: NewAsk = {
     id: spec.id,
     to: spec.person,
@@ -101,7 +103,7 @@ export async function openAsk(c: WorkingDeps, work: Work, spec: Spec): Promise<O
     const said = await commentOnce(c.outside, work.from.place, Number(work.from.id), words(spec), `ask:${spec.id}`);
     if (said._tag === "Cannot") return { _tag: "Held", why: said.why };
   }
-  c.store.keepOnce(`asked:${spec.id}`, JSON.stringify(spec.parked));
+  c.store.keepOnce(`opened:${spec.id}`, "yes");
   return { _tag: "Asked" };
 }
 
@@ -110,6 +112,8 @@ export const saidOf = (answer: Answer): string => `${answer.person} answered: ${
 
 /** The work waits for that person: it is shown on the board, and it is told when it goes quiet. */
 export function waitsFor(c: WorkingDeps, work: Work, spec: Spec): void {
+  // Answered already, before it was fully asked: the work is not left waiting for it.
+  if (answeredOf(c, spec.id) !== undefined) return;
   apply(c, work.id, {
     key: `asked:${spec.id}`,
     at: c.clock.now(),
