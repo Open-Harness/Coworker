@@ -62,3 +62,9 @@ export function nearDay(at: number, now: number, zone: string): string {
   if (dayMonth(at, zone) === dayMonth(now, zone)) return "today";
   return dayMonth(at, zone) === dayMonth(now + DAY, zone) ? "tomorrow" : dayMonth(at, zone);
 }
+
+/** How long something took: `11 min`, `1 h 40 min`. */
+export function lasted(ms: number): string {
+  const minutes = Math.max(1, Math.round(ms / 60_000));
+  return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h${minutes % 60 === 0 ? "" : ` ${minutes % 60} min`}`;
+}
