@@ -4,7 +4,6 @@ import { Card } from "@astryxdesign/core/Card";
 import { InfoTip } from "@astryxdesign/core/InfoTip";
 import { VStack } from "@astryxdesign/core/Layout";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
-import { Text } from "@astryxdesign/core/Text";
 import { useMediaQuery } from "@astryxdesign/core/hooks";
 import { HStack } from "@astryxdesign/core/Layout";
 import { useToast } from "@astryxdesign/core/Toast";
@@ -16,18 +15,16 @@ import { useBoardDrag } from "../board-kit/drag.ts";
 import { ManagerFrame } from "../manager-frame/frame.tsx";
 import { BoardCardView, CardBody } from "./card.tsx";
 
-/** The steps of the standard process, which a board that is still being read is drawn with. */
-const USUAL = ["Triage", "Building", "Checking", "With a person", "Done"] as const;
+/** A board that is still being read does not know its steps yet: five columns of unnamed shapes, one on a phone. */
+const SHAPES = [0, 1, 2, 3, 4] as const;
 
 function Waiting() {
   const isNarrow = useMediaQuery("(max-width: 768px)");
   return (
     <HStack gap={3} padding={4} vAlign="start">
-      {USUAL.slice(0, isNarrow ? 1 : 5).map((name) => (
-        <VStack key={name} gap={3} style={{ flex: 1, minWidth: 0 }}>
-          <Text type="body" weight="semibold">
-            {name}
-          </Text>
+      {SHAPES.slice(0, isNarrow ? 1 : SHAPES.length).map((column) => (
+        <VStack key={column} gap={3} style={{ flex: 1, minWidth: 0 }}>
+          <Skeleton width="50%" height={16} />
           {[0, 1].map((i) => (
             <Card key={i} padding={3}>
               <VStack gap={2}>
