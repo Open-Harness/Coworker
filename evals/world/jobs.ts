@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { env, git, root } from "./git.ts";
+import { budget, modelOf, record, spentDollars, withUsage } from "./budget.ts";
 import { json } from "./http.ts";
 
 /*
@@ -25,11 +26,14 @@ export async function realModels(request: Request): Promise<Response | undefined
   const [base, key] = [set("JOBS_BASE_URL"), set("JOBS_KEY")];
   if (base === undefined || key === undefined) return json({ error: { message: "Set JOBS_BASE_URL and JOBS_KEY to run the jobs" } }, 401);
   const headers = new Headers({ "content-type": "application/json", authorization: `Bearer ${key}` });
-  const body = request.method === "GET" ? undefined : await request.text();
+  const limit = budget();
+  if (limit !== undefined && spentDollars() >= limit) return json({ error: { message: `JOBS_BUDGET reached: $${spentDollars().toFixed(2)} of $${limit} spent` } }, 402);
+  const body = request.method === "GET" ? undefined : withUsage(await request.text());
   const response = await fetch(`${base.replace(/\/$/u, "")}${url.pathname.replace(/^\/v1/u, "")}`, { method: request.method, headers, ...(body === undefined ? {} : { body }) });
   spent.calls += 1;
   if (response.body === null) return new Response(null, { status: response.status });
   const text = await response.text();
+  if (body !== undefined) record(modelOf(body), body, text);
   for (const [, input = "0", output = "0"] of text.matchAll(/"prompt_tokens":\s*(\d+)[\s\S]{0,40}?"completion_tokens":\s*(\d+)/gu)) {
     spent.input += Number(input);
     spent.output += Number(output);
