@@ -8,8 +8,15 @@ const complain = (file: string, line: number, message: string): void => void pro
 /** The document itself is not Astryx's to draw. */
 const DOCUMENT = "src/routes/__root.tsx";
 const DOCUMENT_ELEMENTS = new Set(["html", "head", "body"]);
-/** Works around one Astryx sizing bug; the file says which. */
-const STYLED = new Set(["src/modules/ui/internal/NavGroup.tsx"]);
+/** Works around one Astryx sizing bug; the file says which. `states.tsx` dims what was read while the connection is lost. */
+const STYLED = new Set(["src/modules/ui/internal/NavGroup.tsx", "src/modules/page/internal/states.tsx"]);
+/**
+ * A screen adapts an Astryx template (D5): its first line says which, `// astryx-template: <name>`, and the template's own styling
+ * and the brand marks it draws (svg) are allowed in that file. Only where screens are: no module may.
+ */
+const SCREENS = /^src\/(screens\/|door\/|juno\/|shell\.tsx$)/u;
+const TEMPLATE = /^\/\/ astryx-template: [a-z][a-z0-9-]*$/u;
+const BRAND_MARKS = new Set(["svg", "path"]);
 /** The one file that draws charts. Astryx has no chart component, so this wraps recharts, which Astryx's own templates use. */
 const CHARTS = "src/modules/ui/internal/Chart.tsx";
 const ALLOWED_IMPORTS =
@@ -18,18 +25,20 @@ const ALLOWED_IMPORTS =
 for (const file of globSync("src/**/*.tsx")) {
   if (file.endsWith(".test.tsx")) continue;
   const text = readFileSync(file, "utf8");
+  const isTemplate = SCREENS.test(file) && TEMPLATE.test(text.split("\n")[0] ?? "");
   text.split("\n").forEach((line, index) => {
     const at = index + 1;
     for (const [, tag = ""] of line.matchAll(/<([a-z][\w-]*)(?=[\s/>])(?![^<]*=>)/gu)) {
       // Type arguments such as `useState<string>` follow a name; an element does not.
       const before = line.slice(0, line.indexOf(`<${tag}`));
       if (/[\w$]$/u.test(before)) continue;
+      if (isTemplate && BRAND_MARKS.has(tag)) continue;
       if (file !== DOCUMENT || !DOCUMENT_ELEMENTS.has(tag)) complain(file, at, `draws <${tag}> instead of an Astryx component`);
     }
-    if (/\b(className|xstyle|dangerouslySetInnerHTML)=/u.test(line) && !/xstyle=\{rtlStyles\.mirror\}/u.test(line)) {
+    if (!isTemplate && /\b(className|xstyle|dangerouslySetInnerHTML)=/u.test(line) && !/xstyle=\{rtlStyles\.mirror\}/u.test(line)) {
       complain(file, at, "styles a component itself");
     }
-    if (/\bstyle=/u.test(line) && !STYLED.has(file)) complain(file, at, "styles a component itself");
+    if (/\bstyle=/u.test(line) && !STYLED.has(file) && !isTemplate) complain(file, at, "styles a component itself");
     const source = /from "([^"]+)"/u.exec(line)?.[1];
     const isChartLibrary = source === "recharts" && file === CHARTS;
     if (source !== undefined && !isChartLibrary && !ALLOWED_IMPORTS.test(source)) complain(file, at, `imports ${source}`);

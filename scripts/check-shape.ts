@@ -7,7 +7,7 @@ const GENERATED = /routeTree\.gen\.ts$|\.sql$/u;
 /** The only files that may read the environment, print or exit. `_app.tsx` is the browser's composition root. */
 /** `src/world.ts` is part of the composition root: where the fake or the real outside thing is chosen. */
 const ROOTS = new Set(["src/main.ts", "src/world.ts", ...globSync("src/bin/*.ts")]);
-const BROWSER_ROOTS = new Set(["src/routes/_app.tsx", "src/routes/_team.tsx", "src/routes/__root.tsx"]);
+const BROWSER_ROOTS = new Set(["src/routes/_app.tsx", "src/routes/_team.tsx", "src/routes/__root.tsx", "src/browser.tsx"]);
 
 const problems: string[] = [];
 const complain = (file: string, message: string): void => void problems.push(`${file}: ${message}`);
@@ -54,7 +54,7 @@ const FORBIDDEN: readonly (readonly [RegExp, string])[] = [
 const LAYERS: readonly (readonly [RegExp, readonly string[]])[] = [
   // Pages never see the server, and the server never sees pages.
   [
-    /^src\/modules\/(ui|app|admin|api|connection|directory-client|manager-client|team-app|team-core|team-join|team-start|team-shell|team-settings|team-build|team-home)\//u,
+    /^src\/modules\/(ui|app|admin|api|page|connection|directory-client|manager-client|team-core|team-join)\//u,
     [
       "dashboards",
       "manager",
