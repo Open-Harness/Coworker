@@ -6,7 +6,14 @@ import type { Chosen } from "../types.ts";
 /* When two fit equally a person is asked which, and the one they chose takes it: what they said is a person's word, never a model's. */
 
 /** The place says that this person may ask: they are the team's, and what they chose is what they asked for. */
-const THEIRS = (item: Item): AskRule => ({ account: item.account, place: "*", listed: { who: "team" }, bots: [], overheard: "no", others: "no" });
+const THEIRS = (item: Item): AskRule => ({
+  account: item.account,
+  place: "*",
+  listed: { who: "team" },
+  bots: [],
+  overheard: "no",
+  others: "no",
+});
 
 export function decideChosen(item: Item, hears: readonly Hears[], open: readonly OpenWork[], chosen: Chosen, now: number): Decision {
   if (chosen.manager === "")

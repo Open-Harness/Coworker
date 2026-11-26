@@ -60,7 +60,13 @@ function showsOf(call: Call, action: string, args: unknown): Spec["shows"] {
 }
 
 /** What a person said to an action that waited for them: a yes does it, and either is a line in the audit log with who said it. */
-async function answered(call: Call, action: string, args: unknown, answer: NonNullable<ReturnType<typeof answeredOf>>, tool: Tool): Promise<Result> {
+async function answered(
+  call: Call,
+  action: string,
+  args: unknown,
+  answer: NonNullable<ReturnType<typeof answeredOf>>,
+  tool: Tool,
+): Promise<Result> {
   const yes = answer.option === "yes";
   const result = yes ? await tool.run(call, args) : wrong(`${saidOf(answer)} It was not done.`);
   const shows = showsOf(call, action, args);

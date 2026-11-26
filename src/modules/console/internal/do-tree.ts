@@ -3,8 +3,8 @@ import { doings } from "~/modules/doings/service.ts";
 import { playbooks } from "~/modules/playbook/service.ts";
 import type { Files } from "~/modules/playbook/types.ts";
 import { reaches } from "~/modules/reach/service.ts";
+import type { ConsoleDeps, ManagerRow } from "../types.ts";
 import type { ManagerNode } from "~/modules/tree/types.ts";
-import type { ConsoleDeps } from "../types.ts";
 import { accountsOf, surroundings, wholeOf } from "./around.ts";
 import type { Handler } from "./handlers.ts";
 import { retire } from "./retire.ts";
@@ -52,11 +52,22 @@ const saveVersion: Handler = async (c, values) => {
   if (row === undefined) return refuse(`There is no manager "${text(values["manager"])}".`);
   const files = filesOf(values["files"]);
   if (files === undefined) return refuse("The files are a record of the playbook's files and their text.");
+  return saveFiles(c, row, files, Number(values["version"]), { says: `Saved by ${c.who.name}`, from: "edited", doing: "version.save" });
+};
+
+export interface Saving {
+  readonly says: string;
+  readonly from: "edited" | "went back";
+  readonly doing: "version.save" | "version.go_back";
+}
+
+/** `based`: the version these files were made from, when it is known. */
+export async function saveFiles(c: ConsoleDeps, row: ManagerRow, files: Files, based: number, saving: Saving): Promise<Did> {
   const store = c.managers.get(row.objectId, row.region);
   const newest = await store.version();
   if (newest === undefined) return refuse("That manager has no playbook yet.");
-  const based = Number(values["version"]);
-  if (Number.isFinite(based) && based < newest.number) return { _tag: "Clash", theirs: newest.files, version: newest.number };
+  if (Number.isFinite(based) && based < newest.number && saving.from === "edited")
+    return { _tag: "Clash", theirs: newest.files, version: newest.number };
   const read = playbooks.read(files);
   if (read._tag === "Problems") return { _tag: "Problems", problems: read.problems };
   const above = row.node.above === null ? undefined : await managerOf(c, row.node.above);
@@ -66,7 +77,7 @@ const saveVersion: Handler = async (c, values) => {
   const reach = { grants: read.playbook.reach.grants, limits: read.playbook.reach.limits };
   const grown = await grow(c, { is: "reach", id: row.node.id, reach });
   if (typeof grown === "string") return refuse(grown);
-  const saved = await store.save({ files, by: c.who.id, at: c.clock.now(), says: `Saved by ${c.who.name}`, from: "edited" });
+  const saved = await store.save({ files, by: c.who.id, at: c.clock.now(), says: saving.says, from: saving.from });
   const now = (await managerOf(c, row.node.id))?.node ?? row.node;
   const node: ManagerNode = { ...now, version: saved.number, name: read.playbook.name };
   await c.store.setManager({ ...row, node });
@@ -74,10 +85,14 @@ const saveVersion: Handler = async (c, values) => {
   return {
     _tag: "Done",
     id: String(saved.number),
-    says: sentence("version.save", { version: String(saved.number), manager: node.name }, c.who.name),
+    says: sentence(
+      saving.doing,
+      { version: saving.doing === "version.save" ? String(saved.number) : String(based), manager: node.name },
+      c.who.name,
+    ),
     link: `/m/${node.id}/playbook`,
   };
-};
+}
 
 /** What was taken back above is gone from the open work below: its mandate is cut to what is still there. */
 async function narrowWork(c: ConsoleDeps, ids: readonly string[]): Promise<void> {
@@ -93,9 +108,24 @@ async function narrowWork(c: ConsoleDeps, ids: readonly string[]): Promise<void>
   }
 }
 
+/** Going back is a new version on top, made of an earlier one's files: nothing is taken out of the history. */
+const goBack: Handler = async (c, values) => {
+  const row = await managerOf(c, text(values["manager"]));
+  if (row === undefined) return refuse(`There is no manager "${text(values["manager"])}".`);
+  const number = Number(values["version"]);
+  const earlier = Number.isInteger(number) ? await c.managers.get(row.objectId, row.region).version(number) : undefined;
+  if (earlier === undefined) return refuse(`There is no version ${String(values["version"])} of ${row.node.name}.`);
+  return saveFiles(c, row, earlier.files, number, {
+    says: `${c.who.name} went back to version ${number}`,
+    from: "went back",
+    doing: "version.go_back",
+  });
+};
+
 export const treeHandlers: Readonly<Record<string, Handler>> = {
   "manager.pause": switchTo("pause"),
   "manager.start": switchTo("go on"),
   "manager.retire": retire,
   "version.save": saveVersion,
+  "version.go_back": goBack,
 };

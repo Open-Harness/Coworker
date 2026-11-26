@@ -10,6 +10,7 @@ import { workView } from "./work-view.ts";
 import { run } from "./do.ts";
 import { boardView } from "./board.ts";
 import { intakeView, playbookView } from "./manager-views.ts";
+import { versionsView } from "./versions-view.ts";
 import { ok, problem } from "./around.ts";
 import { overviewView, treeView } from "./overview.ts";
 import {
@@ -65,6 +66,7 @@ const READS: readonly (readonly [RegExp, Part])[] = [
   [/^\/m\/([^/]+)\/threads$/u, (c, [id]) => threadsView(c, id ?? "")],
   [/^\/m\/([^/]+)\/playbook$/u, (c, [id], q) => playbookView(c, id ?? "", Number(q.get("version")) || undefined)],
   [/^\/m\/([^/]+)\/intake$/u, (c, [id], q) => intakeView(c, id ?? "", q)],
+  [/^\/m\/([^/]+)\/versions$/u, (c, [id]) => versionsView(c, id ?? "")],
 ];
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>

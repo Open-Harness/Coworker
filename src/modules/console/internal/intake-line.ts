@@ -23,10 +23,7 @@ export function lineOf(item: Item, decision: Decision): IntakeRow["line"] {
   const at = item.at;
   const gates = decision.gated.map(({ gated }) => ({ did: "Let through", says: `${LET[gated.let]}: ${gated.why}`, at }));
   const yes = decision.verdicts.filter((one) => one.is).length;
-  const judged =
-    decision.verdicts.length === 0
-      ? []
-      : [{ did: "Judged", says: `${yes} of ${decision.verdicts.length} kinds fit`, at }];
+  const judged = decision.verdicts.length === 0 ? [] : [{ did: "Judged", says: `${yes} of ${decision.verdicts.length} kinds fit`, at }];
   return [
     { did: "Found", says: `${item.actor.name} on ${item.place}`, at },
     ...gates,
