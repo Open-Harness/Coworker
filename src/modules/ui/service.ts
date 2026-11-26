@@ -11,3 +11,4 @@ export { SuggestionPicker } from "./internal/SuggestionPicker.tsx";
 export { Transcript } from "./internal/Transcript.tsx";
 export { WorkspaceNav } from "./internal/WorkspaceNav.tsx";
 export { BarChart, DonutChart, LineChart } from "./internal/ChartFrame.tsx";
+export { TrendChart } from "./internal/TrendFrame.tsx";

@@ -1,4 +1,6 @@
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -134,6 +136,71 @@ function Donut({ slices, centre, height = HEIGHT }: DonutChartProps) {
           )}
         </Pie>
       </PieChart>
+    </ResponsiveContainer>
+  );
+}
+
+/** A week against the week before, drawn day by day: the week as a line (or filled), the one before dashed and grey. */
+export interface TrendProps {
+  readonly labels: readonly string[];
+  readonly now: readonly number[];
+  readonly before: readonly number[];
+  readonly color: ChartColor;
+  readonly isFilled?: boolean;
+  /** Short, for the axis: `$20`. */
+  readonly format: (value: number) => string;
+  readonly height?: number;
+}
+
+const TREND_TICK = { fontSize: "var(--font-size-sm)", fill: TEXT };
+const TREND_MARGIN = { top: 5, right: 8, left: 0, bottom: 0 };
+
+export function Trend({ labels, now, before, color, isFilled = false, format, height = 200 }: TrendProps) {
+  const rows = labels.map((label, index) => ({ t: index, label, Now: now[index] ?? 0, Before: before[index] ?? 0 }));
+  const stroke = COLOR(color);
+  const ticks = labels.map((_, index) => index).filter((index) => index % 2 === 0);
+  const axes = (
+    <>
+      <CartesianGrid horizontal vertical={false} stroke={GRID} />
+      <XAxis
+        dataKey="t"
+        type="number"
+        domain={[0, labels.length - 1]}
+        ticks={ticks}
+        tickFormatter={(index: number) => labels[index] ?? ""}
+        tick={TREND_TICK}
+        axisLine={false}
+        tickLine={false}
+      />
+      <YAxis tick={TREND_TICK} axisLine={false} tickLine={false} width={52} tickFormatter={format} />
+      <Tooltip content={<Hover />} cursor={{ stroke: GRID }} />
+    </>
+  );
+  const earlier = {
+    dataKey: "Before",
+    stroke: TEXT,
+    strokeWidth: 1,
+    strokeDasharray: "4 4",
+    dot: false,
+    isAnimationActive: false,
+    type: "linear",
+  } as const;
+  const current = { dataKey: "Now", stroke, strokeWidth: 2, dot: false, isAnimationActive: false, type: "linear" } as const;
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      {isFilled ? (
+        <AreaChart data={rows} margin={TREND_MARGIN}>
+          {axes}
+          <Area {...earlier} fill="none" />
+          <Area {...current} fill={stroke} fillOpacity={0.15} />
+        </AreaChart>
+      ) : (
+        <LineChart data={rows} margin={TREND_MARGIN}>
+          {axes}
+          <Line {...earlier} />
+          <Line {...current} />
+        </LineChart>
+      )}
     </ResponsiveContainer>
   );
 }
