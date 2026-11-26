@@ -12,7 +12,7 @@ export interface ToWork {
 const join = (names: readonly string[]): string => names.join(", ");
 
 /**
- * `ours`: the conversation is the work's own issue, and the work has a pull request: the pull request's end is the work's, and an issue
+ * `own`: the conversation is the work's own issue, and the work has a pull request: the pull request's end is the work's, and an issue
  * that is closed because it was merged is not a second end. Speech (a comment, a review) is not here: intake judges it.
  */
 export function toWork(news: News, thread: ThreadRef, own: boolean, hasPull: boolean): readonly ToWork[] {
