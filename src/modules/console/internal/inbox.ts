@@ -1,4 +1,6 @@
 import type { Answer } from "~/modules/api/types.ts";
+import { asks } from "~/modules/asks/service.ts";
+import type { Ask, NewAsk } from "~/modules/asks/types.ts";
 import type { Kept } from "~/modules/asking/types.ts";
 import type { InboxItem, InboxView } from "~/modules/views-workspace/types.ts";
 import type { ConsoleDeps } from "../types.ts";
@@ -28,10 +30,45 @@ const itemOf = (kept: Kept): InboxItem => ({
   beside: {},
 });
 
+
+const KEPT = "ask";
+const DAY = 86_400_000;
+
+/** An ask the co-worker makes of what it tried: made once the way `asks` says it may be, and kept for the person it is to. */
+export async function askAPerson(c: ConsoleDeps, input: Omit<NewAsk, "by"> & { readonly inDays: number }): Promise<Ask | string> {
+  const { inDays, ...rest } = input;
+  const made = asks.ask({ ...rest, by: c.clock.now() + inDays * DAY }, c.clock.now());
+  if (made._tag === "Refused") return made.why;
+  await c.store.keep(KEPT, made.ask.id, made.ask);
+  return made.ask;
+}
+
+const keptItem = (ask: Ask): InboxItem => ({
+  ask,
+  from: "Juno",
+  preview: ask.question,
+  standing: ask.state._tag === "Open" ? "asks" : "done",
+  proposes: ask.need === "review",
+  isNew: ask.state._tag === "Open",
+  looked: [],
+  otherwise: ask.else === "wait" ? null : `If nobody answers: ${ask.else.option}`,
+  links: [],
+  beside: {},
+});
+
+/** What the co-worker asked of this person; an Owner sees what is to any Owner. */
+async function keptItems(c: ConsoleDeps): Promise<readonly InboxItem[]> {
+  const all = (await c.store.kept(KEPT)) as readonly Ask[];
+  return all
+    .filter((ask) => ask.to === c.who.id || c.who.role === "Owner")
+    .toReversed()
+    .map(keptItem);
+}
+
 /** Every ask of this person that is open: the ask in full, and its options. What is answered is gone from here. */
 export async function inboxItems(c: ConsoleDeps): Promise<readonly InboxItem[]> {
   const asked = await c.asks({ op: "inbox", person: c.who.id });
-  return asked.op === "inbox" ? asked.items.map(itemOf) : [];
+  return [...(await keptItems(c)), ...(asked.op === "inbox" ? asked.items.map(itemOf) : [])];
 }
 
 export async function inboxView(c: ConsoleDeps): Promise<InboxView> {

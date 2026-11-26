@@ -28,6 +28,7 @@ import { answerAsk, inboxView } from "./inbox.ts";
 import { threadsView } from "./threads-view.ts";
 import { coworkerView, homeView, shellView } from "./shell.ts";
 import { fillView, templatesView } from "./templates.ts";
+import { readSetUp, sayInSetUp, startSetUp } from "./set-up.ts";
 
 /* The paths of `api/types.ts`, each to the view it answers. A path that is not here is 404 in words. */
 
@@ -57,6 +58,7 @@ const READS: readonly (readonly [RegExp, Part])[] = [
   [/^\/settings\/me$/u, async (c) => ok(await meView(c))],
   [/^\/m\/([^/]+)$/u, (c, [id]) => managerOverview(c, id ?? "")],
   [/^\/m\/([^/]+)\/work\/([^/]+)$/u, (c, [id, work]) => workView(c, id ?? "", work ?? "")],
+  [/^\/set-up\/([^/]+)$/u, (c, [id]) => readSetUp(c, id ?? "")],
   [/^\/m\/([^/]+)\/board$/u, (c, [id]) => boardView(c, id ?? "")],
   [/^\/m\/([^/]+)$/u, (c, [id]) => managerOverview(c, id ?? "")],
   [/^\/m\/([^/]+)\/work\/([^/]+)$/u, (c, [id, work]) => workView(c, id ?? "", work ?? "")],
@@ -92,5 +94,8 @@ export async function write({ path, body }: Call, c: ConsoleDeps): Promise<Answe
   if (tried !== null) return tryTemplate(c, decodeURIComponent(tried[1] ?? ""), body);
   const asked = /^\/inbox\/([^/]+)$/u.exec(path);
   if (asked !== null) return answerAsk(c, decodeURIComponent(asked[1] ?? ""), body);
+  if (path === "/set-up") return startSetUp(c, body);
+  const inSetUp = /^\/set-up\/([^/]+)$/u.exec(path);
+  if (inSetUp !== null) return sayInSetUp(c, decodeURIComponent(inSetUp[1] ?? ""), body);
   return problem(404, `There is nothing to send to ${path}.`);
 }

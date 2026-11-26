@@ -11,6 +11,7 @@ const MIGRATIONS: readonly string[] = [
   ...WORK_MIGRATIONS,
   ...BOXES_MIGRATIONS,
   ...STAYS_MIGRATIONS,
+  `CREATE TABLE kept (kind TEXT NOT NULL, id TEXT NOT NULL, seq INTEGER NOT NULL, json TEXT NOT NULL, PRIMARY KEY (kind, id))`,
 ];
 
 export function migrate(sql: SqlStorage): void {

@@ -198,5 +198,18 @@ export function workStore(storage: DurableObjectStorage): Store {
         .exec("SELECT json FROM ask ORDER BY seq")
         .toArray()
         .map((row) => parsed<Ask>(row["json"])),
+    keep: (kind, id, value) =>
+      void sql.exec(
+        `INSERT INTO kept (kind, id, seq, json) VALUES (?, ?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM kept), ?)
+         ON CONFLICT (kind, id) DO UPDATE SET json = excluded.json`,
+        kind,
+        id,
+        JSON.stringify(value),
+      ),
+    kept: (kind) =>
+      sql
+        .exec("SELECT json FROM kept WHERE kind = ? ORDER BY seq", kind)
+        .toArray()
+        .map((row) => parsed<unknown>(row["json"])),
   };
 }

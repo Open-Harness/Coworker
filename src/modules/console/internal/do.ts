@@ -1,6 +1,6 @@
 import type { Answer, Did } from "~/modules/api/types.ts";
 import { doings } from "~/modules/doings/service.ts";
-import type { Doing } from "~/modules/doings/types.ts";
+import type { Doing, Who } from "~/modules/doings/types.ts";
 import type { ConsoleDeps } from "../types.ts";
 import { ok, problem, whoOf } from "./around.ts";
 import { readsOf } from "./changed.ts";
@@ -23,9 +23,15 @@ const wordsOf = (values: Readonly<Record<string, unknown>>): Readonly<Record<str
     ]),
   );
 
-async function decide(c: ConsoleDeps, doing: Doing | undefined, id: string, values: Readonly<Record<string, unknown>>): Promise<Did> {
+async function decide(
+  c: ConsoleDeps,
+  actor: Who,
+  doing: Doing | undefined,
+  id: string,
+  values: Readonly<Record<string, unknown>>,
+): Promise<Did> {
   if (doing === undefined) return refuse(`"${id}" is not something that can be done here.`);
-  const may = doings.may(doing.id, whoOf(c.who));
+  const may = doings.may(doing.id, actor);
   if (may.is === "off") return refuse(`You may not ${doing.label.toLowerCase()}: ${may.why}`);
   if (may.is === "ask") return refuse(`${doing.label} waits for an Owner's yes, and asking one is not there yet.`);
   const missing = doing.fields.filter(({ needed, name }) => needed && !present(values[name]));
@@ -59,7 +65,8 @@ async function claimWaiting(c: ConsoleDeps, key: string, id: string) {
   return claimed;
 }
 
-export async function run(c: ConsoleDeps, body: unknown): Promise<Answer<Did>> {
+/** `actor`: who presses it. A person by default; the co-worker when it acts by itself. */
+export async function run(c: ConsoleDeps, body: unknown, actor: Who = whoOf(c.who)): Promise<Answer<Did>> {
   if (!isRecord(body) || typeof body["doing"] !== "string" || typeof body["key"] !== "string" || body["key"] === "")
     return problem(422, "Send {doing, values, key}: what to do, its fields, and a key that makes a second press the first.");
   const values = isRecord(body["values"]) ? body["values"] : {};
@@ -68,7 +75,7 @@ export async function run(c: ConsoleDeps, body: unknown): Promise<Answer<Did>> {
   if (claimed.is === "done") return ok(claimed.did);
   if (claimed.is === "busy") return ok(refuse("That press is still being done."));
   const doing = doings.all.find((one) => one.id === id);
-  const did = await decide(c, doing, id, values).catch((error: unknown): Did =>
+  const did = await decide(c, actor, doing, id, values).catch((error: unknown): Did =>
     refuse(error instanceof Error ? error.message : "It could not be done."),
   );
   await c.store.settle(key, did);
@@ -76,7 +83,7 @@ export async function run(c: ConsoleDeps, body: unknown): Promise<Answer<Did>> {
     at: c.clock.now(),
     by: c.who.name,
     byId: c.who.id,
-    kind: "person",
+    kind: actor.is,
     doing: id,
     group: doing?.group ?? "Settings",
     says: doing === undefined ? `tried ${id}` : doings.sentence(doing.id, wordsOf(values), c.who.name),

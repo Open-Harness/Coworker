@@ -5,8 +5,8 @@ import { answerAndWake, hearFor } from "./internal/answers.ts";
 import { requestJoin } from "./internal/requests.ts";
 import { createManager, destroyManagers, listManagers } from "./internal/managers.ts";
 import { migrate, readProfile, writeProfile } from "./internal/store.ts";
-import { DecidingHost } from "./internal/decider-host.ts";
 import { followingOf } from "./internal/following-host.ts";
+import { LookingHost } from "./internal/looking-host.ts";
 import { allowsJoin, readJoinSettings, setApprovedDomains, setInviteLinks } from "./internal/joining.ts";
 import { eventsOf, follow, logEvent, readPolicy, writePolicy } from "./internal/hearing.ts";
 import type { Handle, Policy, Routed, Trigger } from "~/modules/triggers/types.ts";
@@ -48,7 +48,7 @@ import type {
  * One tenant: its people, sources, vault, Inbox, audit log and list of managers, in one Durable Object. The
  * composition root subclasses it to pass the dependencies.
  */
-export class WorkspaceHost<Env = unknown> extends DecidingHost<Env> implements WorkspaceApi {
+export class WorkspaceHost<Env = unknown> extends LookingHost<Env> implements WorkspaceApi {
   async provision(profile: WorkspaceProfile): Promise<ProvisionResult> {
     const existing = readProfile(this.ctx.storage.sql);
     if (existing !== undefined) return { _tag: "AlreadyProvisioned", workspaceId: existing.workspaceId };

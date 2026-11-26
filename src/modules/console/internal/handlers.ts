@@ -6,6 +6,8 @@ import { peopleHandlers } from "./do-people.ts";
 import { treeHandlers } from "./do-tree.ts";
 import { workHandlers } from "./do-work.ts";
 import { spendingHandlers } from "./do-spending.ts";
+import { playbookHandlers } from "./do-playbook.ts";
+import { tryHandlers } from "./do-try.ts";
 
 /** What each doing does. A doing that is in the registry and has no handler here is refused in words, not pretended. */
 export type Handler = (c: ConsoleDeps, values: Readonly<Record<string, unknown>>) => Promise<Did>;
@@ -17,6 +19,8 @@ const handlers: Readonly<Record<string, Handler>> = {
   ...treeHandlers,
   ...workHandlers,
   ...peopleHandlers,
+  ...playbookHandlers,
+  ...tryHandlers,
 };
 
 export const handlerFor = (id: string): Handler | undefined => handlers[id];

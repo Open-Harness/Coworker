@@ -89,7 +89,14 @@ export type StoreOp =
       readonly before: string | null;
       readonly limit: number;
     }
-  | MoreOp;
+  | MoreOp
+  /** What people read and answer later (set-ups, asks, corrections): put by id, oldest first. */
+  | { readonly op: "kept.put"; readonly kind: string; readonly id: string; readonly value: unknown }
+  | { readonly op: "kept.list"; readonly kind: string }
+  /** The co-worker's own conversations: messages as a model is sent them. */
+  | { readonly op: "message.list"; readonly thread: string }
+  | { readonly op: "message.add"; readonly thread: string; readonly message: unknown };
+
 
 /** One thing said of a piece of work by a person: what it is, who did it, and when. */
 export interface ActivityRow {
@@ -137,6 +144,9 @@ export type StoreAnswer =
   | { readonly op: "github.hear" }
   | { readonly op: "ask.list"; readonly asks: readonly Ask[] }
   | { readonly op: "item.list"; readonly rows: readonly ItemRow[]; readonly next: string | null }
+  | { readonly op: "kept.put" | "message.add" }
+  | { readonly op: "kept.list"; readonly values: readonly unknown[] }
+  | { readonly op: "message.list"; readonly messages: readonly unknown[] }
   | MoreAnswer;
 
 /** The same, with each call named. */
@@ -170,6 +180,10 @@ export interface Store {
   readonly chats: (by: string) => Promise<readonly ChatRow[]>;
   /** Tells every open page that these reads changed. */
   readonly changed: (reads: readonly string[]) => Promise<void>;
+  readonly keep: (kind: string, id: string, value: unknown) => Promise<void>;
+  readonly kept: (kind: string) => Promise<readonly unknown[]>;
+  readonly messages: (thread: string) => Promise<readonly unknown[]>;
+  readonly addMessage: (thread: string, message: unknown) => Promise<void>;
 }
 
 /** What is outside the workspace's object that the console needs of it. */
@@ -197,6 +211,8 @@ export interface Outside {
     | { readonly _tag: "Folder"; readonly names: readonly string[] }
     | { readonly _tag: "Gone" }
   >;
+  /** One call to a model, made for the workspace with its credential: the co-worker thinks with it. */
+  readonly call: (path: string, body: string) => Promise<Response>;
 }
 
 export interface ConsoleDeps {

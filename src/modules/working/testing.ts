@@ -4,6 +4,7 @@ import type { ActivityLine, Hold, Job, Message, Spend, Store, StoredJob, ThreadR
 
 /** What a manager keeps, in memory: for tests of what it does, beside the real one in its Durable Object. */
 export function memoryStore(): Store {
+  const rows = new Map<string, unknown>();
   const [works, seen, jobs, threads, messages, spends, holds, once, lines, asks] = [
     new Map<string, Work>(),
     new Set<string>(),
@@ -55,5 +56,7 @@ export function memoryStore(): Store {
     activityOf: (work) => lines.get(work) ?? [],
     putAsk: (ask) => void asks.set(ask.id, ask),
     asks: () => [...asks.values()],
+    keep: (kind, id, value) => void rows.set(`${kind}\u0000${id}`, value),
+    kept: (kind) => [...rows].filter(([key]) => key.startsWith(`${kind}\u0000`)).map(([, value]) => value),
   };
 }

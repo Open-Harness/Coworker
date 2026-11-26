@@ -107,6 +107,9 @@ export interface Store {
   /** What waits for a person, made by this manager's work: one each, by its id. */
   readonly putAsk: (ask: Ask) => void;
   readonly asks: () => readonly Ask[];
+  /** Rows of a kind that people read and answer later (comments, cases, proposals, what was heard): put by id, oldest first. */
+  readonly keep: (kind: string, id: string, value: unknown) => void;
+  readonly kept: (kind: string) => readonly unknown[];
 }
 
 export type { Models } from "~/modules/completion/types.ts";

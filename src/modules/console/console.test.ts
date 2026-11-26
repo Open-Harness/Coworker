@@ -31,6 +31,10 @@ function memoryStore(): Store {
     addChat: async () => undefined,
     chats: async () => [],
     changed: async () => undefined,
+    keep: async () => undefined,
+    kept: async () => [],
+    messages: async () => [],
+    addMessage: async () => undefined,
   };
 }
 
@@ -54,6 +58,8 @@ const nobody: ManagerStoreApi = {
   asks: async () => [],
   usage: async () => [],
   tick: async () => undefined,
+  keep: async () => undefined,
+  kept: async () => [],
   save: async () => {
     throw new Error("not used");
   },
@@ -79,6 +85,7 @@ function deps(role: "Owner" | "Member" = "Owner"): ConsoleDeps {
       rename: async () => ({ _tag: "Renamed" }),
       people: { role: async () => ({ _tag: "Done" }), remove: async () => ({ _tag: "Done" }) },
       read: async () => ({ _tag: "Gone" }),
+      call: async () => new Response("no model", { status: 503 }),
     },
     managers: { mint: () => ({ objectId: "o", store: nobody }), get: () => nobody },
     ours: [],

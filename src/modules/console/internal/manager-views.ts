@@ -1,5 +1,6 @@
 import { templates } from "~/modules/templates/service.ts";
-import type { IntakeView, PlaybookView } from "~/modules/views-manager/types.ts";
+import type { Comment, IntakeView, PlaybookView } from "~/modules/views-manager/types.ts";
+import type { Decision } from "~/modules/intake/types.ts";
 import type { ConsoleDeps } from "../types.ts";
 import { problem, ok } from "./around.ts";
 import { managerModel } from "./model-choice.ts";
@@ -45,7 +46,7 @@ export async function playbookView(c: ConsoleDeps, id: string, wanted: number | 
     files: open.version.files,
     version: open.version.number,
     problems: open.problems,
-    comments: [],
+    comments: (await open.store.kept("comment")) as readonly Comment[],
     because: playbook.because,
     evals: playbook.evals.map((one) => ({
       eval: one,
@@ -83,11 +84,31 @@ export async function playbookView(c: ConsoleDeps, id: string, wanted: number | 
 
 const LIMIT = 50;
 
+/** What intake did, as a correction says it: took on, left, or asked. */
+export const didOf = (decision: Decision): string =>
+  decision._tag === "Took" || decision._tag === "Joined"
+    ? "took"
+    : decision._tag === "Left"
+      ? "left"
+      : decision._tag === "Asked"
+        ? "asked"
+        : "none";
+
+/** A person's word on a decision: right when it is what they say it should have been. Nothing until it is decided. */
+const saidOf = (should: string | undefined, decision: Decision | null): "right" | "wrong" | null =>
+  should === undefined || decision === null ? null : should === didOf(decision) ? "right" : "wrong";
+
 export async function intakeView(c: ConsoleDeps, id: string, query: URLSearchParams) {
   const open = await openManager(c, id);
   if (open === undefined) return gone(id);
   const found = await c.store.items(id, { from: query.get("from") || null, before: query.get("before") || null, limit: LIMIT });
   const head = await headOf(c, open);
+  const corrected = new Map(
+    ((await c.store.kept("correction")) as readonly { manager: string; item: string; should: string }[]).map((one) => [
+      `${one.manager}:${one.item}`,
+      one.should,
+    ]),
+  );
   const view: IntakeView = {
     head,
     // What is not decided yet is kept, and not shown: a row says what became of the item, and nothing has yet.
@@ -106,7 +127,7 @@ export async function intakeView(c: ConsoleDeps, id: string, query: URLSearchPar
                     : null,
               from: item.actor.name,
               line: [{ did: "Found", says: `${item.actor.name} on ${item.place}`, at: item.at }],
-              said: null,
+              said: saidOf(corrected.get(`${id}:${item.id}`), decision),
               versions: { [id]: head.version },
               mandate: null,
             },

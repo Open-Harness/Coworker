@@ -44,5 +44,9 @@ export function remoteStore(send: Send, clock: Clock): Store {
     addChat: async (chat) => void (await ask({ op: "chat.add", chat }, "chat.add")),
     chats: async (by) => (await ask({ op: "chat.list", by }, "chat.list")).rows,
     changed: async (reads) => void (await ask({ op: "changed", reads }, "changed")),
+    keep: async (kind, id, value) => void (await ask({ op: "kept.put", kind, id, value }, "kept.put")),
+    kept: async (kind) => (await ask({ op: "kept.list", kind }, "kept.list")).values,
+    messages: async (thread) => (await ask({ op: "message.list", thread }, "message.list")).messages,
+    addMessage: async (thread, message) => void (await ask({ op: "message.add", thread, message }, "message.add")),
   };
 }
