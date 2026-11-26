@@ -93,6 +93,8 @@ function listAudit({ sql }: StorePlace, op: Extract<StoreOp, { op: "audit.list" 
 function keepItem({ sql, now, id }: StorePlace, op: Extract<StoreOp, { op: "item.keep" }>): StoreAnswer {
   const known = sql.exec("SELECT * FROM console_item WHERE same = ?", op.item.same).toArray()[0];
   if (known !== undefined) return { op: "item.keep", row: itemRow(known), isNew: false };
+  const twin = spokenTwice(sql, op.item);
+  if (twin !== undefined) return { op: "item.keep", row: itemRow(twin), isNew: false };
   const item: Item = { ...op.item, id: id("itm"), trigger: op.trigger };
   sql.exec(
     "INSERT INTO console_item (id, same, at, hears, item, decision) VALUES (?, ?, ?, ?, ?, NULL)",
@@ -103,6 +105,18 @@ function keepItem({ sql, now, id }: StorePlace, op: Extract<StoreOp, { op: "item
     JSON.stringify(item),
   );
   return { op: "item.keep", row: { item, hears: op.hears, decision: null }, isNew: true };
+}
+
+/** An issue opened with our label on it is heard as the issue and again as the label: one speech, kept once. */
+function spokenTwice(sql: StorePlace["sql"], item: Item): Record<string, SqlStorageValue> | undefined {
+  if (item.event !== "issue" && item.event !== "label") return undefined;
+  return sql
+    .exec("SELECT * FROM console_item WHERE json_extract(item, '$.thread') = ?", item.thread)
+    .toArray()
+    .find((row) => {
+      const kept = parsed<Item>(row["item"]);
+      return kept.event !== item.event && (kept.event === "issue" || kept.event === "label") && kept.at === item.at && kept.actor.address === item.actor.address && kept.text === item.text;
+    });
 }
 
 const itemRow = (row: Record<string, SqlStorageValue>): ItemRow => ({
