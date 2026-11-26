@@ -322,3 +322,47 @@ Written while building the pure middle, 26 November 2026. Each is the smallest c
 | # | What happens | Found by | Cause |
 |---|---|---|---|
 | B1 | `pnpm climb --all` at 27368c8 says two kept tests broke: `brain.test.ts` "sends the workspace a path and a body…" and "speaks Anthropic's path…". Run alone, `brain.test.ts` passes 7 of 7, and slice 1 changed nothing in `brain` | code | likely: a timeout while every tier runs at once |
+
+## Building, slices 2 and the screens: what could not be known
+
+Written 26 November 2026, after the console API, slice 2 and the screens were built and merged (score 79.4, 736 of 853). **E** is a locked eval that cannot pass as written: left red, with the fix it would need. **G** is a gap between a view or the doings and its drawing, bridged in the page.
+
+| # | Where | Why it cannot pass | Fix it would need |
+|---|---|---|---|
+| E1 | `evals/flows/kit.ts`, `crash()` | It treats every binding with a function `idFromName` as a Durable Object namespace. Service bindings and RPC stubs answer that too (`__VITEST_POOL_WORKERS_SELF_SERVICE`, `__VITEST_POOL_WORKERS_LOOPBACK_SERVICE`, and the Fetchers `VAULT_MASTER_KEY`, `EMAIL`), so `listDurableObjectIds` throws before anything is evicted. Red: `flow:repo/crash-after-it-came-in`, `-done-was-said`, `-it-built`, `-the-pull-request-opened`. With a scratch copy that skips non-namespaces (`Object.prototype.toString` is `[object DurableObjectNamespace]`), all four pass | Test the namespace's type, or skip a binding whose list throws |
+| E2 | `evals/flows/repo-asked.eval.ts`, `crash-after-it-was-checked` | Its `happens` is `until(null, …)`, which never delivers GitHub's events, so the reviewer can never be asked: "Never came true: the reviewer was asked". It stays red after E1 too | Wait on `repo`, as the other four do |
+| E3 | `evals/screens/kit.ts`, `settled()`, for `state-loading` | It waits for `networkidle`, which a read held on purpose (`slow`) never reaches; with the 8 s wait and the fonts the 60 s test runs out. The page shows its skeleton. Red: `screen:state-loading/*` (5). Green against the drawing | A bound on the `networkidle` wait, or none for a screen with a `slow` read |
+| E4 | `evals/screens/kit.ts:50-52` and `draw()`, for `state-offline` | `open()` takes the whole context offline, then `draw()` opens the drawing in the same context: `net::ERR_INTERNET_DISCONNECTED`. Red: `screen:state-offline/*` (4) | Open the drawing in a context that is online |
+
+**Not built yet, so red for now (not an eval fault):** `screen:set-live/*` and `evals/screens/live.eval.ts` (the co-worker pointer, Stop, Skip to the end, Show me how, Show me) need the playbook triggers, the chat and the palette together, which were on three branches until the merge. The model side (`POST /walk`, `WalkStep`, the walkthrough module) is there. Also red: `flow:repo/a-line-comment-is-done-pushed-and-answered-on-its-line`, `a-passed-check-is-known-and-shown` (no work view: `/m/:manager/work/:work` is 404) and `a-conflict-is-told-and-put-right`.
+
+### Choices, the Worker
+
+- The working layer does not use pi-durable. A thread is a list of OpenAI-format messages in the manager's own object (tables `thread`, `message`, `spend`), and a turn is a loop over the model that stores each message as it is made. One store per object. A turn speaks OpenAI chat completions only; an Anthropic-format connection is refused in words. The spike's brain still serves the spike's chats.
+- Intake belongs to the workspace, not to a manager: one thing that comes in is decided over every manager that hears its place.
+- Durable Object alarms fire on their own in the flows tier; resuming rests on them. While a job is half done the manager keeps a 2 s watchdog alarm.
+- `/api/test/time` did not exist: `passTime()` in `src/world.ts` moves the world clock, then runs `workspace.tick()` and each manager's `tick()`. Only in the fake world.
+- A step checked by code is left when its commands pass, even if the turn ends without `report`: a done is recorded for it. Without it `flow:repo/no-token-that-can-write` cannot be reached.
+- A lost box is known by asking the host (`host.find`), never by the words of the failure.
+- Comments and pull requests are made once by a hidden mark at the end of the body (`<!-- co-worker:key -->`), and by GitHub's 422 "already exists".
+- The issue's text is not in `Work.about`: it goes into the thread, marked as outside words.
+- `checkBundle`'s `most` is files and bytes alike (boxes README): set to 10,000,000.
+- Limits not yet acted on (slice 6): an `ask` job is kept in the manager and not sent to the inbox; Stopped and Asked decisions are stored and nobody acts on them yet; a judge that does not answer is retried in 15 minutes, without telling the owner.
+- **Not real outside the fake world:** with `DT_WORLD=fake` and `DT_OUTSIDE=http` the boxes and the push are the evals' own (`httpBoxes`, `httpGit`, as `evals/README.md` says). Elsewhere they are `noBoxes` and `noPush`, which say so. No container host over Cloudflare Containers and no real GitHub push exist yet: the repo flows prove the work up to those two seams.
+
+### Choices and gaps, the screens
+
+- A screen is a folder `src/screens/<name>/` (`route.ts`, `index.tsx`), found by `import.meta.glob`; two splat routes hand every address to the console. No registry file.
+- G1 Door: `/api/join/known`, `/api/join/request`, `/api/start/repos` are read by the door pages (fixtures in `evals/screens/fixtures/door.ts`) but are not in the console API.
+- G2 Juno: no doing changes Juno's name, role, voice, say-aloud, the soul's Never lines or "may suggest a change", so those are read-only; no doing turns a trigger on (it goes to the playbook's triggers); no doing comments on a skill's file (sent as `line.comment` with the skill as manager); `trigger.add` in the doings takes `manager` and `trigger`, the fixture `what` and `when`. The may-do group captions are not in the view: the page counts its own lines.
+- G3 Settings: no doing for Agents, Environments, Profile, Notifications, template rename, Add a skill, Connect another key, change plan, Invite: these toast and change nothing. Usage needed three optional fields on the shared chart (axis ticks, limit lines, bars over a value).
+- G4 Playbook: a grant has no hours or stage ("Book 09:00 to 17:00", "Move a deal to Offer sent"); edits of steps, triggers, agents, reach and the objective have no files writer (`playbooks.write`), so they stay local.
+- G5 Making: `SetUpView.sofar` is one step behind the drawing; which walk event moves "connect" to "found" is not in the types; no write marks mail read or done; a conversation's work has no manager.
+- G6 Manager: `/m/:manager/settings` says the model `sonnet` where `/settings/keys` says `claude-sonnet-5-5`; the shared `Missing` heading is level 1 where the drawing's gone state is 3; the shell's offline wrapper and a page's draw two banners.
+
+### How to build here
+
+- The default `node` is 18 and cannot run the `.ts` scripts, the build or the evals: use Node 24.
+- `pnpm install --frozen-lockfile --offline` in a new worktree leaves out the darwin-arm64 native bindings (rolldown, oxfmt, oxlint, sharp); `--force`, or a copy from a worktree that has them, fixes it.
+- `oxfmt` over `docs/` rewrites locked pages: run it on `src/` only.
+- Under load, `flows/runs` (`manager/restart`), `flows/settings-apply` and `own-endpoint` time out ("Worker's code had hung") and pass alone, as B1.
