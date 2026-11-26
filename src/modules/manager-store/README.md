@@ -13,7 +13,7 @@ model call cost, by call id, priced or counted without a price), `hold` (why a w
 `board` (work, hold, cost and threads), `usage` (cost by day and model), `tick` (do what is due now). The object wakes itself by its alarm: for a work's date, for a hold's retry,
 and soon, while something is half done, so that a lost object goes on.
 
-To come: `ask` (the open asks of this manager's work; today an ask job is kept and not sent to the inbox). The intake of what came in is not here: it is the workspace's
+Asks: `answered` (the workspace tells that what this manager's work asked of a person was answered; once for each ask). The asks themselves are the workspace's (`asking`). The intake of what came in is not here: it is the workspace's
 (`console_item`, decided by `deciding`), because one thing that comes in is decided over every manager that hears its place.
 
 ## Invariants

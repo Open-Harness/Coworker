@@ -18,7 +18,9 @@ export interface Call {
 export type Result =
   | { readonly _tag: "Said"; readonly text: string; readonly ok: boolean }
   | { readonly _tag: "Ends"; readonly text: string }
-  | { readonly _tag: "Waits"; readonly why: string };
+  | { readonly _tag: "Waits"; readonly why: string }
+  /** It asked a person and waits for the answer: the thread stops where it is, and goes on when it is answered. */
+  | { readonly _tag: "Parks" };
 
 export const said = (text: string): Result => ({ _tag: "Said", text, ok: true });
 export const wrong = (text: string): Result => ({ _tag: "Said", text, ok: false });

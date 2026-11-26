@@ -7,6 +7,7 @@ import { tree } from "~/modules/tree/service.ts";
 import type { ManagerNode } from "~/modules/tree/types.ts";
 import { accountsOf, surroundings, wholeOf } from "./around.ts";
 import type { Handler } from "./handlers.ts";
+import { chosenFrom, isChosen, managerModel } from "./model-choice.ts";
 import { savedTemplates, templatesOf } from "./templates.ts";
 
 const refuse = (why: string): Did => ({ _tag: "Refused", why });
@@ -94,4 +95,20 @@ const save: Handler = async (c, values) => {
   return { _tag: "Done", id, says: doings.sentence("template.save", { manager: row.node.name, name }, c.who.name), link: null };
 };
 
-export const managerHandlers: Readonly<Record<string, Handler>> = { "manager.make": make, "template.save": save };
+/** A manager's own model, which its agents that say "inherit" use before the workspace's. The rest of its settings are in its playbook. */
+const settings: Handler = async (c, values) => {
+  const row = (await c.store.managers()).find(({ node }) => node.id === text(values["manager"]));
+  if (row === undefined) return refuse(`There is no manager "${text(values["manager"])}".`);
+  const elsewhere = ["name", "answers", "perWork", "perDay"].filter((name) => text(values[name]) !== "");
+  if (elsewhere.length > 0) return refuse(`${elsewhere.join(", ")} of a manager are changed in its playbook, not here.`);
+  const chosen = await chosenFrom(c, values);
+  if (!isChosen(chosen)) return chosen;
+  await c.store.set(managerModel(row.node.id), { connection: chosen.connection, model: chosen.model, thinking: chosen.thinking });
+  return { _tag: "Done", id: row.node.id, says: doings.sentence("manager.settings", { manager: row.node.name }, c.who.name), link: null };
+};
+
+export const managerHandlers: Readonly<Record<string, Handler>> = {
+  "manager.make": make,
+  "template.save": save,
+  "manager.settings": settings,
+};

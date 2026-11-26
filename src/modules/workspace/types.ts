@@ -1,3 +1,4 @@
+import type { AskAnswer, AskOp } from "~/modules/asking/types.ts";
 import type { StoreAnswer, StoreOp } from "~/modules/console/types.ts";
 import type { Us } from "~/modules/github-events/types.ts";
 import type { GitHubApi, GitHubConnection, Installation, LostConnection, RepoSource } from "~/modules/github/types.ts";
@@ -218,8 +219,9 @@ export interface WorkspaceApi {
   setSpendLimit(limit: SpendLimit): Promise<{ readonly _tag: "Set"; readonly billing: BillingView } | NotProvisioned>;
   /** After someone joined or left: how many members there are now. */
   membersChanged(members: number): Promise<void>;
-  /** The console's own rows: what each doing did, the audit log, settings, the tree, what came in. See `console`. */
+  /** The console's own rows (see `console`); and what waits for a person, asked by a manager, answered by the console (see `asking`). */
   consoleStore(op: StoreOp): Promise<StoreAnswer | NotProvisioned>;
+  asked(op: AskOp): Promise<AskAnswer | NotProvisioned>;
   /** Does what is due now: what came in is decided, and what a judge did not answer is asked again. */
   tick(): Promise<void>;
   /** Erases everything the object holds, its data key and its managers included. */

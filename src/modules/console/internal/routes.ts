@@ -7,7 +7,6 @@ import { boardView } from "./board.ts";
 import { intakeView, playbookView } from "./manager-views.ts";
 import { ok, problem } from "./around.ts";
 import { overviewView, treeView } from "./overview.ts";
-import { workView } from "./work.ts";
 import {
   billingView,
   connectorsView,
@@ -20,7 +19,10 @@ import {
   sharedView,
   usageView,
 } from "./settings.ts";
-import { inboxView } from "./inbox.ts";
+import { answerAsk, inboxView } from "./inbox.ts";
+import { managerOverview } from "./manager-overview.ts";
+import { threadsView } from "./threads-view.ts";
+import { workView } from "./work-view.ts";
 import { chatsView, coworkerView, homeView, shellView } from "./shell.ts";
 import { fillView, templatesView } from "./templates.ts";
 
@@ -50,7 +52,9 @@ const READS: readonly (readonly [RegExp, Part])[] = [
   [/^\/settings\/shared$/u, () => ok(sharedView())],
   [/^\/settings\/me$/u, async (c) => ok(await meView(c))],
   [/^\/m\/([^/]+)\/board$/u, (c, [id]) => boardView(c, id ?? "")],
+  [/^\/m\/([^/]+)$/u, (c, [id]) => managerOverview(c, id ?? "")],
   [/^\/m\/([^/]+)\/work\/([^/]+)$/u, (c, [id, work]) => workView(c, id ?? "", work ?? "")],
+  [/^\/m\/([^/]+)\/threads$/u, (c, [id]) => threadsView(c, id ?? "")],
   [/^\/m\/([^/]+)\/playbook$/u, (c, [id], q) => playbookView(c, id ?? "", Number(q.get("version")) || undefined)],
   [/^\/m\/([^/]+)\/intake$/u, (c, [id], q) => intakeView(c, id ?? "", q)],
 ];
@@ -77,5 +81,7 @@ export async function read({ path, query }: Call, c: ConsoleDeps): Promise<Answe
 export async function write({ path, body }: Call, c: ConsoleDeps): Promise<Answer<unknown>> {
   if (path === "/do") return run(c, body);
   if (path === "/walk") return walk(body);
+  const asked = /^\/inbox\/([^/]+)$/u.exec(path);
+  if (asked !== null) return answerAsk(c, decodeURIComponent(asked[1] ?? ""), body);
   return problem(404, `There is nothing to send to ${path}.`);
 }

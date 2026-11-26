@@ -5,6 +5,7 @@ import type { ToolSpec } from "~/modules/completion/types.ts";
 import { BOX_TOOLS } from "./box.ts";
 import { GITHUB_TOOLS } from "./github.ts";
 import { SAID_TOOLS } from "./said.ts";
+import { guarded } from "./asked.ts";
 import type { Tool } from "../tool.ts";
 
 const ALL: readonly Tool[] = [...BOX_TOOLS, ...SAID_TOOLS, ...GITHUB_TOOLS];
@@ -24,8 +25,15 @@ export function offered(
   mandate: Mandate,
   at: { account: string; place: string } | null,
 ): Offered {
-  const { tools } = threads.offer(role, agent, mandate, at);
+  const { tools, asks } = threads.offer(role, agent, mandate, at);
   const names = new Set(tools.map(nameOf));
-  const may = new Map([...byName].filter(([name]) => names.has(name)));
+  const asked = new Map(asks.map((id) => [nameOf(id), id]));
+  // An action set to ask is offered like any other, and parks at the call until a person says yes.
+  const may = new Map<string, Tool>(
+    [...byName].flatMap(([name, tool]): [string, Tool][] => {
+      const action = asked.get(name);
+      return names.has(name) ? [[name, tool]] : action === undefined ? [] : [[name, guarded(tool, action)]];
+    }),
+  );
   return { specs: [...may.values()].map(({ name, description, parameters }) => ({ name, description, parameters })), may };
 }

@@ -84,6 +84,7 @@ export const faultyObjects = (real: TenantObjects, armed: ObjectFaults = faults)
         membersChanged: (members) => minted.object.membersChanged(members),
         tick: () => minted.object.tick(),
         consoleStore: (op) => minted.object.consoleStore(op),
+        asked: (op) => minted.object.asked(op),
       },
     };
   },

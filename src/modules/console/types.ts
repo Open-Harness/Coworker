@@ -1,5 +1,6 @@
 import type { Answer, Did } from "~/modules/api/types.ts";
 import type { Ask } from "~/modules/asks/types.ts";
+import type { AskAnswer, AskOp } from "~/modules/asking/types.ts";
 import type { Role } from "~/modules/doings/types.ts";
 import type { Heard } from "~/modules/following/types.ts";
 import type { Decision, Item } from "~/modules/intake/types.ts";
@@ -148,6 +149,8 @@ export interface ConsoleDeps {
   readonly people: readonly Member[];
   readonly store: Store;
   readonly outside: Outside;
+  /** What waits for a person: the workspace keeps it. See `asking`. */
+  readonly asks: (op: AskOp) => Promise<AskAnswer>;
   readonly managers: ManagerStores;
   /** Ours: the templates the product comes with, read from `docs/templates`. */
   readonly ours: readonly Template[];

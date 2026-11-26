@@ -19,6 +19,15 @@ as it was at a version, and `alarm` and `later`. Nothing is read from anywhere.
   without a report, what it did is looked at all the same.
 - The cost of every model call is kept by its call id, priced when the model's price is known and counted without one when it is not.
 
+## How it asks a person
+
+One way, for anything that waits for a person (`internal/asking.ts`): the ask is made by the workspace (`outside.asks`, module `asking`) under an id made from what asked, the
+issue says it once, the work waits for that person (`asked`), and the manager keeps how to go on under the ask's id (`once` `asked:<id>`). A thread that asked at a call is
+**parked**: the call stays without a result, the job ends, and nothing polls. When the workspace tells `answered`, the answer is kept (`once` `answered:<id>`), the work hears it
+(`answered`), and a `resume` job goes on from the same call, which then says what the answer was (the `ask` tool), or does what was said yes to (an action set to ask:
+`tools/asked.ts` `guarded`, or without asking when a rule the person made with "always" covers it). Four kinds: `tool` (a call waits), `limit` (the work spent more than its
+own limit: go on with the same again, or stop), `model` (the model did not answer: try again, or stop; the hold is let go), `plain` (whoever is working is told).
+
 ## Invariants
 
 - No token that can write is ever in a box or a prompt. A box clones with a token that can only read; a branch leaves as a bundle, is checked, and is

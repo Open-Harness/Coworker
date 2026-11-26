@@ -57,6 +57,13 @@ async function one(c: DecidingDeps, { item, hears }: Pending): Promise<{ readonl
   const now = c.clock.now();
   const standing = await c.standing(item).catch(() => undefined);
   const known: Item = standing === undefined ? item : { ...item, actor: { ...item.actor, standing } };
+  const said = await c.answered?.(known);
+  if (said !== undefined) {
+    const why = `It answered what was asked (${said.ask}), so it is not a new thing.`;
+    const answer: Decision = { item: item.id, gated: [], verdicts: [], why, _tag: "Joined", work: said.work ?? "" };
+    c.store.decided(item.id, answer, null);
+    return { retry: null, held: false };
+  }
   const heard = await listeners(c, hears);
   const decision = await decide(c, known, heard, now);
   if ((await act(c, known, decision, heard)) === "NotTaken") return { retry: now + 5_000, held: true };

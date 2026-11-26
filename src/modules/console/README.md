@@ -5,7 +5,7 @@ every change as a doing of the one registry (`POST /do`). `createConsole(deps)` 
 reaches for nothing; the Worker builds it (`src/console-root.ts`) and `http` calls it (`/api/ws/<workspace>/…`).
 
 Built: the reads every start flow makes (`/shell`, `/home`, `/inbox`, `/chats`, `/overview`, `/tree`, `/coworker`, `/templates`,
-`/templates/:template`, `/settings/*`, and a manager's `/board` (its open work as cards, from the manager's own object), `/playbook`, `/intake`; `/settings/usage` sums what every manager's model calls cost, a model with no price known counted in `notKnown`), `/do`, `/walk`. A path with no builder is 404
+`/templates/:template`, `/settings/*`, and a manager's `/board` (its open work as cards, from the manager's own object), `/playbook`, `/intake`; `/settings/usage` sums what every manager's model calls cost, a model with no price known counted in `notKnown`), `/do`, `/walk`. `/inbox` is what waits for the person (the workspace keeps the asks: `asking`), and `POST /inbox/:ask` is their answer (`Answered`, `Late`, or `Refused` for someone it is not for). `/m/:manager`, `/m/:manager/work/:work` and `/m/:manager/threads` are small views of what the manager's object keeps. A manager's own model is the setting `manager.model.<id>` (`manager.settings`), `spending.save` keeps the parts of the day (`spending.parts`) and never more than the day. A path with no builder is 404
 in words. A doing that is in the registry and has no handler is refused in words ("is not available yet"), never pretended: handlers
 are `workspace.general`, `models.default`, `manager.make`, `template.save`. Add one in `internal/do-*.ts` and `handlers.ts`.
 

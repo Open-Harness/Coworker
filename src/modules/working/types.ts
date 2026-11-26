@@ -1,3 +1,4 @@
+import type { AskAnswer, AskOp } from "~/modules/asking/types.ts";
 import type { Boxes } from "~/modules/boxes/types.ts";
 import type { Message, Models } from "~/modules/completion/types.ts";
 import type { Clock } from "~/modules/clock/types.ts";
@@ -18,7 +19,9 @@ import type { ToDo, Work, WorkEvent } from "~/modules/work/types.ts";
 export type Job =
   | ToDo
   | { readonly key: string; readonly do: "confirm"; readonly check: string }
-  | { readonly key: string; readonly do: "run checks"; readonly step: string };
+  | { readonly key: string; readonly do: "run checks"; readonly step: string }
+  /** A thread that waited for an answer goes on from where it was. */
+  | { readonly key: string; readonly do: "resume"; readonly thread: string };
 
 export interface StoredJob {
   readonly seq: number;
@@ -118,6 +121,19 @@ export interface Outside {
   readonly github: GitHubApi;
   readonly git: GitPort;
   readonly fetch: typeof fetch;
+  /** What waits for a person: kept, shown and answered by the workspace. It is asked again with the same id, never twice. */
+  readonly asks: (op: AskOp) => Promise<AskAnswer>;
+}
+
+/** What was asked of a person for a piece of work was answered, anywhere: `answer` in the words it is known by, `option` its id. */
+export interface Answer {
+  readonly ask: string;
+  readonly work: string;
+  readonly person: string;
+  readonly answer: string;
+  readonly option: string | null;
+  readonly where: string;
+  readonly at: number;
 }
 
 export interface WorkingDeps {
@@ -154,6 +170,8 @@ export interface TakeInput {
 export interface Working {
   /** Takes what intake decided on as a piece of work, once per item. */
   readonly take: (input: TakeInput) => Promise<{ readonly work: string } | { readonly _tag: "NoSuchKind"; readonly why: string }>;
+  /** An ask of this work was answered: the work and its threads go on, once for each ask. */
+  readonly answered: (input: Answer) => Promise<void>;
   /** What came in on a conversation that work follows goes to that work. */
   readonly heard: (input: { readonly work: string; readonly item: Item }) => Promise<void>;
   /** Something happened that the work follows or a person said: it moves the work by that event, once by its key. `says`: how its page puts it. */
