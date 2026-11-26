@@ -42,7 +42,12 @@ export function followStoreOver(sql: SqlStorage): FollowStore {
         .map((row) => parsed<News>(row["json"])),
     told: (id) => void sql.exec("UPDATE follow_news SET told = 1 WHERE id = ?", id),
     want: (wanted) =>
-      void sql.exec("INSERT OR IGNORE INTO follow_want (repo, number, json) VALUES (?, ?, ?)", wanted.repo, wanted.number, JSON.stringify(wanted)),
+      void sql.exec(
+        "INSERT OR IGNORE INTO follow_want (repo, number, json) VALUES (?, ?, ?)",
+        wanted.repo,
+        wanted.number,
+        JSON.stringify(wanted),
+      ),
     wanted: () =>
       sql
         .exec("SELECT json FROM follow_want ORDER BY repo, number")

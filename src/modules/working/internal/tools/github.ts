@@ -146,7 +146,10 @@ const RUN: Readonly<Record<string, (call: Call, args: unknown) => Promise<Result
 function numbered(args: unknown, wanted: readonly string[]): unknown {
   if (!isRecord(args)) return args;
   return Object.fromEntries(
-    Object.entries(args).map(([name, value]) => [name, wanted.includes(name) && typeof value === "string" && /^\d+$/u.test(value) ? Number(value) : value]),
+    Object.entries(args).map(([name, value]) => [
+      name,
+      wanted.includes(name) && typeof value === "string" && /^\d+$/u.test(value) ? Number(value) : value,
+    ]),
   );
 }
 

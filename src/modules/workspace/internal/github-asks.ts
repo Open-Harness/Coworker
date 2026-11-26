@@ -1,4 +1,5 @@
 import type { Ask } from "~/modules/asks/types.ts";
+import { connection, removed, restored } from "./github.ts";
 
 /* What waits for a person and is the workspace's own, not a manager's: today, that the GitHub App must be installed again. */
 
@@ -36,7 +37,11 @@ export function askToInstall(sql: SqlStorage, installation: number, account: str
       reminded: 0,
       state: { _tag: "Open" },
     };
-    sql.exec("INSERT OR IGNORE INTO console_ask (id, seq, json) VALUES (?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM console_ask), ?)", ask.id, JSON.stringify(ask));
+    sql.exec(
+      "INSERT OR IGNORE INTO console_ask (id, seq, json) VALUES (?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM console_ask), ?)",
+      ask.id,
+      JSON.stringify(ask),
+    );
   }
 }
 
@@ -47,4 +52,18 @@ export function installedAgain(sql: SqlStorage, installation: number): void {
     const gone: Ask = { ...ask, state: { _tag: "Gone", why: "The App is installed again." } };
     sql.exec("UPDATE console_ask SET json = ? WHERE id = ?", JSON.stringify(gone), ask.id);
   }
+}
+
+/** The App was uninstalled or suspended: its sources stop, and each Owner is told and asked once. */
+export function appLost(sql: SqlStorage, installation: number, owners: readonly string[], now: number): void {
+  const was = connection(sql).installation;
+  removed(sql, installation, owners, now);
+  if (was?.id === installation) askToInstall(sql, installation, was.account, owners, now);
+}
+
+/** The App is back as the same installation: what it was on is restored, and what asked for it is gone. `false`: it was never lost. */
+export function appBack(sql: SqlStorage, installation: number): boolean {
+  if (!restored(sql, installation)) return false;
+  installedAgain(sql, installation);
+  return true;
 }

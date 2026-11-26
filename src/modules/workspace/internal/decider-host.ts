@@ -28,7 +28,10 @@ export abstract class DecidingHost<Env> extends SettingsHost<Env> {
     const decided = await deciding.run().catch(soon);
     // What became true of a conversation that work follows is told to that work, after what people said is decided.
     const followed = await followingOf(this.ctx.storage.sql, this.dependencies).run().catch(soon);
-    const again = [decided.again, followed.again].reduce<number | null>((least, one) => (one === null ? least : Math.min(least ?? one, one)), null);
+    const again = [decided.again, followed.again].reduce<number | null>(
+      (least, one) => (one === null ? least : Math.min(least ?? one, one)),
+      null,
+    );
     if (again !== null) await this.wakeFor(again - this.dependencies.clock.now());
     return again;
   }

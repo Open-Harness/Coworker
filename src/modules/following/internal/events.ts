@@ -24,13 +24,17 @@ export function toWork(news: News, thread: ThreadRef, own: boolean, hasPull: boo
   });
   switch (told.is) {
     case "checked":
-      if (told.ended === "passed") return [{ event: base, says: `Check ${join(news.passed.length === 0 ? ["checks"] : news.passed)} passed.` }];
+      if (told.ended === "passed")
+        return [{ event: base, says: `Check ${join(news.passed.length === 0 ? ["checks"] : news.passed)} passed.` }];
       return [
         { event: base, says: `Check ${join(told.failed.map(({ name }) => name))} failed.` },
         heard("check", join(told.failed.map(({ name, says }) => (says === "" ? `${name} failed` : `${name} failed: ${says}`)))),
       ];
     case "conflict":
-      return [{ event: base, says: "It no longer merges: main moved." }, heard("conflict", `It conflicts with main, at ${told.sha.slice(0, 7)}.`)];
+      return [
+        { event: base, says: "It no longer merges: main moved." },
+        heard("conflict", `It conflicts with main, at ${told.sha.slice(0, 7)}.`),
+      ];
     case "ended": {
       if (own && hasPull) return [];
       if (told.as === "closed") return [{ event: base, says: "Closed without merging." }];

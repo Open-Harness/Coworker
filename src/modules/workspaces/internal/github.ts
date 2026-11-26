@@ -57,7 +57,8 @@ export const gitHubInstallations = (database: D1Database, objects: TenantObjects
     const row = workspaceId === undefined ? undefined : await findRow(database, workspaceId);
     if (workspaceId === undefined || row === undefined) return;
     await objects.get(row.objectId, row.region).gitHubRemoved(installation, await ownersOf(database, workspaceId));
-    if (how !== "suspended") await database.prepare(`DELETE FROM "github_installation" WHERE "installationId" = ?`).bind(installation).run();
+    if (how !== "suspended")
+      await database.prepare(`DELETE FROM "github_installation" WHERE "installationId" = ?`).bind(installation).run();
   },
 });
 

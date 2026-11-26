@@ -47,7 +47,9 @@ export function keepAndTell(
   const after = githubEvents.keep(before, records);
   c.store.keep(repo, after);
   const about = [...new Set([...numbers, ...(sha === null ? [] : githubEvents.withHead(after, sha))])];
-  const news = about.flatMap((number) => githubEvents.told(before, after, number, us).map((told) => newsOf(repo, number, told, after, c.clock.now(), asked)));
+  const news = about.flatMap((number) =>
+    githubEvents.told(before, after, number, us).map((told) => newsOf(repo, number, told, after, c.clock.now(), asked)),
+  );
   c.store.addNews(news);
   return news;
 }

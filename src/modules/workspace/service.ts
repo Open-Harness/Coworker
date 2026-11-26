@@ -19,8 +19,8 @@ import type { CommandRequest, EnvironmentView, ExecOutcome, SaveEnvironment, Sav
 import { commandToken } from "./internal/token.ts";
 import { runStore } from "./internal/console-store.ts";
 import type { StoreAnswer, StoreOp } from "~/modules/console/types.ts";
-import { connect, connection, lostConnection, removed, restored, setSources } from "./internal/github.ts";
-import { askToInstall, installedAgain, workspaceAsks } from "./internal/github-asks.ts";
+import { connect, connection, lostConnection, setSources } from "./internal/github.ts";
+import { appBack, appLost } from "./internal/github-asks.ts";
 import type {
   AddHandleResult,
   AnswerResult,
@@ -175,20 +175,13 @@ export class WorkspaceHost<Env = unknown> extends DecidingHost<Env> implements W
   }
 
   async gitHubRemoved(installation: number, owners: readonly string[]): Promise<void> {
-    const { sql } = this.ctx.storage;
-    const was = connection(sql).installation;
-    const now = this.dependencies.clock.now();
-    removed(sql, installation, owners, now);
-    if (was?.id === installation) askToInstall(sql, installation, was.account, owners, now);
-    await this.offer();
+    appLost(this.ctx.storage.sql, installation, owners, this.dependencies.clock.now());
+    return this.offer();
   }
-
   async gitHubBack(installation: number, us: Us): Promise<void> {
-    const { sql } = this.ctx.storage;
-    if (!restored(sql, installation)) return;
-    installedAgain(sql, installation);
-    followingOf(sql, this.dependencies).back(us);
-    await this.wakeFor(0);
+    if (!appBack(this.ctx.storage.sql, installation)) return;
+    followingOf(this.ctx.storage.sql, this.dependencies).back(us);
+    return this.wakeFor(0);
   }
 
   async environments(): Promise<readonly EnvironmentView[]> {
@@ -232,14 +225,13 @@ export class WorkspaceHost<Env = unknown> extends DecidingHost<Env> implements W
 
   async consoleStore(op: StoreOp): Promise<StoreAnswer | NotProvisioned> {
     if (!this.provisioned()) return { _tag: "NotProvisioned" };
-    const { ids, clock } = this.dependencies;
-    if (op.op === "ask.list") return { op: "ask.list", asks: workspaceAsks(this.ctx.storage.sql) };
+    const { sql } = this.ctx.storage;
     if (op.op === "github.hear") {
-      followingOf(this.ctx.storage.sql, this.dependencies).hear(op.heard);
+      followingOf(sql, this.dependencies).hear(op.heard);
       await this.wakeFor(0);
       return { op: "github.hear" };
     }
-    const answer = runStore({ sql: this.ctx.storage.sql, now: clock.now(), id: ids.next }, op);
+    const answer = runStore({ sql, now: this.dependencies.clock.now(), id: this.dependencies.ids.next }, op);
     // What came in is decided from the object's alarm, so that a lost object still decides it when it is back.
     if (answer.op === "item.keep" && answer.isNew) await this.wakeFor(0);
     return answer;

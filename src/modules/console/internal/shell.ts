@@ -19,7 +19,12 @@ export async function identityOf(c: ConsoleDeps): Promise<Identity> {
 }
 
 export async function shellView(c: ConsoleDeps): Promise<ShellView> {
-  const [rows, zone, identity, inbox] = await Promise.all([c.store.managers(), settingOr(c.store, "zone", "UTC"), identityOf(c), waitingFor(c)]);
+  const [rows, zone, identity, inbox] = await Promise.all([
+    c.store.managers(),
+    settingOr(c.store, "zone", "UTC"),
+    identityOf(c),
+    waitingFor(c),
+  ]);
   const nodes = rows.map(({ node }) => node);
   const now = new Map(rolled(nodes).map((one) => [one.id, one]));
   return {

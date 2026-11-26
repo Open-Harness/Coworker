@@ -17,7 +17,11 @@ export async function workView(c: ConsoleDeps, manager: string, id: string) {
   const kinds = open.playbook?.kinds ?? [];
   const kind = kinds.find((one) => one.id === work.kind);
   const names = Object.fromEntries(c.people.map((one) => [one.id, one.name]));
-  const answers = { id: work.answers, name: names[work.answers] ?? work.answers, is: work.answers === manager ? "manager" : "person" } as const;
+  const answers = {
+    id: work.answers,
+    name: names[work.answers] ?? work.answers,
+    is: work.answers === manager ? "manager" : "person",
+  } as const;
   const view: WorkView = {
     head: await headOf(c, open),
     work,

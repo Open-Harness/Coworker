@@ -207,7 +207,6 @@ export interface WorkspaceApi {
   setRepoSources(managerId: string, sources: readonly Omit<RepoSource, "managerId">[]): Promise<SetSourcesResult>;
   /** The App was uninstalled: its sources stop and these Owners get a notice. */
   gitHubRemoved(installation: number, owners: readonly string[]): Promise<void>;
-  /** The App is back, as it was: its sources are restored, and what came in while it was away is asked of GitHub. */
   gitHubBack(installation: number, us: Us): Promise<void>;
   /** The Environments screen, and which agent runs in which. */
   environments(): Promise<readonly EnvironmentView[]>;
