@@ -3,6 +3,7 @@ import { agentOf } from "./brief.ts";
 import { completion } from "~/modules/completion/service.ts";
 import { spend } from "./spend.ts";
 import { offered } from "./tools/index.ts";
+import { serverTools } from "./tools/mcp.ts";
 import type { Call } from "./tool.ts";
 
 /* One agent's conversation, as far as it can go: ask the model, do what it called, ask again; until it ends its part, has nothing more to say, or must wait. */
@@ -45,7 +46,8 @@ export async function turn(c: WorkingDeps, id: string): Promise<Turned> {
     const agent = row === undefined || playbook === undefined ? undefined : agentOf(playbook, row.agent);
     if (row === undefined || work === undefined || playbook === undefined || agent === undefined) return { _tag: "Ended" };
     if (row.state === "ended" || work.ended !== null) return { _tag: "Ended" };
-    const { specs, may } = offered(row.role, agent, work.mandate, { account: work.from.account, place: work.from.place });
+    const more = await serverTools(c.outside, work.mandate);
+    const { specs, may } = offered(row.role, agent, work.mandate, { account: work.from.account, place: work.from.place }, more);
     const messages = c.store.messages(id);
     const at = messages.findLastIndex((message) => message.role === "assistant");
     const last = at < 0 ? undefined : messages[at];

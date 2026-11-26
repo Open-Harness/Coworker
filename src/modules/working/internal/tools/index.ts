@@ -10,7 +10,6 @@ import { guarded } from "./asked.ts";
 import type { Tool } from "../tool.ts";
 
 const ALL: readonly Tool[] = [...BOX_TOOLS, ...SAID_TOOLS, ...GITHUB_TOOLS, ...EMAIL_TOOLS];
-const byName = new Map(ALL.map((tool) => [tool.name, tool]));
 const nameOf = (id: string): string => id.replaceAll(".", "_");
 
 export interface Offered {
@@ -25,7 +24,9 @@ export function offered(
   agent: AgentRole,
   mandate: Mandate,
   at: { account: string; place: string } | null,
+  more: readonly Tool[] = [],
 ): Offered {
+  const byName = new Map([...ALL, ...more].map((tool) => [tool.name, tool]));
   const { tools, asks } = threads.offer(role, agent, mandate, at);
   const names = new Set(tools.map(nameOf));
   const asked = new Map(asks.map((id) => [nameOf(id), id]));

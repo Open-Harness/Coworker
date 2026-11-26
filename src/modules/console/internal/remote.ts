@@ -49,5 +49,6 @@ export function remoteStore(send: Send, clock: Clock): Store {
     messages: async (thread) => (await ask({ op: "message.list", thread }, "message.list")).messages,
     addMessage: async (thread, message) => void (await ask({ op: "message.add", thread, message }, "message.add")),
     mail: async (call) => (await ask({ op: "mail", call }, "mail")).answer,
+    mcp: async (call) => (await ask({ op: "mcp", call }, "mcp")).answer,
   };
 }

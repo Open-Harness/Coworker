@@ -15,7 +15,7 @@ export async function identityOf(c: ConsoleDeps): Promise<Identity> {
     name,
     role: "Your co-worker",
     since: c.workspace.since,
-    addresses: accounts.map(({ id, as, works }) => ({ connector: id, as, works })),
+    addresses: accounts.filter(({ tools }) => tools === undefined).map(({ id, as, works }) => ({ connector: id, as, works })),
   };
 }
 

@@ -6,6 +6,7 @@ import { findByAddress, findRow } from "./internal/directory.ts";
 import { approvalFor } from "./internal/approvals.ts";
 import { exportData, updateGeneral } from "./internal/general.ts";
 import { joinByDomain, joinByLink, joining, setApprovedDomains, setInviteLinks } from "./internal/joining.ts";
+import { removeDue, scheduleRemoval } from "./internal/removal.ts";
 import { listWorkspaces, openWorkspace, reachWorkspace, removeWorkspace } from "./internal/members.ts";
 import type { TenantObjects, WorkspaceAt, Workspaces, WorkspacesDependencies } from "./types.ts";
 
@@ -32,6 +33,8 @@ export const createWorkspaces = (dependencies: WorkspacesDependencies): Workspac
   approvalFor: (userId, workspaceId, call) => approvalFor(dependencies, userId, workspaceId, call),
   updateGeneral: (userId, workspaceId, input) => updateGeneral(dependencies, userId, workspaceId, input),
   exportData: (userId, workspaceId) => exportData(dependencies, userId, workspaceId),
+  scheduleRemoval: (userId, workspaceId, at) => scheduleRemoval(dependencies, userId, workspaceId, at),
+  removeDue: (now) => removeDue(dependencies, now),
 });
 
 /** Finds a workspace's object by its id, without a person: for what a manager needs of its own workspace. */

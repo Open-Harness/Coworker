@@ -172,7 +172,12 @@ export const agentFrom = (env: Env): Agent =>
  */
 export async function passTime(
   request: Request,
-  deps: { readonly workspace: (id: string) => Promise<WorkspaceApi | undefined>; readonly stores: ManagerStores },
+  deps: {
+    readonly workspace: (id: string) => Promise<WorkspaceApi | undefined>;
+    readonly stores: ManagerStores;
+    /** What came due in the control plane at this time: a workspace that was deleted, thirty days on. */
+    readonly sweep: (now: number) => Promise<unknown>;
+  },
 ): Promise<Response> {
   const body: unknown = await request.json().catch(() => undefined);
   const asked = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
@@ -185,5 +190,6 @@ export async function passTime(
   const rows = await object.consoleStore({ op: "manager.list" });
   if ("op" in rows && rows.op === "manager.list")
     await Promise.all(rows.rows.map(({ objectId, region }) => deps.stores.get(objectId, region).tick()));
+  await deps.sweep(worldClock.now());
   return Response.json({ now: worldClock.now() });
 }

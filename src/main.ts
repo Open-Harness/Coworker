@@ -201,6 +201,10 @@ export class ManagerStore extends ManagerStoreHost<Env> {
 const ours = readOurs((message) => console.error(message));
 
 export default {
+  /** Every hour: a workspace that an Owner deleted thirty days ago is destroyed, its objects and its rows. */
+  scheduled: async (_event: ScheduledController, env: Env): Promise<void> => {
+    await controlFrom(env, new Request(present(env.DT_APP_URL) ?? "https://app.invalid/")).workspaces.removeDue(systemClock.now());
+  },
   /** Mail to the workspace's address is kept in its mailbox; Email Routing bounces what is rejected, with the reason. */
   email: async (message: ForwardableEmailMessage, env: Env): Promise<void> => {
     const received = await mailInFrom(env)({ from: message.from, to: message.to, raw: message.raw, rawSize: message.rawSize });
@@ -214,7 +218,11 @@ export default {
     if (env.DT_WORLD === "fake" && pathname === "/api/test/inbound-mail") return fakeInbound(request, mailInFrom(env));
     if (env.DT_WORLD === "fake" && pathname === "/api/test/lapse-invite") return lapseInvite(request, env.AUTH);
     if (env.DT_WORLD === "fake" && pathname === "/api/test/time")
-      return passTime(request, { workspace: workspaceById(env.AUTH, tenantsFrom(env)), stores: managerStoresFrom(env) });
+      return passTime(request, {
+        workspace: workspaceById(env.AUTH, tenantsFrom(env)),
+        stores: managerStoresFrom(env),
+        sweep: (now) => controlFrom(env, request).workspaces.removeDue(now),
+      });
     return createHttp({
       directory: () => env.DIRECTORY.getByName(DIRECTORY_NAME),
       workspace: (workspaceId) => env.WORKSPACES.getByName(workspaceId),

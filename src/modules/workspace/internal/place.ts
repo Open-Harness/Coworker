@@ -11,6 +11,7 @@ import { readJoinSettings } from "./joining.ts";
 import { addressFor, listManagers } from "./managers.ts";
 import { readPolicy } from "./hearing.ts";
 import { people } from "./people.ts";
+import { exportedOf } from "./exporting.ts";
 
 /** What the settings module needs of this object, made from the pieces the object holds. */
 export interface Pieces {
@@ -74,6 +75,7 @@ export function settingsPlace(pieces: Pieces): SettingsPlace {
         github: connection(sql),
         policies: Object.fromEntries(listManagers(sql, profile).map((entry) => [entry.slug, readPolicy(sql, entry.managerId)])),
         audit: allAudit(sql),
+        ...(await exportedOf(sql, dependencies.stores)),
       };
     },
   };

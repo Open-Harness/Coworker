@@ -59,6 +59,8 @@ function app() {
     updateGeneral: unused,
     approvalFor: unused,
     exportData: unused,
+    scheduleRemoval: unused,
+    removeDue: unused,
   };
   const managers = { mint: unused, get: unused };
   const control = () => ({ auth, workspaces, managers, github: noApp });

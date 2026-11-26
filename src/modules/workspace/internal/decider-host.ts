@@ -8,6 +8,7 @@ import { runStore } from "./console-store.ts";
 import { decidingOf } from "./deciding-host.ts";
 import { followingOf } from "./following-host.ts";
 import { mailingOf } from "./mailing-host.ts";
+import { serversOf } from "./mcp-host.ts";
 import { readProfile } from "./store.ts";
 import { SettingsHost } from "./settings-host.ts";
 
@@ -135,6 +136,7 @@ export abstract class DecidingHost<Env> extends SettingsHost<Env> {
       return { op: "github.hear" };
     }
     if (op.op === "mail") return { op: "mail", answer: await this.#mail(op.call) };
+    if (op.op === "mcp") return { op: "mcp", answer: await serversOf(sql, this.dependencies, this.vault()).handle(op.call) };
     const answer = runStore({ sql, now: this.dependencies.clock.now(), id: this.dependencies.ids.next }, op);
     if (op.op === "item.keep" && answer.op === "item.keep" && answer.isNew) {
       await this.wakeFor(0);

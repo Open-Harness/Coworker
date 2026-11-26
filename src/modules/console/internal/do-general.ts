@@ -32,4 +32,33 @@ const defaultModel: Handler = async (c, values) => {
   return done(sentence("models.default", { model: chosen.model, connection: chosen.label }, c.who.name));
 };
 
-export const generalHandlers: Readonly<Record<string, Handler>> = { "workspace.general": general, "models.default": defaultModel };
+/** Everything the workspace holds, as a file an Owner downloads: what is kept, and never a secret's value. */
+const exportAll: Handler = async (c) => ({
+  _tag: "Done",
+  id: c.workspace.id,
+  says: sentence("workspace.export", {}, c.who.name),
+  link: `/api/workspaces/${c.workspace.id}/export`,
+});
+
+const DAY = 86_400_000;
+const GRACE = 30;
+
+/** The workspace's name typed is the press: it is removed for good thirty days on, and until then it is as it was. */
+const deleteWorkspace: Handler = async (c, values) => {
+  if (text(values["name"]) !== c.workspace.name)
+    return refuse(`That is not the name of this workspace. Type "${c.workspace.name}" to delete it.`);
+  const at = c.clock.now() + GRACE * DAY;
+  const scheduled = await c.outside.retire(at);
+  if (scheduled._tag === "Refused") return refuse(scheduled.why);
+  const day = new Date(at).toISOString().slice(0, 10);
+  return done(
+    `${sentence("workspace.delete", { name: c.workspace.name }, c.who.name)}. It is removed for good in ${GRACE} days, on ${day}.`,
+  );
+};
+
+export const generalHandlers: Readonly<Record<string, Handler>> = {
+  "workspace.general": general,
+  "models.default": defaultModel,
+  "workspace.export": exportAll,
+  "workspace.delete": deleteWorkspace,
+};
