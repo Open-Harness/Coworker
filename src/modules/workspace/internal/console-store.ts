@@ -24,9 +24,6 @@ export const KEPT_MIGRATIONS: readonly string[] = [
   `ALTER TABLE console_audit ADD COLUMN approved_by TEXT`,
 ];
 
-/** What the audit log says besides what it did: who said yes. Added last, so that it runs after every other. */
-export const AUDIT_MIGRATIONS: readonly string[] = ["ALTER TABLE console_audit ADD COLUMN approved_by TEXT"];
-
 /** A press that was begun and never settled is let go of after this long: its object was lost before it could say. */
 const STALE = 60_000;
 

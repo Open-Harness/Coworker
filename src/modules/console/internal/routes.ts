@@ -13,17 +13,7 @@ import { intakeView, playbookView } from "./manager-views.ts";
 import { versionsView } from "./versions-view.ts";
 import { ok, problem } from "./around.ts";
 import { overviewView, treeView } from "./overview.ts";
-import {
-  billingView,
-  connectorsView,
-  generalView,
-  githubView,
-  keysView,
-  meView,
-  membersView,
-  sharedView,
-  usageView,
-} from "./settings.ts";
+import { billingView, connectorsView, generalView, githubView, keysView, meView, membersView, sharedView, usageView } from "./settings.ts";
 import { inboxView } from "./inbox.ts";
 import { answering } from "./answering.ts";
 import { threadsView } from "./threads-view.ts";
