@@ -1,6 +1,7 @@
 import type { Did } from "~/modules/api/types.ts";
 import type { AuditRow, ItemRow, ManagerRow, StoreAnswer, StoreOp } from "~/modules/console/types.ts";
 import type { Decision, Item } from "~/modules/intake/types.ts";
+import { runMore } from "./console-more.ts";
 
 /* What the console keeps in the workspace's object: what each doing did (once per key), the audit log, settings, the tree, what came in. */
 
@@ -167,5 +168,7 @@ export function runStore(place: StorePlace, op: StoreOp): StoreAnswer {
       return keepItem(place, op);
     case "item.list":
       return listItems(place, op);
+    default:
+      return runMore(sql, now, op);
   }
 }

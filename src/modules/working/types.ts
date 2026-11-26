@@ -5,7 +5,7 @@ import type { GitPort } from "~/modules/boxes/types.ts";
 import type { Decision, Item, OpenWork } from "~/modules/intake/types.ts";
 import type { GitHubApi } from "~/modules/github/types.ts";
 import type { Playbook } from "~/modules/playbook/types.ts";
-import type { ToDo, Work } from "~/modules/work/types.ts";
+import type { ToDo, Work, WorkEvent } from "~/modules/work/types.ts";
 
 /*
  * What a manager does with its work: it moves it (`work`), does what moving it asked, runs the conversations of its agents
@@ -137,11 +137,26 @@ export interface TakeInput {
   readonly answers: string;
 }
 
+/** What became of an event applied to a piece of work by someone outside it. */
+export type Changed = { readonly _tag: "Moved" | "Same" } | { readonly _tag: "Refused"; readonly why: string } | { readonly _tag: "Gone" };
+
+/** Work of another manager that was handed over: it goes on here, under a new id, with what it had. */
+export interface AdoptInput {
+  readonly from: Work;
+  /** The version of this manager's playbook it goes on under. */
+  readonly version: number;
+  readonly at: number;
+}
+
 export interface Working {
   /** Takes what intake decided on as a piece of work, once per item. */
   readonly take: (input: TakeInput) => Promise<{ readonly work: string } | { readonly _tag: "NoSuchKind"; readonly why: string }>;
   /** What came in on a conversation that work follows goes to that work. */
   readonly heard: (input: { readonly work: string; readonly item: Item }) => Promise<void>;
+  /** One change of one piece of work by a person (the console): an event applied once by its key. */
+  readonly event: (work: string, event: WorkEvent) => Promise<Changed>;
+  /** Work handed over by another manager goes on here, on the step it was at, following what it followed. */
+  readonly adopt: (input: AdoptInput) => Promise<{ readonly work: string } | { readonly _tag: "NoSuchKind"; readonly why: string }>;
   /** Open work, as intake counts it. */
   readonly open: () => readonly OpenWork[];
   /** Does what is to be done now, for every piece of work, and says when to wake next. */

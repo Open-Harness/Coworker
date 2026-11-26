@@ -35,6 +35,8 @@ function app() {
     emailProven: unused,
     userOf: unused,
     membersOf: unused,
+    setRole: unused,
+    removeMember: unused,
     renameOrganization: unused,
   };
   const workspaces: Workspaces = {

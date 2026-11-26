@@ -5,7 +5,8 @@ import type { Clock } from "~/modules/clock/types.ts";
 import { playbooks } from "~/modules/playbook/service.ts";
 import type { Files, Playbook, Version } from "~/modules/playbook/types.ts";
 import { clonePlace, createWorking } from "~/modules/working/service.ts";
-import type { Outside, TakeInput, Working } from "~/modules/working/types.ts";
+import type { AdoptInput, Changed, Outside, TakeInput, Working } from "~/modules/working/types.ts";
+import type { WorkEvent } from "~/modules/work/types.ts";
 import type { Region } from "~/modules/workspace/types.ts";
 import { migrate, pushVersion, readRecord, versionAt, versionsOf, writeRecord } from "./internal/tables.ts";
 import { workStore } from "./internal/work-tables.ts";
@@ -144,6 +145,18 @@ export class ManagerStoreHost<Env = unknown> extends DurableObject<Env> implemen
 
   async heard(input: { readonly work: string; readonly item: TakeInput["item"] }): Promise<void> {
     await this.#works()?.heard(input);
+  }
+
+  async event(work: string, event: WorkEvent): Promise<Changed> {
+    const working = this.#works();
+    return working === undefined ? { _tag: "Gone" } : working.event(work, event);
+  }
+
+  async adopt(
+    input: AdoptInput,
+  ): Promise<{ readonly work: string } | { readonly _tag: "NeverOpened" } | { readonly _tag: "NoSuchKind"; readonly why: string }> {
+    const working = this.#works();
+    return working === undefined ? { _tag: "NeverOpened" } : working.adopt(input);
   }
 
   async board(): Promise<readonly BoardRow[]> {

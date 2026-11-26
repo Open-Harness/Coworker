@@ -3,6 +3,7 @@ import { doings } from "~/modules/doings/service.ts";
 import type { Doing } from "~/modules/doings/types.ts";
 import type { ConsoleDeps } from "../types.ts";
 import { ok, problem, whoOf } from "./around.ts";
+import { readsOf } from "./changed.ts";
 import { handlerFor } from "./handlers.ts";
 
 /* `POST /do`: the one door for every change. What it is, whether this person may, what is missing, once per key, and a line in the audit log. */
@@ -45,12 +46,25 @@ const whyOf = (did: Did): string | null =>
         ? "Someone changed the same line"
         : null;
 
+const WAIT = 50;
+const PATIENCE = 200;
+
+/** A press that is still being done by the same key is waited for, so that the second press has the first one's answer. */
+async function claimWaiting(c: ConsoleDeps, key: string, id: string) {
+  let claimed = await c.store.claim(key, id);
+  for (let tries = 0; claimed.is === "busy" && tries < PATIENCE; tries += 1) {
+    await new Promise((resolve) => setTimeout(resolve, WAIT));
+    claimed = await c.store.claim(key, id);
+  }
+  return claimed;
+}
+
 export async function run(c: ConsoleDeps, body: unknown): Promise<Answer<Did>> {
   if (!isRecord(body) || typeof body["doing"] !== "string" || typeof body["key"] !== "string" || body["key"] === "")
     return problem(422, "Send {doing, values, key}: what to do, its fields, and a key that makes a second press the first.");
   const values = isRecord(body["values"]) ? body["values"] : {};
   const [id, key] = [body["doing"], body["key"]];
-  const claimed = await c.store.claim(key, id);
+  const claimed = await claimWaiting(c, key, id);
   if (claimed.is === "done") return ok(claimed.did);
   if (claimed.is === "busy") return ok(refuse("That press is still being done."));
   const doing = doings.all.find((one) => one.id === id);
@@ -71,5 +85,6 @@ export async function run(c: ConsoleDeps, body: unknown): Promise<Answer<Did>> {
     permission: "on",
     role: c.who.role,
   });
+  if (did._tag === "Done") await c.store.changed(readsOf(id, values, did.id));
   return ok(did);
 }

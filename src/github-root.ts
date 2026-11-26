@@ -37,11 +37,12 @@ export async function gitHubIn(request: Request, dependencies: GitHubIn): Promis
   if (heard._tag !== "Item" || object === undefined) return Response.json({ _tag: heard._tag }, { status: 202 });
   try {
     const rows = await object.consoleStore({ op: "manager.list" });
-    const hears =
-      "op" in rows && rows.op === "manager.list"
-        ? rows.rows.filter((row) => row.hears.includes(heard.item.place)).map(({ node }) => node.id)
-        : [];
-    if (hears.length > 0) await object.consoleStore({ op: "item.keep", item: heard.item, trigger: "event", hears });
+    const listening = "op" in rows && rows.op === "manager.list" ? rows.rows.filter((row) => row.hears.includes(heard.item.place)) : [];
+    const hears = listening.map(({ node }) => node.id);
+    // While every manager that hears the place is paused, what was asked of them is kept, and what was only overheard is not.
+    const paused = !listening.some(({ node }) => node.state === "runs");
+    if (hears.length > 0 && (!paused || heard.item.addressed))
+      await object.consoleStore({ op: "item.keep", item: heard.item, trigger: "event", hears });
     return Response.json({ _tag: "Heard", hears }, { status: 202 });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "It could not be kept" }, { status: 500 });

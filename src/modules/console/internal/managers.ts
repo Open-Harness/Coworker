@@ -23,7 +23,9 @@ export async function openManager(c: ConsoleDeps, id: string, number?: number): 
   if (version === undefined) return undefined;
   const read = playbooks.read(version.files);
   if (read._tag === "Problems") return { row, store, version, playbook: null, problems: read.problems };
-  const around = await surroundings(c, wholeOf(await accountsOf(c)));
+  const whole = wholeOf(await accountsOf(c));
+  const above = row.node.above === null ? undefined : (await c.store.managers()).find(({ node }) => node.id === row.node.above);
+  const around = await surroundings(c, above === undefined ? whole : above.node.reach);
   return { row, store, version, playbook: read.playbook, problems: playbooks.check(read.playbook, around) };
 }
 

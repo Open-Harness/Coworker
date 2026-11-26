@@ -118,6 +118,10 @@ export interface Auth {
   readonly membersOf: (
     organizationId: string,
   ) => Promise<readonly { readonly userId: string; readonly email: string; readonly name: string; readonly role: Preset }[]>;
+  /** Changes a person's preset in an organization; false when they have no seat. */
+  readonly setRole: (userId: string, organizationId: string, role: Preset) => Promise<boolean>;
+  /** Takes a person's seat away; false when they had none. */
+  readonly removeMember: (userId: string, organizationId: string) => Promise<boolean>;
   /** Only the workspaces module renames: the name and slug are the workspace's name and address. */
   readonly renameOrganization: (organizationId: string, name: string, slug: string) => Promise<void>;
   /** Mails a link to `email` that proves it is this person's. */

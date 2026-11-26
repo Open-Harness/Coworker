@@ -8,8 +8,10 @@ import {
   membershipsOf,
   renameOrganization,
   removeOrganization,
+  removeMemberFrom,
   roleIn,
   saveApprovedDomains,
+  setRoleIn,
   slugTaken,
 } from "./internal/control.ts";
 import { authOptions } from "./internal/options.ts";
@@ -65,6 +67,8 @@ export function createAuth({ database, mailer, settings, onSignUp, onPersonChang
     organizationsApproving: (domain) => approvingDomain(database, domain),
     isSlugTaken: (slug) => slugTaken(database, slug),
     membersOf: (organizationId) => membersIn(database, organizationId),
+    setRole: (userId, organizationId, role) => setRoleIn(database, userId, organizationId, role),
+    removeMember: (userId, organizationId) => removeMemberFrom(database, userId, organizationId),
     renameOrganization: (organizationId, name, slug) => renameOrganization(database, organizationId, name, slug),
     sendEmailProof: (user, email) => sendEmailProof(settings, mailer, user, email, now()),
     emailProven: (user, token) => emailProven(settings, user, token, now()),

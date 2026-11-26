@@ -1,9 +1,13 @@
 import { randomIds } from "~/modules/clock/service.ts";
+import { readPlace } from "./console-place.ts";
 import { createConsole, remoteStore } from "~/modules/console/service.ts";
 import type { ConsoleFor } from "~/modules/http/types.ts";
 import type { ManagerStores } from "~/modules/manager-store/types.ts";
 import type { Template } from "~/modules/templates/types.ts";
 import type { Clock } from "~/modules/clock/types.ts";
+import type { Role } from "~/modules/doings/types.ts";
+import { personOf } from "~/modules/protocol/service.ts";
+import type { Preset } from "~/modules/auth/types.ts";
 
 /** What the console is built from, for each request: the outside things of the deployment. */
 export interface ConsoleRoot {
@@ -12,12 +16,16 @@ export interface ConsoleRoot {
   readonly clock: Clock;
   readonly app: string | null;
   readonly mailDomain: string;
+  /** How a place is read: only ever by GET. */
+  readonly fetch: typeof fetch;
 }
+
+const PRESETS: Readonly<Record<Role, Preset>> = { Owner: "owner", Builder: "builder", Member: "member" };
 
 /** The console for one person in one workspace, over that workspace's own object. */
 export const consoleFrom =
   (root: ConsoleRoot): ConsoleFor =>
-  ({ object, entry, since, person, me, people, workspaces }) =>
+  ({ object, entry, since, person, me, people, workspaces, auth, github }) =>
     createConsole({
       workspace: { id: entry.workspaceId, name: entry.name, address: entry.address, region: entry.region, since },
       who: me,
@@ -37,6 +45,27 @@ export const consoleFrom =
             ? { _tag: "Renamed" }
             : { _tag: "Refused", why: "reason" in renamed ? renamed.reason : "The name could not be changed." };
         },
+        people: {
+          role: async (who, role) => {
+            const seat = (await auth.membersOf(entry.workspaceId)).find((one) => personOf(one).id === who);
+            if (seat === undefined) return { _tag: "Refused", why: "That person is not in this workspace." };
+            const owners = people.filter((one) => one.role === "Owner");
+            if (seat.role === "owner" && role !== "Owner" && owners.length < 2)
+              return { _tag: "Refused", why: "A workspace keeps at least one Owner." };
+            await auth.setRole(seat.userId, entry.workspaceId, PRESETS[role]);
+            return { _tag: "Done" };
+          },
+          remove: async (who) => {
+            const seat = (await auth.membersOf(entry.workspaceId)).find((one) => personOf(one).id === who);
+            if (seat === undefined) return { _tag: "Refused", why: "That person is not in this workspace." };
+            if (seat.role === "owner" && people.filter((one) => one.role === "Owner").length < 2)
+              return { _tag: "Refused", why: "A workspace keeps at least one Owner." };
+            await auth.removeMember(seat.userId, entry.workspaceId);
+            await workspaces.personChanged({ kind: "left", userId: seat.userId, organizationId: entry.workspaceId });
+            return { _tag: "Done" };
+          },
+        },
+        read: (place, path) => readPlace({ github, object, fetch: root.fetch }, place, path),
       },
       managers: root.managers,
       ours: root.ours,

@@ -80,3 +80,23 @@ export async function approvingDomain(database: D1Database, domain: string): Pro
     .all<{ id: string }>();
   return results.map((row) => row.id);
 }
+
+/** A person's preset in an organization, changed. The person must have a seat. */
+export async function setRoleIn(database: D1Database, userId: string, organizationId: string, role: Preset): Promise<boolean> {
+  const done = await database
+    .prepare(`UPDATE "member" SET "role" = ? WHERE "userId" = ? AND "organizationId" = ?`)
+    .bind(role, userId, organizationId)
+    .run();
+  return (done.meta.changes ?? 0) > 0;
+}
+
+/** A person's seat, taken away, and the sessions that had the organization open let go of it. */
+export async function removeMemberFrom(database: D1Database, userId: string, organizationId: string): Promise<boolean> {
+  const [removed] = await database.batch([
+    database.prepare(`DELETE FROM "member" WHERE "userId" = ? AND "organizationId" = ?`).bind(userId, organizationId),
+    database
+      .prepare(`UPDATE "session" SET "activeOrganizationId" = NULL WHERE "userId" = ? AND "activeOrganizationId" = ?`)
+      .bind(userId, organizationId),
+  ]);
+  return (removed?.meta.changes ?? 0) > 0;
+}

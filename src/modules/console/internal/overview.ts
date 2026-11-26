@@ -21,7 +21,7 @@ async function playbookOf(
 }
 
 export async function treeView(c: ConsoleDeps): Promise<TreeView> {
-  const rows = await c.store.managers();
+  const rows = (await c.store.managers()).filter(({ node }) => node.state !== "retired");
   const rolls = new Map(rolled(rows.map(({ node }) => node)).map((one) => [one.id, one]));
   const tree: TreeRow[] = [];
   for (const row of rows) {

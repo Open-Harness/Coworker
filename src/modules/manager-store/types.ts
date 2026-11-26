@@ -1,7 +1,7 @@
 import type { OpenWork } from "~/modules/intake/types.ts";
 import type { Files, Version } from "~/modules/playbook/types.ts";
-import type { Work } from "~/modules/work/types.ts";
-import type { Hold, TakeInput, ThreadRow } from "~/modules/working/types.ts";
+import type { Work, WorkEvent } from "~/modules/work/types.ts";
+import type { AdoptInput, Changed, Hold, TakeInput, ThreadRow } from "~/modules/working/types.ts";
 import type { Region } from "~/modules/workspace/types.ts";
 
 /*
@@ -73,6 +73,12 @@ export interface ManagerStoreApi {
   ): Promise<{ readonly work: string } | { readonly _tag: "NeverOpened" } | { readonly _tag: "NoSuchKind"; readonly why: string }>;
   /** What came in on a conversation that work follows. */
   heard(input: { readonly work: string; readonly item: TakeInput["item"] }): Promise<void>;
+  /** A person's change of one piece of work: an event applied once by its key. */
+  event(work: string, event: WorkEvent): Promise<Changed>;
+  /** Work another manager handed over goes on here, on the step it was at. */
+  adopt(
+    input: AdoptInput,
+  ): Promise<{ readonly work: string } | { readonly _tag: "NeverOpened" } | { readonly _tag: "NoSuchKind"; readonly why: string }>;
   board(): Promise<readonly BoardRow[]>;
   usage(): Promise<readonly UsageRow[]>;
   /** Does what is due now, and goes on with what was waiting. Answers when nothing can go further. */
