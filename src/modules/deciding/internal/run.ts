@@ -2,6 +2,7 @@ import { intake } from "~/modules/intake/service.ts";
 import type { Decision, Hears, Item } from "~/modules/intake/types.ts";
 import type { DecidingDeps, Pending } from "../types.ts";
 import { hearsOf, type Listener, listenerOf, openOf } from "./hears.ts";
+import { decideChosen } from "./chosen.ts";
 import { judge } from "./judge.ts";
 
 /** When a judge that did not answer is asked again. */
@@ -17,12 +18,31 @@ async function listeners(c: DecidingDeps, hears: readonly string[]): Promise<rea
 async function decide(c: DecidingDeps, item: Item, heard: readonly Listener[], now: number): Promise<Decision> {
   const hears: readonly Hears[] = heard.map(hearsOf);
   const open = openOf(heard);
+  const chosen = c.chosen?.(item);
+  if (chosen !== undefined) return decideChosen(item, hears, open, chosen, now);
   const settled = intake.settled({ item, hears, open, now });
   if (settled !== undefined) return settled;
   const first = heard.find(({ row }) => row.node.state === "runs") ?? heard[0];
   const agent = first?.playbook.agents.find(({ id }) => id === "judge");
   const judgement = await judge(c.models, c.call, item, hears, open, agent);
   return intake.decide({ item, hears, open, judgement, now });
+}
+
+/** Two that fit equally: the one who answers for the first is asked which, and the item waits for the answer. */
+async function askWhich(
+  c: DecidingDeps,
+  item: Item,
+  decision: Extract<Decision, { _tag: "Asked" }>,
+  heard: readonly Listener[],
+): Promise<void> {
+  const between = decision.between.flatMap(({ manager, kind }) => {
+    const one = heard.find(({ row }) => row.node.id === manager);
+    const name = one?.playbook.kinds.find(({ id }) => id === kind)?.name;
+    return one === undefined || name === undefined ? [] : [{ manager, name: one.row.node.name, kind, kindName: name }];
+  });
+  const first = heard.find(({ row }) => row.node.id === between[0]?.manager);
+  if (first === undefined) return;
+  await c.askWhich?.({ item, to: first.playbook.objective.owner, between, why: decision.why });
 }
 
 /** What follows from a decision: a manager takes it on, or the work that follows it hears it. `NotTaken`: the manager is not there to take it. */
@@ -33,6 +53,7 @@ async function act(c: DecidingDeps, item: Item, decision: Decision, heard: reado
     const taken = await c.manager(taker.row).take({ item, took: decision, answers: taker.playbook.objective.owner });
     if ("_tag" in taken) return "NotTaken";
   }
+  if (decision._tag === "Asked" && decision.between.length > 1) await askWhich(c, item, decision, heard);
   if (decision._tag === "Joined") {
     const owner = heard.find(({ hearing }) => hearing.open.some(({ id }) => id === decision.work));
     if (owner !== undefined) await c.manager(owner.row).heard({ work: decision.work, item });
@@ -62,6 +83,12 @@ async function one(c: DecidingDeps, { item, hears }: Pending): Promise<{ readonl
     const why = `It answered what was asked (${said.ask}), so it is not a new thing.`;
     const answer: Decision = { item: item.id, gated: [], verdicts: [], why, _tag: "Joined", work: said.work ?? "" };
     c.store.decided(item.id, answer, null);
+    return { retry: null, held: false };
+  }
+  const waiting = c.asked?.(known);
+  if (waiting !== undefined) {
+    const why = `A person is already asked who takes this conversation (${waiting}), so it waits with that and is not a new thing.`;
+    c.store.decided(item.id, { item: item.id, gated: [], verdicts: [], why, _tag: "Left" }, null);
     return { retry: null, held: false };
   }
   const heard = await listeners(c, hears);

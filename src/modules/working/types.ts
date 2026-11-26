@@ -126,6 +126,21 @@ export interface Outside {
   readonly fetch: typeof fetch;
   /** What waits for a person: kept, shown and answered by the workspace. It is asked again with the same id, never twice. */
   readonly asks: (op: AskOp) => Promise<AskAnswer>;
+  /** A line in the workspace's audit log: what the manager did that a person had to say yes to. */
+  readonly audit?: (line: AuditLine) => Promise<void>;
+  /** The line written before the action said it was done turns out not to be: the action failed. Said of the same line, by its `at` and `action`. */
+  readonly auditFailed?: (line: Pick<AuditLine, "at" | "action">, why: string) => Promise<void>;
+}
+
+export interface AuditLine {
+  readonly at: number;
+  /** What was done, in words that say who did it. */
+  readonly says: string;
+  /** The action's id. */
+  readonly action: string;
+  readonly outcome: "done" | "refused" | "failed";
+  readonly why: string | null;
+  readonly approvedBy: string;
 }
 
 /** What was asked of a person for a piece of work was answered, anywhere: `answer` in the words it is known by, `option` its id. */

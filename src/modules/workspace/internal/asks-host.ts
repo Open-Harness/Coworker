@@ -3,6 +3,7 @@ import type { Asking, Kept } from "~/modules/asking/types.ts";
 import type { ManagerRow } from "~/modules/console/types.ts";
 import type { WorkspaceDependencies } from "../types.ts";
 import { asksStoreOver } from "./asks-store.ts";
+import { chose, isChoice } from "./choosing.ts";
 
 const rowsOf = (sql: SqlStorage): readonly ManagerRow[] =>
   sql
@@ -14,6 +15,7 @@ const rowsOf = (sql: SqlStorage): readonly ManagerRow[] =>
 async function tell(sql: SqlStorage, dependencies: WorkspaceDependencies, one: Kept): Promise<boolean> {
   const { state } = one.ask;
   if (state._tag !== "Answered") return true;
+  if (isChoice(one.ask.id)) return (chose(sql, one), true);
   const row = rowsOf(sql).find(({ node }) => node.id === one.ask.about.manager);
   if (row === undefined) return true;
   const option = one.ask.options.find(({ id }) => id === state.answer);

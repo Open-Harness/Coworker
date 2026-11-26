@@ -3,6 +3,8 @@ import type { Comment, IntakeView, PlaybookView } from "~/modules/views-manager/
 import type { Decision } from "~/modules/intake/types.ts";
 import type { ConsoleDeps } from "../types.ts";
 import { problem, ok } from "./around.ts";
+import { judgeCases } from "./cases.ts";
+import { lineOf } from "./intake-line.ts";
 import { managerModel } from "./model-choice.ts";
 import { headOf, openManager, type Open } from "./managers.ts";
 
@@ -35,6 +37,7 @@ export async function playbookView(c: ConsoleDeps, id: string, wanted: number | 
   if (playbook === null) return problem(422, `The playbook does not read: ${open.problems[0]?.says ?? "it has a problem"}`);
   const template = c.ours.find(({ id: one }) => one === open.row.node.template?.id);
   const copy = await open.store.copy();
+  const judged = await judgeCases(c, id);
   const newer =
     template === undefined || copy === undefined || copy.template === null
       ? null
@@ -49,7 +52,7 @@ export async function playbookView(c: ConsoleDeps, id: string, wanted: number | 
     comments: (await open.store.kept("comment")) as readonly Comment[],
     because: playbook.because,
     evals: playbook.evals.map((one) => ({
-      eval: one,
+      eval: one.of === "agents/judge" ? { ...one, cases: [...one.cases, ...judged.map(({ case: made }) => made.id)] } : one,
       now: null,
       seen: 0,
       was: null,
@@ -72,7 +75,7 @@ export async function playbookView(c: ConsoleDeps, id: string, wanted: number | 
     record: {},
     worse: [],
     saidBy: { person: owner(open), at: open.version.at },
-    cases: { shown: [], total: 0 },
+    cases: { shown: [], total: judged.length },
     past: null,
     newer:
       newer === null || newer._tag === "Same"
@@ -86,7 +89,7 @@ const LIMIT = 50;
 
 /** What intake did, as a correction says it: took on, left, or asked. */
 export const didOf = (decision: Decision): string =>
-  decision._tag === "Took" || decision._tag === "Joined"
+  decision._tag === "Took" || decision._tag === "Joined" || (decision._tag === "Left" && decision.would !== undefined)
     ? "took"
     : decision._tag === "Left"
       ? "left"
@@ -126,7 +129,7 @@ export async function intakeView(c: ConsoleDeps, id: string, query: URLSearchPar
                     ? { id: decision.work, title: item.title }
                     : null,
               from: item.actor.name,
-              line: [{ did: "Found", says: `${item.actor.name} on ${item.place}`, at: item.at }],
+              line: lineOf(item, decision),
               said: saidOf(corrected.get(`${id}:${item.id}`), decision),
               versions: { [id]: head.version },
               mandate: null,

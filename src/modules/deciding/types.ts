@@ -17,6 +17,24 @@ export interface Pending {
   readonly hears: readonly string[];
 }
 
+/** Who a person chose, when two fit equally. */
+export interface Chosen {
+  readonly manager: string;
+  readonly kind: string;
+  /** The person, and their name. */
+  readonly by: string;
+  readonly name: string;
+}
+
+/** Two or more fit equally: a person is asked which, once. */
+export interface AskWhich {
+  readonly item: Item;
+  /** Who is asked. */
+  readonly to: string;
+  readonly between: readonly { readonly manager: string; readonly name: string; readonly kind: string; readonly kindName: string }[];
+  readonly why: string;
+}
+
 export interface DecidingStore {
   /** Items with no decision yet, or whose judge did not answer and whose time to ask again has come. Oldest first. */
   readonly pending: (now: number) => readonly Pending[];
@@ -35,6 +53,12 @@ export interface DecidingDeps {
   readonly standing: (item: Item) => Promise<Actor["standing"]>;
   readonly clock: Clock;
   /** Does what was said answer an ask that was made on its thread? Then it is that answer, and not a new thing. */
+  /** Asks a person which of those that fit equally takes an item. Asking twice for one item is one ask. */
+  readonly askWhich?: (input: AskWhich) => Promise<void>;
+  /** The one a person chose for an item, once they answered. */
+  readonly chosen?: (item: Item) => Chosen | undefined;
+  /** Is a person already asked which manager takes this item's conversation? The ask's id. */
+  readonly asked?: (item: Item) => string | undefined;
   readonly answered?: (item: Item) => Promise<{ readonly ask: string; readonly work: string | null } | undefined>;
 }
 

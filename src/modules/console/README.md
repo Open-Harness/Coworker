@@ -26,6 +26,16 @@ when there is one, its decision). A manager's own object is `manager-store`.
 - A manager is made in this order: filled and checked, grown in the tree (`tree.grow`, never wider than above), its object opened with
   its own copy as version 1, and only then registered. Nothing is registered that failed before.
 
+## The playbook, as it is decided and changed
+
+- An intake row's `line` is what became of the item, step by step: found, let through (one for each manager), judged, decided.
+- `intake.correct` is right or wrong against what intake did; a `Left` that carries `would` counts as the judge's yes. Each correction is a case of
+  the judge's eval (`agents/judge`); twice wrong in a row for a kind sends the kind back a step as a new version.
+- `GET /m/:manager/versions` lists every version, newest first, with what each did to open work (open work keeps the version it began on).
+  `version.go_back` is a new version made of an earlier one's files (`from: "went back"`); nothing is taken out of the history.
+- `line.comment` keeps the comment, and the co-worker's model replies with `Change:`, `Answer:` or `Case:`; a change waits for a person to accept (`suggestion.accept`).
+- What a manager does that a person said yes to (an action set to ask) is a line of the audit log, with who said yes (`approvedBy`).
+
 ## How to test
 
 With `ConsoleDeps` of memory: a store that keeps rows in a map, a fake `outside`, and manager objects of memory. The whole Worker is

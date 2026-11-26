@@ -23,6 +23,9 @@ export const KEPT_MIGRATIONS: readonly string[] = [
   `CREATE TABLE console_message (thread TEXT NOT NULL, n INTEGER NOT NULL, json TEXT NOT NULL, PRIMARY KEY (thread, n))`,
 ];
 
+/** What the audit log says besides what it did: who said yes. Added last, so that it runs after every other. */
+export const AUDIT_MIGRATIONS: readonly string[] = ["ALTER TABLE console_audit ADD COLUMN approved_by TEXT"];
+
 /** A press that was begun and never settled is let go of after this long: its object was lost before it could say. */
 const STALE = 60_000;
 
@@ -52,6 +55,7 @@ function auditRow(row: Record<string, SqlStorageValue>): AuditRow {
     why: typeof row["why"] === "string" ? row["why"] : null,
     permission: PERMISSIONS.find((permission) => permission === row["permission"]) ?? "on",
     role: role === "Owner" || role === "Builder" ? role : "Member",
+    approvedBy: typeof row["approved_by"] === "string" ? row["approved_by"] : null,
   };
 }
 
@@ -133,7 +137,7 @@ export function runStore(place: StorePlace, op: Exclude<StoreOp, { readonly op: 
       return { op: "settle" };
     case "audit.add":
       sql.exec(
-        `INSERT INTO console_audit (at, by_name, by_id, kind, doing, grouping, says, outcome, why, permission, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO console_audit (at, by_name, by_id, kind, doing, grouping, says, outcome, why, permission, role, approved_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         op.row.at,
         op.row.by,
         op.row.byId,
@@ -145,8 +149,18 @@ export function runStore(place: StorePlace, op: Exclude<StoreOp, { readonly op: 
         op.row.why,
         op.row.permission,
         op.row.role,
+        op.row.approvedBy ?? null,
       );
       return { op: "audit.add" };
+    case "audit.failed":
+      sql.exec(
+        "UPDATE console_audit SET outcome = 'failed', why = ? WHERE at = ? AND by_id = ? AND doing = ? AND outcome = 'done'",
+        op.why,
+        op.at,
+        op.byId,
+        op.doing,
+      );
+      return { op: "audit.failed" };
     case "audit.list":
       return listAudit(place, op);
     case "setting.get": {

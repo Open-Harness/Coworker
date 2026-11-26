@@ -5,7 +5,9 @@ import type { Change, Files } from "~/modules/playbook/types.ts";
 import type { Comment } from "~/modules/views-manager/types.ts";
 import { accountsOf, surroundings, wholeOf } from "./around.ts";
 import type { Handler } from "./handlers.ts";
+import { comeBack, partOfLine, textOfLine } from "./comment-turn.ts";
 import { openManager } from "./managers.ts";
+import { kindOfDecision, sendBack } from "./send-back.ts";
 
 /* What a person does with what is offered to a playbook, and with what intake judged: accept a line, leave it, correct a decision. */
 
@@ -58,6 +60,32 @@ const leave: Handler = async (c, values) => {
   return { _tag: "Done", id: comment.id, says, link: null };
 };
 
+/** A comment on a line: kept at once, then the co-worker answers it, and what it became is kept beside it. */
+const commentOn: Handler = async (c, values) => {
+  const [manager, line, said] = [text(values["manager"]), text(values["line"]), text(values["text"])];
+  const open = await openManager(c, manager);
+  if (open === undefined) return refuse(`There is no manager "${manager}".`);
+  if (open.playbook === null) return refuse("The playbook does not read, so a line of it cannot be commented on.");
+  const was = textOfLine(open.playbook, line);
+  if (was === undefined) return refuse(`There is no line "${line}" in ${open.row.node.name}.`);
+  const id = c.ids.next("cm");
+  const made: Comment = {
+    id,
+    on: line,
+    part: partOfLine(line),
+    by: c.who.name,
+    at: c.clock.now(),
+    text: said,
+    quote: null,
+    became: { _tag: "Open" },
+  };
+  await open.store.keep("comment", id, made);
+  const became = await comeBack(c, made, was);
+  if (became._tag !== "Open") await open.store.keep("comment", id, { ...made, became });
+  const says = doings.sentence("line.comment", { line, manager: open.row.node.name, text: said }, c.who.name);
+  return { _tag: "Done", id, says, link: `/m/${open.row.node.id}/playbook` };
+};
+
 const SHOULD = ["took", "left", "asked"];
 
 /** What intake did with an item, and what it should have done: the correction is kept. It is a case for the judge too, made of it and of what the judge said, when the week's look is made. */
@@ -70,6 +98,8 @@ const correct: Handler = async (c, values) => {
   const row = rows.find((one) => one.item.id === item);
   if (row === undefined) return refuse("That did not come in to this manager.");
   await c.store.keep("correction", `${manager}:${item}`, { manager, item, should, by: c.who.name, at: c.clock.now() });
+  const kind = row.decision === null ? undefined : kindOfDecision(row.decision, manager);
+  if (kind !== undefined) await sendBack(c, open, kind);
   return { _tag: "Done", id: item, says: doings.sentence("intake.correct", { item: row.item.title, should }, c.who.name), link: null };
 };
 
@@ -77,4 +107,5 @@ export const playbookHandlers: Readonly<Record<string, Handler>> = {
   "suggestion.accept": accept,
   "suggestion.leave": leave,
   "intake.correct": correct,
+  "line.comment": commentOn,
 };
