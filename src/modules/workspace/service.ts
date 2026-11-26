@@ -6,6 +6,7 @@ import { requestJoin } from "./internal/requests.ts";
 import { createManager, destroyManagers, listManagers } from "./internal/managers.ts";
 import { migrate, readProfile, writeProfile } from "./internal/store.ts";
 import { DecidingHost } from "./internal/decider-host.ts";
+import { look } from "./internal/weekly.ts";
 import { allowsJoin, readJoinSettings, setApprovedDomains, setInviteLinks } from "./internal/joining.ts";
 import { eventsOf, follow, logEvent, readPolicy, writePolicy } from "./internal/hearing.ts";
 import type { Handle, Policy, Routed, Trigger } from "~/modules/triggers/types.ts";
@@ -222,6 +223,38 @@ export class WorkspaceHost<Env = unknown> extends DecidingHost<Env> implements W
     // What came in is decided from the object's alarm, so that a lost object still decides it when it is back.
     if (answer.op === "item.keep" && answer.isNew) await this.wakeFor(0);
     return answer;
+  }
+
+  #looking: Promise<void> | undefined;
+
+  /** What is due now: what came in is decided, and each manager not looked at for a week is. */
+  override async tick(): Promise<void> {
+    await super.tick();
+    await this.#lookWeekly();
+  }
+
+  /** Whenever the object wakes, a look that is due is made. */
+  override async alarm(): Promise<void> {
+    await super.alarm();
+    await this.#lookWeekly();
+  }
+
+  /** The week's look, once at a time: the one in hand is the one asked for. */
+  #lookWeekly(): Promise<void> {
+    const profile = readProfile(this.ctx.storage.sql);
+    if (profile === undefined) return Promise.resolve();
+    this.#looking ??= look({
+      sql: this.ctx.storage.sql,
+      dependencies: this.dependencies,
+      profile,
+      connections: () => this.modelConnections(),
+      secrets: () => this.secrets(),
+      github: () => this.gitHub(),
+      modelCall: (call) => this.modelCall(call),
+    })
+      .catch(() => undefined)
+      .finally(() => void (this.#looking = undefined));
+    return this.#looking;
   }
 
   async destroy(): Promise<{ readonly _tag: "Destroyed" }> {

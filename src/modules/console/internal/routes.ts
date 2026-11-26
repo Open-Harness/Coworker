@@ -7,6 +7,8 @@ import { boardView } from "./board.ts";
 import { intakeView, playbookView } from "./manager-views.ts";
 import { ok, problem } from "./around.ts";
 import { overviewView, treeView } from "./overview.ts";
+import { managerOverview } from "./manager-overview.ts";
+import { inboxView as askedView } from "./inbox.ts";
 import {
   billingView,
   connectorsView,
@@ -19,7 +21,7 @@ import {
   sharedView,
   usageView,
 } from "./settings.ts";
-import { chatsView, coworkerView, homeView, inboxView, shellView } from "./shell.ts";
+import { chatsView, coworkerView, homeView, shellView } from "./shell.ts";
 import { fillView, templatesView } from "./templates.ts";
 import { readSetUp, sayInSetUp, startSetUp } from "./set-up.ts";
 
@@ -30,7 +32,7 @@ type Part = (c: ConsoleDeps, parts: readonly string[], query: URLSearchParams) =
 const READS: readonly (readonly [RegExp, Part])[] = [
   [/^\/shell$/u, async (c) => ok(await shellView(c))],
   [/^\/home$/u, () => ok(homeView())],
-  [/^\/inbox$/u, () => ok(inboxView())],
+  [/^\/inbox$/u, async (c) => ok(await askedView(c))],
   [/^\/chats$/u, () => ok(chatsView())],
   [/^\/overview$/u, async (c, _, q) => ok(await overviewView(c, q))],
   [/^\/tree$/u, async (c) => ok(await treeView(c))],
@@ -48,6 +50,7 @@ const READS: readonly (readonly [RegExp, Part])[] = [
   [/^\/settings\/mcp-servers$/u, () => ok(mcpView())],
   [/^\/settings\/shared$/u, () => ok(sharedView())],
   [/^\/settings\/me$/u, async (c) => ok(await meView(c))],
+  [/^\/m\/([^/]+)$/u, (c, [id]) => managerOverview(c, id ?? "")],
   [/^\/set-up\/([^/]+)$/u, (c, [id]) => readSetUp(c, id ?? "")],
   [/^\/m\/([^/]+)\/board$/u, (c, [id]) => boardView(c, id ?? "")],
   [/^\/m\/([^/]+)\/playbook$/u, (c, [id], q) => playbookView(c, id ?? "", Number(q.get("version")) || undefined)],

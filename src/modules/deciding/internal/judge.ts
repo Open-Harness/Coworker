@@ -48,7 +48,7 @@ export async function judge(
     model: chosen.model,
     thinking: chosen.thinking,
     messages: [
-      { role: "system", content: system },
+      { role: "system", content: agent === undefined ? system : `${agent.told.trim()}\n\n${system}` },
       { role: "user", content: user },
     ],
     tools: [JUDGE],

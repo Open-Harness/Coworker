@@ -10,6 +10,7 @@ import type { Comment } from "~/modules/views-manager/types.ts";
 import type { ConsoleDeps } from "../types.ts";
 import { accountsOf, ok, problem, surroundings, whoOf, wholeOf } from "./around.ts";
 import { born } from "./born.ts";
+import { modelsOf } from "./models-of.ts";
 import { setUpView } from "./set-up-view.ts";
 
 /* Setting a manager up from a sentence: what the console gives `setting-up`, and its two paths. */
@@ -63,7 +64,7 @@ export function depsOf(c: ConsoleDeps): SetUpDeps {
       messages: async () => (await c.store.messages(`set-up:${walk}`)) as readonly Message[],
       add: (message) => c.store.addMessage(`set-up:${walk}`, message),
     }),
-    models: async () => ({ connections: await c.outside.connections(), choice: await choiceOf(c) }),
+    models: () => modelsOf(c),
     call: (path, body) => c.outside.call(path, body),
     newId: () => c.ids.next("walk"),
     problems: (draft) => problemsOf(c, draft),
@@ -81,18 +82,6 @@ export function depsOf(c: ConsoleDeps): SetUpDeps {
       await c.managers.get(row.objectId, row.region).keep("comment", id, comment);
     },
   };
-}
-
-const THINKING = ["off", "low", "medium", "high"] as const;
-
-/** The workspace's own choice of model, as the console keeps it. */
-async function choiceOf(c: ConsoleDeps) {
-  const value = await c.store.setting("choice");
-  const one = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
-  const level = THINKING.find((name) => name === one["thinking"]);
-  return typeof one["connection"] === "string" && typeof one["model"] === "string"
-    ? { connection: one["connection"], model: one["model"], thinking: level ?? "low" }
-    : null;
 }
 
 const mayMake = (c: ConsoleDeps) => doings.may("manager.make", whoOf(c.who));

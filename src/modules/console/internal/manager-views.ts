@@ -78,6 +78,20 @@ export async function playbookView(c: ConsoleDeps, id: string, wanted: number | 
 
 const LIMIT = 50;
 
+/** What intake did, as a correction says it: took on, left, or asked. */
+export const didOf = (decision: Decision): string =>
+  decision._tag === "Took" || decision._tag === "Joined"
+    ? "took"
+    : decision._tag === "Left"
+      ? "left"
+      : decision._tag === "Asked"
+        ? "asked"
+        : "none";
+
+/** A person's word on a decision: right when it is what they say it should have been. Nothing until it is decided. */
+const saidOf = (should: string | undefined, decision: Decision | null): "right" | "wrong" | null =>
+  should === undefined || decision === null ? null : should === didOf(decision) ? "right" : "wrong";
+
 /** Until a judge has been asked, what is said of an item is that: it is kept, and nothing has been decided. */
 const waiting = (item: string): Decision => ({ item, gated: [], verdicts: [], why: "Not decided yet", _tag: "CouldNot" });
 
@@ -86,6 +100,12 @@ export async function intakeView(c: ConsoleDeps, id: string, query: URLSearchPar
   if (open === undefined) return gone(id);
   const found = await c.store.items(id, { from: query.get("from") || null, before: query.get("before") || null, limit: LIMIT });
   const head = await headOf(c, open);
+  const corrected = new Map(
+    ((await c.store.kept("correction")) as readonly { manager: string; item: string; should: string }[]).map((one) => [
+      `${one.manager}:${one.item}`,
+      one.should,
+    ]),
+  );
   const view: IntakeView = {
     head,
     rows: found.rows.map(({ item, decision }) => ({
@@ -99,7 +119,7 @@ export async function intakeView(c: ConsoleDeps, id: string, query: URLSearchPar
             : null,
       from: item.actor.name,
       line: [{ did: "Found", says: `${item.actor.name} on ${item.place}`, at: item.at }],
-      said: null,
+      said: saidOf(corrected.get(`${id}:${item.id}`), decision),
       versions: { [id]: head.version },
       mandate: null,
     })),
