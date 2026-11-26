@@ -96,7 +96,10 @@ export function useWords(): Words & {
   const zone = shell._tag === "Ok" ? shell.value.workspace.zone : "UTC";
   const tree = shell._tag === "Ok" ? shell.value.tree : NONE;
   return useMemo(
-    () => ({ ...createWords(clock, zone), clock, manager: (id: string) => tree.find((node) => node.id === id)?.name ?? id,
+    () => ({
+      ...createWords(clock, zone),
+      clock,
+      manager: (id: string) => tree.find((node) => node.id === id)?.name ?? id,
       above: (id: string) => tree.find((node) => node.id === id)?.above ?? null,
     }),
     [clock, zone, tree],

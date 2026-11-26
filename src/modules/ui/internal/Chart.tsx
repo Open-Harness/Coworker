@@ -120,7 +120,14 @@ function Bars({ labels, series, unit, isStacked = false, hasDecimals = false, he
           <ReferenceLine key={at} y={at} stroke={TEXT} strokeDasharray="4 4" />
         ))}
         {series.map(({ name, color, values }) => (
-          <Bar key={name} dataKey={name} fill={COLOR(color)} {...(isStacked ? { stackId: "all" } : {})} radius={[3, 3, 0, 0]} isAnimationActive={false}>
+          <Bar
+            key={name}
+            dataKey={name}
+            fill={COLOR(color)}
+            {...(isStacked ? { stackId: "all" } : {})}
+            radius={[3, 3, 0, 0]}
+            isAnimationActive={false}
+          >
             {over === undefined || series.length > 1
               ? null
               : values.map((value, at) => <Cell key={labels[at] ?? at} fill={value >= over ? COLOR("red") : COLOR(color)} />)}

@@ -174,35 +174,35 @@ export function Triggers({ view }: { readonly view: CoworkerView }) {
   const columns = isNarrow ? all.filter((c) => ["name", "on", "more"].includes(c.key as string)) : all;
   return (
     <>
-    <Layout
-      height="fill"
-      header={
-        <LayoutHeader hasDivider={false} padding={4}>
-          <HStack gap={2} vAlign="center" wrap="wrap">
-            <StackItem size="fill">
-              <Text type="supporting" color="secondary">
-                What makes something come in, for all managers. Each is changed in the playbook it belongs to.
-              </Text>
-            </StackItem>
-            <Button label="Add one" size="sm" variant="secondary" onClick={() => setAdding(true)} />
-          </HStack>
-        </LayoutHeader>
-      }
-      content={
-        <LayoutContent role="main" padding={0}>
-          <Table<Row>
-            data={sortedData}
-            columns={columns}
-            idKey="id"
-            density="balanced"
-            dividers="rows"
-            textOverflow="truncate"
-            hasHover
-            plugins={{ sortable }}
-          />
-        </LayoutContent>
-      }
-    />
+      <Layout
+        height="fill"
+        header={
+          <LayoutHeader hasDivider={false} padding={4}>
+            <HStack gap={2} vAlign="center" wrap="wrap">
+              <StackItem size="fill">
+                <Text type="supporting" color="secondary">
+                  What makes something come in, for all managers. Each is changed in the playbook it belongs to.
+                </Text>
+              </StackItem>
+              <Button label="Add one" size="sm" variant="secondary" onClick={() => setAdding(true)} />
+            </HStack>
+          </LayoutHeader>
+        }
+        content={
+          <LayoutContent role="main" padding={0}>
+            <Table<Row>
+              data={sortedData}
+              columns={columns}
+              idKey="id"
+              density="balanced"
+              dividers="rows"
+              textOverflow="truncate"
+              hasHover
+              plugins={{ sortable }}
+            />
+          </LayoutContent>
+        }
+      />
       <AddTrigger isOpen={adding} onClose={() => setAdding(false)} />
     </>
   );

@@ -52,7 +52,10 @@ export function Spending({ view, onDirty }: JunoPage) {
       used: p.used,
     })),
   );
-  const under = underNote(view.spending.parts.map((p) => p.manager), words);
+  const under = underNote(
+    view.spending.parts.map((p) => p.manager),
+    words,
+  );
   const handed = rows.reduce((sum, r) => sum + num(r.part), 0);
   const over = handed - whole;
   const edit = (id: string, key: "part" | "piece", text: string) => {
