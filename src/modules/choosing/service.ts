@@ -1,13 +1,5 @@
+import { choose } from "./internal/choose.ts";
+import { add, parts, price, room } from "./internal/money.ts";
 import type { Choosing } from "./types.ts";
 
-function notBuilt(what: string): never {
-  throw new Error(`Not built: ${what}`);
-}
-
-export const choosing: Choosing = {
-  choose: () => notBuilt("choosing.choose"),
-  price: () => notBuilt("choosing.price"),
-  add: () => notBuilt("choosing.add"),
-  room: () => notBuilt("choosing.room"),
-  parts: () => notBuilt("choosing.parts"),
-};
+export const choosing: Choosing = { choose, price, add, room, parts };
