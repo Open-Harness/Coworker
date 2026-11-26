@@ -35,7 +35,7 @@ export async function workView(c: ConsoleDeps, manager: string, id: string) {
   const names = Object.fromEntries(c.people.map((one) => [one.id, one.name]));
   const step = kind?.steps.find((one) => one.id === work.step);
   const now = c.clock.now();
-  const activity = await c.store.activity(work.id);
+  const activity = [...((await open.store.work(work.id))?.activity ?? []), ...(await c.store.activity(work.id))];
   const view: WorkView = {
     head: await headOf(c, open),
     work,

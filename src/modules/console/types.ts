@@ -97,7 +97,6 @@ export type StoreOp =
   | { readonly op: "message.list"; readonly thread: string }
   | { readonly op: "message.add"; readonly thread: string; readonly message: unknown };
 
-
 /** One thing said of a piece of work by a person: what it is, who did it, and when. */
 export interface ActivityRow {
   readonly manager: string;
@@ -227,12 +226,9 @@ export interface ConsoleDeps {
   readonly people: readonly Member[];
   readonly store: Store;
   readonly outside: Outside;
-  /** What waits for a person: the workspace keeps it. See `asking`. */
   readonly asks: (op: AskOp) => Promise<AskAnswer>;
   readonly managers: ManagerStores;
-  /** Ours: the templates the product comes with, read from `docs/templates`. */
   readonly ours: readonly Template[];
-  /** The name of the GitHub App's bot (`juno-test`): the co-worker's address there. */
   readonly app: string | null;
   readonly mailbox: string;
   readonly clock: Clock;

@@ -26,7 +26,10 @@ export async function look(h: Looking): Promise<void> {
     workspace: { id: profile.workspaceId, name: profile.name, address: profile.address, region: profile.region, since: profile.createdAt },
     who: { id: "coworker", email: "", name: "Juno", role: "Owner" },
     people: [],
-    store: remoteStore(async (op) => (op.op === "github.hear" ? { op: "github.hear" } : runStore({ sql: h.sql, now: clock.now(), id: ids.next }, op)), clock),
+    store: remoteStore(
+      async (op) => (op.op === "github.hear" ? { op: "github.hear" } : runStore({ sql: h.sql, now: clock.now(), id: ids.next }, op)),
+      clock,
+    ),
     outside: {
       connections: h.connections,
       secrets: h.secrets,

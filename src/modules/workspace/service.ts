@@ -17,8 +17,6 @@ import type { BillingView, SpendLimit } from "~/modules/billing/types.ts";
 import { meteredCommand } from "./internal/metered.ts";
 import type { CommandRequest, EnvironmentView, ExecOutcome, SaveEnvironment, SaveResult } from "~/modules/sandboxes/types.ts";
 import { commandToken } from "./internal/token.ts";
-import { runStore } from "./internal/console-store.ts";
-import type { StoreAnswer, StoreOp } from "~/modules/console/types.ts";
 import { connect, connection, lostConnection, setSources } from "./internal/github.ts";
 import { appBack, appLost } from "./internal/github-asks.ts";
 import type {
@@ -223,33 +221,11 @@ export class WorkspaceHost<Env = unknown> extends LookingHost<Env> implements Wo
     if (profile !== undefined) await this.account(profile).membersChanged(members, this.sandboxes().used);
   }
 
-  async consoleStore(op: StoreOp): Promise<StoreAnswer | NotProvisioned> {
-    if (!this.provisioned()) return { _tag: "NotProvisioned" };
-    const { sql } = this.ctx.storage;
-    if (op.op === "github.hear") {
-      followingOf(sql, this.dependencies).hear(op.heard);
-      await this.wakeFor(0);
-      return { op: "github.hear" };
-    }
-    const answer = runStore({ sql, now: this.dependencies.clock.now(), id: this.dependencies.ids.next }, op);
-    // What came in is decided from the object's alarm, so that a lost object still decides it when it is back.
-    if (op.op === "item.keep" && answer.op === "item.keep" && answer.isNew) {
-      await this.wakeFor(0);
-      // Nothing is asked of a judge when every manager that hears it is paused: it is left, and said so, at once.
-      if (this.pausedAll(op.hears)) await this.decide();
-      this.tell(["/shell", "/tree", ...op.hears.map((manager) => `/m/${manager}`)]);
-    }
-    if (answer.op === "item.reopen") await this.wakeFor(0);
-    if (op.op === "changed") this.tell(op.reads);
-    return answer;
-  }
-
   async destroy(): Promise<{ readonly _tag: "Destroyed" }> {
     const workspace = readProfile(this.ctx.storage.sql);
     if (workspace !== undefined) await destroyManagers(this.ctx.storage.sql, workspace, this.dependencies.managers);
     await this.ctx.storage.deleteAlarm();
     await this.ctx.storage.deleteAll();
-    // An empty schema again, so the object answers NotProvisioned like one nobody made.
     migrate(this.ctx.storage.sql);
     return { _tag: "Destroyed" };
   }

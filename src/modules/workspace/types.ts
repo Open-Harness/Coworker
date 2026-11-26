@@ -206,10 +206,9 @@ export interface WorkspaceApi {
   gitHubLost(): Promise<LostConnection | undefined>;
   /** The repos a manager hears and, per repo, which events. */
   setRepoSources(managerId: string, sources: readonly Omit<RepoSource, "managerId">[]): Promise<SetSourcesResult>;
-  /** The App was uninstalled: its sources stop and these Owners get a notice. */
+  /** The App was uninstalled (its sources stop, Owners get a notice), or is back. */
   gitHubRemoved(installation: number, owners: readonly string[]): Promise<void>;
   gitHubBack(installation: number, us: Us): Promise<void>;
-  /** The Environments screen, and which agent runs in which. */
   environments(): Promise<readonly EnvironmentView[]>;
   saveEnvironment(input: SaveEnvironment): Promise<SaveResult | NotProvisioned>;
   /** A run's command, in its agent's environment, with its secrets from the vault. */
@@ -217,9 +216,8 @@ export interface WorkspaceApi {
   /** The Billing screen: seats, this period's hours and the limit. */
   billing(): Promise<BillingView | NotProvisioned>;
   setSpendLimit(limit: SpendLimit): Promise<{ readonly _tag: "Set"; readonly billing: BillingView } | NotProvisioned>;
-  /** After someone joined or left: how many members there are now. */
   membersChanged(members: number): Promise<void>;
-  /** The console's own rows (see `console`); and what waits for a person, asked by a manager, answered by the console (see `asking`). */
+  /** The console's own rows (see `console`), and what waits for a person (see `asking`). */
   consoleStore(op: StoreOp): Promise<StoreAnswer | NotProvisioned>;
   asked(op: AskOp): Promise<AskAnswer | NotProvisioned>;
   /** Does what is due now: what came in is decided, and what a judge did not answer is asked again. */

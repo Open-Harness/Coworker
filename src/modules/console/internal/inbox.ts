@@ -30,7 +30,6 @@ const itemOf = (kept: Kept): InboxItem => ({
   beside: {},
 });
 
-
 const KEPT = "ask";
 const DAY = 86_400_000;
 
@@ -58,7 +57,7 @@ const keptItem = (ask: Ask): InboxItem => ({
 
 /** What the co-worker asked of this person; an Owner sees what is to any Owner. */
 async function keptItems(c: ConsoleDeps): Promise<readonly InboxItem[]> {
-  const all = (await c.store.kept(KEPT)) as readonly Ask[];
+  const all = [...((await c.store.kept(KEPT)) as readonly Ask[]), ...(await c.store.asks())];
   return all
     .filter((ask) => ask.to === c.who.id || c.who.role === "Owner")
     .toReversed()

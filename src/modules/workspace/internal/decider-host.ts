@@ -2,6 +2,7 @@ import type { AskAnswer, AskOp, Asking } from "~/modules/asking/types.ts";
 import type { Item } from "~/modules/intake/types.ts";
 import type { NotProvisioned } from "../types.ts";
 import { askingOf } from "./asks-host.ts";
+import type { StoreAnswer, StoreOp } from "~/modules/console/types.ts";
 import { runStore } from "./console-store.ts";
 import { decidingOf } from "./deciding-host.ts";
 import { followingOf } from "./following-host.ts";
@@ -107,6 +108,25 @@ export abstract class DecidingHost<Env> extends SettingsHost<Env> {
     await super.alarm();
     await this.decide();
     await this.askTick();
+  }
+
+  async consoleStore(op: StoreOp): Promise<StoreAnswer | NotProvisioned> {
+    if (!this.provisioned()) return { _tag: "NotProvisioned" };
+    const { sql } = this.ctx.storage;
+    if (op.op === "github.hear") {
+      followingOf(sql, this.dependencies).hear(op.heard);
+      await this.wakeFor(0);
+      return { op: "github.hear" };
+    }
+    const answer = runStore({ sql, now: this.dependencies.clock.now(), id: this.dependencies.ids.next }, op);
+    if (op.op === "item.keep" && answer.op === "item.keep" && answer.isNew) {
+      await this.wakeFor(0);
+      if (this.pausedAll(op.hears)) await this.decide();
+      this.tell(["/shell", "/tree", ...op.hears.map((manager) => `/m/${manager}`)]);
+    }
+    if (answer.op === "item.reopen") await this.wakeFor(0);
+    if (op.op === "changed") this.tell(op.reads);
+    return answer;
   }
 
   /** Whether every one of these managers is paused (or gone), so that nothing of what they hear needs a judge. */
