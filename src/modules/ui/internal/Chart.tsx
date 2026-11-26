@@ -10,6 +10,7 @@ import {
   LineChart,
   Pie,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -26,7 +27,7 @@ import type { ChartColor, ChartSeries, DonutChartProps, SeriesChartProps } from 
  * Colours are Astryx's data tokens, passed through recharts' own stroke and fill props, so dark mode follows the theme.
  */
 
-const COLOR = (color: ChartColor): string => `var(--color-data-categorical-${color})`;
+const COLOR = (color: ChartColor): string => (color === "neutral" ? "var(--color-data-neutral)" : `var(--color-data-categorical-${color})`);
 const TEXT = "var(--color-text-secondary)";
 const GRID = "var(--color-border)";
 const AXIS = { fontSize: 12, fill: TEXT };
@@ -96,16 +97,34 @@ function Lines({ labels, series, unit, hasDecimals = false, height = HEIGHT }: S
   );
 }
 
-function Bars({ labels, series, unit, isStacked = false, hasDecimals = false, height = HEIGHT }: SeriesChartProps) {
+function Bars({ labels, series, unit, isStacked = false, hasDecimals = false, height = HEIGHT, axis, lines = [], over }: SeriesChartProps) {
+  const prefix = axis?.prefix ?? "";
+  const scale =
+    axis === undefined
+      ? Y_AXIS
+      : {
+          ...Y_AXIS,
+          width: 44,
+          domain: [0, axis.top] as [number, number],
+          ticks: [...axis.ticks],
+          tickFormatter: (value: number) => `${prefix}${value}`,
+        };
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={rowsOf(labels, series) as Record<string, string | number>[]} margin={MARGIN}>
         <CartesianGrid horizontal vertical={false} stroke={GRID} />
         <XAxis dataKey="label" {...X_AXIS} />
-        <YAxis {...Y_AXIS} allowDecimals={hasDecimals} />
+        <YAxis {...scale} allowDecimals={hasDecimals} />
         <Tooltip content={<Hover {...(unit === undefined ? {} : { unit })} />} cursor={{ fill: GRID, fillOpacity: 0.4 }} />
-        {series.map(({ name, color }) => (
-          <Bar key={name} dataKey={name} fill={COLOR(color)} {...(isStacked ? { stackId: "all" } : {})} isAnimationActive={false} />
+        {lines.map((at) => (
+          <ReferenceLine key={at} y={at} stroke={TEXT} strokeDasharray="4 4" />
+        ))}
+        {series.map(({ name, color, values }) => (
+          <Bar key={name} dataKey={name} fill={COLOR(color)} {...(isStacked ? { stackId: "all" } : {})} radius={[3, 3, 0, 0]} isAnimationActive={false}>
+            {over === undefined || series.length > 1
+              ? null
+              : values.map((value, at) => <Cell key={labels[at] ?? at} fill={value >= over ? COLOR("red") : COLOR(color)} />)}
+          </Bar>
         ))}
       </BarChart>
     </ResponsiveContainer>

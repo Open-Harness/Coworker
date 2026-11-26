@@ -36,7 +36,7 @@ function Frame({ label, height, isEmpty, emptyText, legend, columns, rows, drawi
       {legend.length > 1 && (
         <HStack gap={2} wrap="wrap">
           {legend.map(({ name, color }) => (
-            <Token key={name} size="sm" color={color} label={name} />
+            <Token key={name} size="sm" color={color === "neutral" ? "gray" : color} label={name} />
           ))}
         </HStack>
       )}
