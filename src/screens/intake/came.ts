@@ -1,3 +1,4 @@
+import type { Reach } from "~/modules/reach/types.ts";
 import type { Clock } from "~/modules/page/types.ts";
 import type { IntakeRow, IntakeView } from "~/modules/views-manager/types.ts";
 import { capital, dayMonth } from "../manager-frame/words.ts";
@@ -77,7 +78,7 @@ export function cameOf(row: IntakeRow, view: IntakeView, words: Words): Came {
 }
 
 /** What a grant allows, in the words of its ids: `mail.send` that asks is "Send mail, asks". */
-export function mayOf(mandate: NonNullable<IntakeRow["mandate"]>["mandate"]): string {
+export function mayOf(mandate: Pick<Reach, "grants">): string {
   const said = mandate.grants.flatMap((grant) =>
     Object.entries(grant.may)
       .filter(([, permission]) => permission !== "off")

@@ -44,3 +44,21 @@ export function say(unit: Tile["unit"], value: number, long = false): string {
 }
 
 export const capital = (text: string): string => `${text.slice(0, 1).toUpperCase()}${text.slice(1)}`;
+
+const DAYS = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"] as const;
+
+/** A five-field cron as people say it: `30 8 * * 1-5` is "Weekdays, 08:30". What it cannot say, it leaves as it is. */
+export function cadence(cron: string): string {
+  const [minute = "", hour = "", dom = "", month = "", dow = ""] = cron.split(/\s+/u);
+  if (dom !== "*" || month !== "*") return cron;
+  const days = dow === "*" ? "Every day" : dow === "1-5" ? "Weekdays" : /^[0-6]$/u.test(dow) ? (DAYS[Number(dow)] ?? cron) : cron;
+  if (hour === "*" && minute === "0") return dow === "*" ? "Every hour" : `${days}, every hour`;
+  if (!/^\d+$/u.test(hour) || !/^\d+$/u.test(minute)) return cron;
+  return `${days}, ${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`;
+}
+
+/** A day that is near as people say it: today, tomorrow, else `5 Oct`. */
+export function nearDay(at: number, now: number, zone: string): string {
+  if (dayMonth(at, zone) === dayMonth(now, zone)) return "today";
+  return dayMonth(at, zone) === dayMonth(now + DAY, zone) ? "tomorrow" : dayMonth(at, zone);
+}
