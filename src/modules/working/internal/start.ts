@@ -64,7 +64,8 @@ export async function startThread(c: WorkingDeps, workId: string, job: Start): P
     const agent = playbook === undefined ? undefined : agentOf(playbook, job.agent);
     if (work === undefined || playbook === undefined || agent === undefined) return done;
     let todo = job.brief;
-    if (job.role === "checks") {
+    // A checker of a change in a repo is shown the diff. Of anything else (an answer to a customer), it is shown what the one who did it said.
+    if (job.role === "checks" && work.from.connector === "github") {
       const diff = await diffOf(c, workId, work.from.place, id);
       if (typeof diff !== "string") return diff;
       todo = `${job.brief}\n\nThe change, as a diff of its branch:\n${diff}`;

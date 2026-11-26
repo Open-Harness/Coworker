@@ -6,7 +6,7 @@ import { leave, settle } from "./enter.ts";
 import { addEvidence, lastOthers } from "./evidence.ts";
 import { fail } from "./fail.ts";
 import { madeMoved, moved, refuse, same } from "./made.ts";
-import { indexOfStep, stepOf } from "./steps.ts";
+import { indexOfStep, isChecking, stepOf } from "./steps.ts";
 import { briefOf, checkBrief, wrongOf } from "./text.ts";
 import { lookMs } from "./time.ts";
 import { startTodo } from "./todo.ts";
@@ -28,9 +28,7 @@ export function started(work: Work, e: Ev<"started">, kind: Kind): Moved {
   return moved({ ...work, threads: [...work.threads, { id: e.thread, agent: e.agent, role, state: "working" }] });
 }
 
-function isCheckingBy(step: Step, agent: string): boolean {
-  return "agent" in step.by && step.by.agent === agent && step.leaves.length > 0 && step.leaves.every((leave) => leave.by === "agent");
-}
+const isCheckingBy = (step: Step, agent: string): boolean => isChecking(step) && "agent" in step.by && step.by.agent === agent;
 
 /** It is waiting for code to show what it needs, when that is what is left. */
 function waitsForCi(work: Work, step: Step | undefined): boolean {
