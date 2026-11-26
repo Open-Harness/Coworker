@@ -834,7 +834,25 @@
     "screen:live/stops-before-saving-and-nothing-is-saved-until-a-person-presses-it": "32edcb2",
     "screen:live/announces-every-step-to-a-screen-reader": "32edcb2",
     "screen:live/a-reply-of-the-co-worker-can-show-how": "32edcb2",
-    "flow:tree/paused-it-takes-nothing-on-and-keeps-what-came-in": "8ecf21a"
+    "flow:tree/paused-it-takes-nothing-on-and-keeps-what-came-in": "8ecf21a",
+    "flow:repo/crash-after-it-came-in": "42dd6dd",
+    "flow:repo/crash-after-done-was-said": "42dd6dd",
+    "flow:repo/crash-after-it-built": "42dd6dd",
+    "flow:repo/crash-after-the-pull-request-opened": "42dd6dd",
+    "flow:repo/crash-after-it-was-checked": "42dd6dd",
+    "flow:asks/a-crash-while-it-waits-loses-nothing": "42dd6dd",
+    "flow:juno/a-crash-in-the-middle-answers-once": "42dd6dd",
+    "flow:set-up/a-crash-keeps-where-it-was": "42dd6dd",
+    "flow:mail/one-of-ours-that-came-back-is-told-to-its-work-and-not-written-to-again": "42dd6dd",
+    "screen:state-loading/says-what-is-drawn": "42dd6dd",
+    "screen:state-loading/looks-as-drawn": "42dd6dd",
+    "screen:state-loading/looks-as-drawn-on-a-phone": "42dd6dd",
+    "screen:state-loading/looks-as-drawn-in-the-dark": "42dd6dd",
+    "screen:state-offline/says-what-is-drawn": "42dd6dd",
+    "screen:state-offline/looks-as-drawn": "42dd6dd",
+    "screen:state-offline/looks-as-drawn-on-a-phone": "42dd6dd",
+    "screen:state-offline/looks-as-drawn-in-the-dark": "42dd6dd",
+    "screen:live/shows-what-it-is-about-to-do-before-doing-it": "42dd6dd"
   },
   "history": [
     {
@@ -856,6 +874,13 @@
       "commit": "32edcb2",
       "score": 96.7,
       "pass": 832,
+      "of": 853
+    },
+    {
+      "at": "2026-11-26T17:17:16.230Z",
+      "commit": "42dd6dd",
+      "score": 100,
+      "pass": 853,
       "of": 853
     }
   ]
