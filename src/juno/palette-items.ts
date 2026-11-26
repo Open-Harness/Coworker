@@ -49,11 +49,18 @@ export const doingsOf = (shell: ShellView): readonly Item[] =>
     item("do", doing.id, doing.label, doing.at.page, doing.group, doing.keys === undefined ? {} : { keys: doing.keys }),
   );
 
-/** A doing with fields can be shown: the co-worker does it on the screen while you watch. */
-export const showingOf = (shell: ShellView): readonly Item[] =>
-  shell.doings
+const lower = (words: string): string => `${words.charAt(0).toLowerCase()}${words.slice(1)}`;
+
+/** A doing with fields can be shown: the co-worker does it on the screen while you watch. Those of the page you are on come first. */
+export const showingOf = (shell: ShellView, path = ""): readonly Item[] => {
+  const here = (page: string): boolean => path.split("/").includes(page);
+  return shell.doings
     .filter((doing) => doing.fields.length > 0)
-    .map((doing) => item("show", doing.id, doing.label, `/walk/${doing.id}`, `${shell.coworker.name} does it while you watch`));
+    .toSorted((a, b) => Number(here(b.at.page)) - Number(here(a.at.page)))
+    .map((doing) =>
+      item("show", doing.id, `Show me how to ${lower(doing.label)}`, `/walk/${doing.id}`, `${shell.coworker.name} does it while you watch`),
+    );
+};
 
 /** What the shell already knows how to find: chats and people. Work and the rest come from the server, by the words. */
 export const knownOf = (shell: ShellView): readonly Item[] => [
@@ -75,19 +82,19 @@ export const foundOf = (view: SearchView): readonly Item[] =>
   view.found.map((one) => item(KIND[one.is], `${one.is}-${one.id}`, one.title, one.link, one.about));
 
 /** What shows before anything is typed: the things people do most, how to be shown one, and the first pages. */
-export function firstOf(shell: ShellView): readonly Item[] {
+export function firstOf(shell: ShellView, path = ""): readonly Item[] {
   const doing = doingsOf(shell);
   const first = ["manager.create", "work.add", "trigger.add", "connector.connect"].flatMap((id) =>
     doing.filter((one) => one.id === `do:${id}`),
   );
-  return [...first, ...showingOf(shell).slice(0, 1), ...pagesOf(shell).slice(0, 5)];
+  return [...first, ...showingOf(shell, path).slice(0, 1), ...pagesOf(shell).slice(0, 5)];
 }
 
 /** The first character narrows it, for people who want that. */
-export function narrowed(shell: ShellView, found: readonly Item[], mark: string): readonly Item[] | undefined {
+export function narrowed(shell: ShellView, found: readonly Item[], mark: string, path = ""): readonly Item[] | undefined {
   const kinds = (...of: readonly Kind[]) => [...knownOf(shell), ...found].filter((one) => of.includes(one.auxiliaryData?.kind ?? "ask"));
   if (mark === ">") return doingsOf(shell);
-  if (mark === "?") return showingOf(shell);
+  if (mark === "?") return showingOf(shell, path);
   if (mark === "#") return kinds("work");
   if (mark === "@") return kinds("person", "chat");
   return undefined;

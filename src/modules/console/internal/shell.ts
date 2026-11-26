@@ -1,6 +1,7 @@
 import type { CoworkerView, HomeView, ChatsView, ShellView } from "~/modules/views-workspace/types.ts";
 import type { Identity } from "~/modules/coworker/types.ts";
 import { doings } from "~/modules/doings/service.ts";
+import { talks } from "~/modules/talks/service.ts";
 import type { ConsoleDeps } from "../types.ts";
 import { accountsOf, personOf, rolled, whoOf } from "./around.ts";
 import { inboxItems } from "./inbox.ts";
@@ -21,11 +22,12 @@ export async function identityOf(c: ConsoleDeps): Promise<Identity> {
 }
 
 export async function shellView(c: ConsoleDeps): Promise<ShellView> {
-  const [rows, zone, identity, waiting] = await Promise.all([
+  const [rows, zone, identity, waiting, chats] = await Promise.all([
     c.store.managers(),
     settingOr(c.store, "zone", "UTC"),
     identityOf(c),
     inboxItems(c),
+    c.store.chats(c.who.id),
   ]);
   const nodes = rows.map(({ node }) => node);
   const now = new Map(rolled(nodes).map((one) => [one.id, one]));
@@ -44,7 +46,7 @@ export async function shellView(c: ConsoleDeps): Promise<ShellView> {
         now: node.state === "paused" ? "Paused" : "Waiting for something to come in",
       })),
     people: c.people.map(personOf),
-    chats: [],
+    chats: chats.map((row) => talks.chat(row, identity.name)),
     inbox: waiting.length,
     triggers: 0,
     doings: doings.offered(whoOf(c.who)),
