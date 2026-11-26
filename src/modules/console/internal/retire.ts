@@ -25,6 +25,8 @@ export const retire: Handler = async (c, values) => {
   const heir = to === null ? undefined : await managerOf(c, to);
   if (to !== null && (heir === undefined || heir.node.state === "retired" || heir.node.id === row.node.id))
     return refuse(`"${to}" cannot take over: it is not a manager that is there.`);
+  // What it is in the middle of (a pull request being opened, say) is finished first, so that what the heir takes over is all of it.
+  await c.managers.get(row.objectId, row.region).tick();
   const open = await openWork(c, row);
   const at = c.clock.now();
   const taken = new Map<string, string>();

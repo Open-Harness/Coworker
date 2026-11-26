@@ -27,6 +27,8 @@ export async function adopt(
     waits: false,
   });
   const here = made.work.step;
+  // What was at hand on the first step is not done again: the work goes straight to the step it was at, and that step says what is next.
+  const moves = from.step !== here && kind.steps.some((step) => step.id === from.step);
   c.store.transaction(() => {
     c.store.see(`take:${id}`);
     c.store.putWork({
@@ -38,10 +40,9 @@ export async function adopt(
       priority: from.priority,
       order: from.order,
     });
-    c.store.addJobs(id, made.todo);
+    if (!moves) c.store.addJobs(id, made.todo);
   });
-  if (from.step !== here && kind.steps.some((step) => step.id === from.step))
-    apply(c, id, { key: `adopt:${id}`, at, is: "moved", person: "handed over", step: from.step });
+  if (moves) apply(c, id, { key: `adopt:${id}`, at, is: "moved", person: "handed over", step: from.step });
   rearm(c);
   return { work: id };
 }
