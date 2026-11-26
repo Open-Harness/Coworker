@@ -49,10 +49,11 @@ export async function open(page: Page, screen: Screen): Promise<readonly string[
   }
   if (Object.values(screen.reads ?? {}).includes("offline")) {
     await settled(page);
-    await page.context().setOffline(true);
+    // Only this page loses its connection: the drawing beside it, in the same context, must still load.
+    await (await page.context().newCDPSession(page)).send("Network.emulateNetworkConditions", { offline: true, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
     await page.evaluate(() => dispatchEvent(new Event("offline")));
   }
-  await settled(page);
+  await settled(page, Object.values(screen.reads ?? {}).includes("slow"));
   return asked;
 }
 
@@ -62,8 +63,9 @@ export async function draw(page: Page, id: string): Promise<void> {
 }
 
 /** Nothing on it has changed for a while, and no motion is left. */
-export async function settled(page: Page): Promise<void> {
-  await page.waitForLoadState("networkidle").catch(() => undefined);
+export async function settled(page: Page, held = false): Promise<void> {
+  // A read held on purpose never ends, so the network is never idle: do not wait for it, only for the page to be drawn.
+  await page.waitForLoadState("networkidle", held ? { timeout: 1000 } : undefined).catch(() => undefined);
   await page.waitForFunction(() => (document.querySelector("#astryx-app-shell-main") ?? document.body).textContent!.trim().length > 20, undefined, { timeout: 8000 }).catch(() => undefined);
   await page.evaluate(() => document.fonts.ready);
   let [last, same] = ["", 0];

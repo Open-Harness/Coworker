@@ -143,6 +143,7 @@ export async function crash(): Promise<void> {
   for (const binding of Object.values(env as unknown as Record<string, unknown>)) {
     const namespace = binding as DurableObjectNamespace;
     if (typeof namespace !== "object" || namespace === null || typeof namespace.idFromName !== "function") continue;
+    if (Object.prototype.toString.call(binding) !== "[object DurableObjectNamespace]") continue;
     for (const id of await listDurableObjectIds(namespace)) await evictDurableObject(namespace.get(id)).catch(() => undefined);
   }
 }
