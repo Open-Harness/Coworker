@@ -68,22 +68,26 @@ async function answered(
   tool: Tool,
 ): Promise<Result> {
   const yes = answer.option === "yes";
-  const result = yes ? await tool.run(call, args) : wrong(`${saidOf(answer)} It was not done.`);
   const shows = showsOf(call, action, args);
-  const outcome = !yes ? "refused" : result._tag === "Said" && !result.ok ? "failed" : "done";
   const line = shows?.text.split("\n")[0] ?? action;
-  // Once, however often the thread goes on from this call.
+  // Once, however often the thread goes on from this call. The line is durable before the action's effect can be seen:
+  // a yes is written as done, and turned into failed if the action then fails. A no is written as refused.
   const key = `audited:${idOfCall(call)}`;
-  if (call.c.store.once(key) !== undefined) return result;
-  call.c.store.keepOnce(key, "yes");
-  await call.c.outside.audit?.({
-    at: call.c.clock.now(),
-    says: `${call.c.manager.name}: ${line.replace(/\.$/u, "")} on ${shows?.where ?? ""}`,
-    action,
-    outcome,
-    why: result._tag === "Said" && !result.ok ? result.text : null,
-    approvedBy: answer.person,
-  });
+  const first = call.c.store.once(key) === undefined;
+  const at = call.c.clock.now();
+  if (first) {
+    call.c.store.keepOnce(key, "yes");
+    await call.c.outside.audit?.({
+      at,
+      says: `${call.c.manager.name}: ${line.replace(/\.$/u, "")} on ${shows?.where ?? ""}`,
+      action,
+      outcome: yes ? "done" : "refused",
+      why: null,
+      approvedBy: answer.person,
+    });
+  }
+  const result = yes ? await tool.run(call, args) : wrong(`${saidOf(answer)} It was not done.`);
+  if (first && yes && result._tag === "Said" && !result.ok) await call.c.outside.auditFailed?.({ at, action }, result.text);
   return result;
 }
 

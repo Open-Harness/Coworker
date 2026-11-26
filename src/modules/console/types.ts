@@ -14,11 +14,7 @@ import type { ManagerNode } from "~/modules/tree/types.ts";
 import type { SecretInfo } from "~/modules/vault/types.ts";
 import type { Region } from "~/modules/workspace/types.ts";
 
-/*
- * The console's server side, for one request by one person in one workspace: every read of `api/types.ts`' map answered in
- * its view, and every change as a doing of the one registry (`POST /do`). It is given what it reads and changes, and
- * reaches for nothing: the Worker builds it, `http` calls it.
- */
+/* The console's server side, for one request by one person in one workspace: every read of `api/types.ts`' map answered in its view, and every change as a doing of the one registry (`POST /do`). Given what it reads and changes; reaches for nothing. */
 
 export interface Member {
   readonly id: string;
@@ -68,6 +64,7 @@ export type StoreOp =
   | { readonly op: "claim"; readonly key: string; readonly doing: string; readonly at: number }
   | { readonly op: "settle"; readonly key: string; readonly did: Did }
   | { readonly op: "audit.add"; readonly row: Omit<AuditRow, "id"> }
+  | { readonly op: "audit.failed"; readonly at: number; readonly byId: string; readonly doing: string; readonly why: string }
   | {
       readonly op: "audit.list";
       readonly by: string | null;
@@ -136,7 +133,7 @@ export type MoreAnswer =
 
 export type StoreAnswer =
   | { readonly op: "claim"; readonly is: "yours" | "busy" | "done"; readonly did?: Did }
-  | { readonly op: "settle" | "audit.add" | "setting.set" | "manager.add" }
+  | { readonly op: "settle" | "audit.add" | "audit.failed" | "setting.set" | "manager.add" }
   | { readonly op: "audit.list"; readonly lines: readonly AuditRow[]; readonly next: string | null }
   | { readonly op: "setting.get"; readonly value: unknown }
   | { readonly op: "manager.list"; readonly rows: readonly ManagerRow[] }

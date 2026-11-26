@@ -128,6 +128,8 @@ export interface Outside {
   readonly asks: (op: AskOp) => Promise<AskAnswer>;
   /** A line in the workspace's audit log: what the manager did that a person had to say yes to. */
   readonly audit?: (line: AuditLine) => Promise<void>;
+  /** The line written before the action said it was done turns out not to be: the action failed. Said of the same line, by its `at` and `action`. */
+  readonly auditFailed?: (line: Pick<AuditLine, "at" | "action">, why: string) => Promise<void>;
 }
 
 export interface AuditLine {

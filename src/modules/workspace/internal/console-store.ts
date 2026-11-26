@@ -152,6 +152,15 @@ export function runStore(place: StorePlace, op: Exclude<StoreOp, { readonly op: 
         op.row.approvedBy ?? null,
       );
       return { op: "audit.add" };
+    case "audit.failed":
+      sql.exec(
+        "UPDATE console_audit SET outcome = 'failed', why = ? WHERE at = ? AND by_id = ? AND doing = ? AND outcome = 'done'",
+        op.why,
+        op.at,
+        op.byId,
+        op.doing,
+      );
+      return { op: "audit.failed" };
     case "audit.list":
       return listAudit(place, op);
     case "setting.get": {

@@ -73,6 +73,9 @@ export const outsideFor =
           },
         });
       },
+      auditFailed: async (line, why) => {
+        await (await workspace())?.consoleStore({ op: "audit.failed", at: line.at, byId: record.id, doing: line.action, why });
+      },
       // The workspace keeps what is asked of a person. A workspace that is gone keeps nothing, and says so.
       asks: async (op) => {
         const asked = await (await workspace())?.asked(op);
