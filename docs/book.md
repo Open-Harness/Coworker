@@ -6,7 +6,7 @@ The score is `pnpm climb --all`: of 100, weighted. On 25 November 2026 it is **0
 | Tier | Evals | Counts | Runs in |
 |---|---|---|---|
 | rules | 241 | 1 each | seconds |
-| flows | 163 | 3 each | minutes |
+| flows | 164 | 3 each | minutes |
 | screens | 449 | 2 each | minutes |
 | jobs | 18 | 5 each | a key, and money |
 
@@ -334,6 +334,7 @@ Label an issue: within a minute it says what done means, works in a clone, runs 
 | `flow:repo/two-managers-two-repos-two-models-neither-sees-the-other` | X2, X7, I1 to I5, W1, W2, W10, H1 to H10, L1, A1 |
 | `flow:repo/what-it-cost-is-on-the-work` | X2, X7, I1 to I5, W1, W2, W10, H1 to H10, L1, A1 |
 | `flow:repo/a-price-not-known-is-said-and-not-zero` | X2, X7, I1 to I5, W1, W2, W10, H1 to H10, L1, A1 |
+| `flow:repo/a-change-left-uncommitted-is-committed-with-its-message-and-pushed` | X2, X7, I1 to I5, W1, W2, W10, H1 to H10, L1, A1 |
 | `flow:repo/a-lost-box-and-its-snapshots-cost-time-only` | X2, X7, I1 to I5, W1, W2, W10, H1 to H10, L1, A1 |
 | `flow:repo/no-container-free-it-waits-and-says-so` | X2, X7, I1 to I5, W1, W2, W10, H1 to H10, L1, A1 |
 | `flow:start/the-shell-says-who-and-where` | P2, P5, P6, T1, T2, M1, M2, U4 |

@@ -20,6 +20,8 @@ export async function bundleOf(
   if (base.exitCode !== 0 || head.exitCode !== 0)
     return { _tag: "Unavailable", why: `There is no branch ${branch} in the box yet: ${(base.stderr + head.stderr).trim().slice(0, 200)}` };
   const [from, to] = [base.stdout.trim(), head.stdout.trim()];
+  if (from === to)
+    return { _tag: "Unavailable", why: `There is no change on ${branch} since it left ${place.base}: commit something first` };
   const files = await run(`git diff --name-only ${from} ${to}`);
   const made = await run(`git bundle create ${FILE} ${b} ^${from} 2>&1 && base64 < ${FILE} | tr -d '\\n'`);
   if (made.exitCode !== 0) return { _tag: "Unavailable", why: `The branch could not be bundled: ${made.stdout.slice(0, 200)}` };

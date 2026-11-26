@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { env, git, root } from "./git.ts";
@@ -35,6 +35,8 @@ export async function realModels(request: Request): Promise<Response | undefined
   if (response.body === null) return new Response(null, { status: response.status });
   const text = await response.text();
   if (body !== undefined) record(modelOf(body), body, text);
+  const trace = set("JOBS_TRACE");
+  if (trace !== undefined) await appendFile(trace, `${JSON.stringify({ at: new Date().toISOString(), path: url.pathname, status: response.status, asked: body ?? null, answer: text })}\n`);
   for (const [, input = "0", output = "0"] of text.matchAll(/"prompt_tokens":\s*(\d+)[\s\S]{0,40}?"completion_tokens":\s*(\d+)/gu)) {
     spent.input += Number(input);
     spent.output += Number(output);

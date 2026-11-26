@@ -23,10 +23,25 @@ export function pullOf({ c, work }: Call): number | undefined {
   return found === undefined ? undefined : Number(found.id);
 }
 
-async function push(call: Call): Promise<Result> {
+/** A change left uncommitted in the box is committed first, with the message given: the tool says it pushes the work's changes, so it does. */
+async function commitLeft(call: Call, message: string): Promise<Result | undefined> {
+  const { c, work, id } = call;
+  const words = message.trim() === "" ? "Changes for this work" : message.trim();
+  const quoted = `'${words.replaceAll("'", `'\\''`)}'`;
+  const ran = await c.boxes.run(work.id, `${id}:commit`, `git add -A && (git diff --cached --quiet || git commit -qm ${quoted})`, 60);
+  if ("_tag" in ran) return waits(ran.why);
+  return ran.exitCode === 0
+    ? undefined
+    : wrong(`Not pushed: the changes could not be committed: ${(ran.stderr || ran.stdout).trim().slice(0, 300)}`);
+}
+
+async function push(call: Call, args: unknown): Promise<Result> {
   const { c, work, branch } = call;
+  const committed = await commitLeft(call, stringArg(args, "message"));
+  if (committed !== undefined) return committed;
   const bundle = await c.boxes.bundle(work.id, branch);
-  if ("_tag" in bundle) return bundle.why.startsWith("There is no branch") ? wrong(bundle.why) : waits(bundle.why);
+  // Nothing to push is the agent's to hear, not a wait: waiting would try the same empty push for ever.
+  if ("_tag" in bundle) return bundle.why.startsWith("There is no") ? wrong(bundle.why) : waits(bundle.why);
   const base = await defaultBranch(c.outside, repoOf(call));
   const checked = checkBundle(bundle, { branch, defaultBranch: base, workflows: false, most: MOST });
   if (checked._tag === "Refused") return wrong(`Not pushed: ${checked.why}`);
