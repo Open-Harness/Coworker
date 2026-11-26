@@ -316,3 +316,9 @@ Written while building the pure middle, 26 November 2026. Each is the smallest c
 - `read` also refuses a `{{id}}` in a file where it is no blank; both written templates pass.
 - `saveAs`: places become `repo` (GitHub), `mailbox` (email), `place` (other); people `owner`, `person`, `person2`…; a model blank takes its agent's id; clashes numbered; unused dropped. Names are swapped at word boundaries in all text ("ama" leaves "drama"); model names in free text are not swept. Files that do not read as a playbook: secrets cut, no blanks (the type has no way to say so). `gone` lists only what was cut outright (secrets, eval cases), one entry per file and kind, never the text.
 - `newer` finds the manager's own value of each blank by matching the new template's text and YAML against `given`; one not found takes its best or empty. YAML with blanks and front matter is written again from a parsed document: reformatted, the same playbook.
+
+## Building: flaky under load
+
+| # | What happens | Found by | Cause |
+|---|---|---|---|
+| B1 | `pnpm climb --all` at 27368c8 says two kept tests broke: `brain.test.ts` "sends the workspace a path and a body…" and "speaks Anthropic's path…". Run alone, `brain.test.ts` passes 7 of 7, and slice 1 changed nothing in `brain` | code | likely: a timeout while every tier runs at once |
