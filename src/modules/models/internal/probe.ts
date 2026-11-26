@@ -99,7 +99,11 @@ export function probeOpenAICompatible(send: typeof fetch, baseUrl: string, key: 
   return probe(
     () => send(`${baseUrl}/models`, { headers }),
     (model) =>
-      send(`${baseUrl}/chat/completions`, { method: "POST", headers, body: JSON.stringify({ model, max_tokens: LEAST_OPENAI_TOKENS, messages: PING }) }),
+      send(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ model, max_tokens: LEAST_OPENAI_TOKENS, messages: PING }),
+      }),
     preferring("mini"),
   );
 }
