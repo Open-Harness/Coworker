@@ -1,13 +1,14 @@
+import { allowed, mandate, narrow } from "./internal/mandate.ts";
+import { wider } from "./internal/wider.ts";
 import type { Reaches } from "./types.ts";
 
-function notBuilt(what: string): never {
-  throw new Error(`Not built: ${what}`);
-}
-
 export const reaches: Reaches = {
-  wider: () => notBuilt("reach.wider"),
-  handOn: () => notBuilt("reach.handOn"),
-  mandate: () => notBuilt("reach.mandate"),
-  narrow: () => notBuilt("reach.narrow"),
-  allowed: () => notBuilt("reach.allowed"),
+  wider,
+  handOn: (whole, part) => {
+    const why = wider(whole, part);
+    return why.length === 0 ? { _tag: "Handed", reach: part } : { _tag: "Wider", why };
+  },
+  mandate,
+  narrow,
+  allowed,
 };
