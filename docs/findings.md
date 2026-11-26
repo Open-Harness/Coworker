@@ -12,7 +12,7 @@ Two kinds, because they are planned differently:
 - **M, the model**: what the product is meant to be is unclear, missing or wrong. Decide these before fixing the screens
   that depend on them.
 
-Last changed: 25 November 2026. 104 fixes, 12 model questions.
+Last changed: 26 November 2026. 104 fixes, 12 model questions.
 
 ## Connecting a model
 
@@ -207,3 +207,112 @@ Not conclusions, places to look when planning.
 5. **The chosen templates were not followed, and nothing checked.** F25 to F35. Only screenshots were kept "for a person to look at".
 6. **Settings that are stored and never obeyed.** F26 (approval, limit), F37 (owner). Worth a search for more.
 7. **The model says who decides, not who does.** M1 to M3: people are there to approve, not to work.
+
+## Building, slice 1: what could not be known
+
+Written while building the pure middle, 26 November 2026. Each is the smallest choice that keeps the evals green, or a place where two locked pages disagree. **D** is a disagreement between locked pages: built as the eval says, and the other page should change.
+
+| # | Where | What disagrees | Built as |
+|---|---|---|---|
+| D1 | `threads/README.md`, Settled by the evals, last line, and `evals/rules/threads.eval.ts`, the offer | The README: `Offer.tools` has every action on or ask. The eval: `github.push` (ask) is only in `asks`, not `tools` | The eval: `tools` the on actions, `asks` the ask ones |
+| D2 | `work/README.md` (a manager step tells the manager's doer) and `evals/rules/work-ends.eval.ts`, `moved-by-a-person` (it "only waits there") | Whether a person moving work into a manager step starts the doer | The eval for `moved`; the README for every other way in |
+| D3 | spec O5 (how often it looks may change alone) and `trials/README.md` (names no cadence line) | Whether a cadence change may go alone | The README |
+
+### Choices, by module
+
+
+**boxes / choosing**
+
+- boxes `checkBundle`: empty and `.` path segments dropped before testing `.github/workflows/` (README: `./` and `//` still name it; `a/./b` not said). `.github/workflowsx/`, `docs/workflows/` are not workflow files. Order: default branch, then not its own branch, then workflow files, then size (refused when strictly over `most`).
+- boxes `createBoxes` left as a stub: no rule eval reaches it; the pages do not fix its idempotency table or SqlStorage shape. Built when a flow needs it.
+- choosing fallback: only to levels above the first that names a model (`inherit`/`null` skipped); a level naming the same connection and model as the one that failed is not another.
+- choosing `room`: the narrowest reached limit, in the order work, manager, workspace; none reached → tells of the first near limit in list order.
+- choosing `parts`: when the whole is not enough, each ask is cut by the same share (whole / total); a negative whole counts as 0.
+
+**asks / mcp**
+
+- asks: a `know` with a date not after `at` is accepted (README refuses a missing or past date for every need but `know`, and says nothing of know with one).
+- asks `answer` refuses in order: may not answer, gone, already answered, empty, not an option. An answer must equal an option id exactly ("YES" is refused).
+- asks: the README's last two settled lines (a one-day default for tool-call and to-do asks; answering by a GitHub comment) are not this module's functions; they belong where asks are made and where comments are read.
+- mcp `mayBe`: parsed with `new URL`, so numeric and hex hosts and `user@host` come out as the real host; a trailing dot is dropped. Private beyond the spec's list: 0/8, 100.64/10, `::`, fc00::/7, fe80::/10, IPv4-mapped IPv6, the bare names `local` and `internal`.
+- mcp `toolName`: `mcp_<server>_<tool>`, anything outside [A-Za-z0-9_-] as `_`; the prefix means it can never be one of ours.
+
+**coworker / knowledge**
+
+- coworker `talkingTo`: when no group fits, a careful "anyone" (polite and brief, only what is public, no sign) — the contract is not nullable and the README does not say. A domain fits only exactly; an empty domain never.
+- knowledge `clash`: only the existing notes must be kept (the new one is usually still proposed); a note with the new one's id is skipped; a curly apostrophe counts as a straight one.
+- knowledge README's last line (a note from a comment by someone inside is also proposed as a change to `agents/<id>/told`) has no function in `Knowledge`; whichever module makes `Proposed` must do it.
+
+**connectors / doings**
+
+- doings registry: the 81 doings' ids, groups, roles, co-worker defaults, stops and fields follow evals/rules/data/doings.ts exactly; their labels, pages, control names, sentences and undo words are ours, read from nowhere. A field's label comes from its name ("perWork" → "Per work"). Page names (managers, work, intake, chats, connectors, people, keys, billing, profile, security, environments, workspace, co-worker) are not fixed anywhere.
+- doings palette: a doing's `about` is its group; matched on label or id only; the ask line is `Ask: <words>`, nothing for empty words. A sentence is "{by} {template}", an empty field filled by its label in lower case. The co-worker acting for someone gets the lesser of the two, with the stricter side's why. The last step of a walk that stops says "<control> is yours to press."
+- connectors `checked`: one problem at a time, in order: not an object, a fixed part, an unknown key, a missing needed one, a wrong kind; a number is finite, a list is of text.
+- connectors: the registry holds what the evals check (set-up steps, events, actions, skills of evals/rules/data/connectors.ts), our own words for each. `receive`, `act`, `standing` wait for intake.
+
+**intake**
+
+- `question`: every outside field (open work titles, item title, actor, text) has its line breaks put as ` / `, so no outside line can be the closing line; "outside" is not written before the mark.
+- A listed bot not spoken to is overheard like anyone; spoken to, it is asked.
+- Stop: whether the actor may stop is read from the work's own manager's rules with addressed true; a cron or wait never stops; a stop from anyone else joins the work.
+- Verdicts: fit clamped to 0..1, a repeated manager/kind keeps its first, the judge's order kept. `decide` with nothing settled and no judgement: CouldNot, saying why. A tie within 0.1 is asked (1e-9 of slack for floating point).
+
+**github-events**
+
+- Ties in real data: open and closed records of the same item in the same second, on 6 of 35 real pull requests. Settled by rank: closed after open, deleted after both; no tie is left in the real traces.
+- An item's labels are kept sorted (the real traces end sorted while events come in their own order).
+- A dismissed review is heard (`review`), not noise. Ours coming back is noise, its records kept.
+- Records do not say who acted, so `moved` and `ready` are not told when the item is ours; `ended`, `conflict`, `checked` always are. A review that is only a wrapper (commented, empty) is not told; its line comments are.
+- Checks: the newest id of each (app, name) counts; cancelled or stale counts as nothing; of a commit's checks, failed over running over passed. The `checked` key has the deciding check ids, so a rerun that passes again is told again. Answers take max(updated, at).
+- Work events: check ids and heard fields are not fixed by the pages; chosen: `review`, `checks`, `mergeable`; `heard.item` is "<login>: <text>". No work event for moved, ready, or a review off the head or only a comment (those go out as heard), nor a review taken back (heard).
+
+**mail-events**
+
+- A report (bounce, complaint, delivered, late) is `Mail`, not `Noise`, so its state is kept; only list, machine and our own mail are noise.
+- A report reaches a conversation only through the Message-ID it is about; about a mail not ours or not kept, it has none and is not told. A report that comes before our sent mail is told once that mail is kept.
+- A plain-text bounce (about 20 of the 57 recorded) gives one report for the message, its first recipient: `why-it-did-not-arrive` wants one report for lhost-exim-02 and lhost-qmail-02, which name two. So a second wrong address in such a bounce is not closed. Machine-readable ones give one per recipient.
+- `why` is read from the words first, the status second (missing in many, wrong in some: "5.0.0"); all of 5.1.x is "no such address"; of several recipients only the first's lines are read.
+- Away goes before machine (rfc3834-06 has Precedence: bulk and a no-reply sender). A report's `of` is the first Message-ID after the first embedded message.
+- `asWork`: new person mail → heard (wrote, item = mail id); away → heard (away, item = the told key); bounce or complaint → failed, by connector, check `delivered` (our choice of id). `answer` always says autoSubmitted null (every auto case is already No). A conversation waits for nobody when the last mail is ours and everyone else is closed to. Late and delivered are not told (Told has no case); they change `sent` only.
+
+**threads / tree**
+
+- A checker's tools are its own cut to check, read, bash and skill, never more (a checker without `check` in its list cannot call it); README says "exactly", the eval's comment says "has only what it has". Judges always get `judge`; the co-worker in a chat its eight chat tools. `tries` and `searches` are offered as `does`.
+- A connector action is offered only while the mandate holds, a place is given, and a grant covers that account and place (or `*`); the strongest grant wins; dotted names not on the mandate are dropped.
+- Outside words: each line marked so it cannot be a prompt line or close its block (every Unicode line break), with a sentence before the first saying they are outside and not instructions. Tool-call arguments are rebuilt from known own keys only.
+- tree: a move that would give a manager more than its new parent has is refused, not narrowed (the README allows either). Narrowing below is tree's own cut (not `reaches.narrow`): limits a manager never had stay out, a `*` place becomes the parent's places. Children of a retired manager move up to its `above`; retired managers stay in `under`; `under` and `above` nearest first. Roll: a node with no row counts zero and idle.
+
+**measures / trials / walkthrough**
+
+- measures: a point's time and its line are those of the reading's `of`, not `at`; the line of the current standing is the line at `now` (the eval needs it, the README does not say). `Worse.now` is NaN when nothing settled was read (the type allows only a number). `NotYet.until`: when the first unsettled reading counts; with none, now plus the settle time; with an unknown before, now.
+- trials `score`: a case passes when more than half its runs pass; cost is the mean per case, summed; spread is the mean of 2·min(pass, fail)/runs. `mayAlone` of no change is true. Cadence: spec O5 says how often it looks may change alone, the README's list names no cadence line; followed the README. Case ids are a content hash, salted when taken; `held` takes the lower half of each part by id.
+- walkthrough: `made` is `manager-<walkthrough id>` (pure code cannot mint an id). Answers to questions outside the latest round are ignored (the eval needs a draft-stage "make it" for q1 to walk); a round of none is allowed; a question asked again, two cases with one id, or "that is wrong" about an unknown finding is refused; throw away at any stage not ended.
+- walkthrough `score`: the types have nowhere to say who edited a line; a `you said` line no asked question lists in `changes` counts as a person's edit. A real record of edits needs a type.
+- walkthrough `because.yaml`: written as simple `key:` blocks of why, by, where — our own format, to be checked against playbook's reader.
+
+**playbook**
+
+- `skills.yaml` and `because.yaml` may be missing and read as empty; SKILL.md, objective, workflow, triggers and reach are needed. `skills/<id>/SKILL.md` holds the body only (its front matter comes from skills[]); a skill's other files are kept as they are.
+- Read sorts agents, evals and skills here by id, skills here before listed ones; write then read is the same.
+- Lines: each `##` section is an exact slice with its heading, so the slices joined are the page (adding a section changes the old last one's text, which a new-section edit allows). `objective` has empty text; a grant line carries its account and place; a skill here is its whole SKILL.md, otherwise YAML.
+- The name, `because` and a skill's other files are no shown line but merge three ways; diff and apply ignore them. If one of the three cannot be read, merge (and diff) go file by file. A clash of meaning after a merge (a step added to a kind the other removed) is a Clash on that line. A new line in apply goes at the end of its group.
+- Beyond the README: read refuses duplicate ids and grants; check refuses an eval of nothing and an event its account does not offer. Kinds are checked against `Surroundings.above` (the wider eval), not reach.yaml.
+- YAML: the `yaml` library cannot keep some texts (a line of only spaces); then the value is written with every text double-quoted.
+- oxlint warns twice `no-thenable`: the locked types have a `then` key.
+
+**work**
+
+- `Work` has nowhere to note that a thread died once at a step: each first `unanswered` adds code evidence, met false, check `unanswered@<step>`; the second at the same step asks. No leave or done-when names that id.
+- A person who says passed or failed with no `person` on the event is recorded as code (work-ends and work-waits send `failed by: person` with no name; `person?` is optional in types.ts).
+- A failure follows the step's `otherwise` only when the failed check is one of that step's leaves; any other is evidence only.
+- No cascade on old evidence: entering a step moves at most once per event; evidence from earlier (merged while at Build) is held and used at the next evidence event there. The last step is checked on every evidence event, so merged and closed work in either order.
+- "The agent of the last agent step before it" skips checking steps (in templates/repo the manager's own hands are then the doer). The manager's doer is its last `does` thread: told if working, started if ended. A person moving work back adds the same "nothing before counts" evidence as a send-back. `answered` on a person's step ends it with no evidence.
+- `take` sets order 0 and priority soon (said nowhere). `narrowed` uses `reaches.wider`. `opened again` turns a stopped mandate back to holds; a taken-back one stays. `reported done` from a checker is refused (it uses `checked`; it may report no or stuck). After done on a step whose unmet leaves are commands and no checker started, next is `ci`. A replayed `answered` is refused (no record of keys; the evals allow it).
+
+**templates**
+
+- A person blank with no answer takes its best, the literal `whoever makes it` (README: a person is always answered; `fill("repo", {})` lists only `["repo"]`), which check then refuses as an unknown person. Nothing in the types tells `fill` who makes it.
+- An answer with a line break is refused at `template.yaml`, the blank's id as the line (the README allows refusing or one text).
+- `read` also refuses a `{{id}}` in a file where it is no blank; both written templates pass.
+- `saveAs`: places become `repo` (GitHub), `mailbox` (email), `place` (other); people `owner`, `person`, `person2`…; a model blank takes its agent's id; clashes numbered; unused dropped. Names are swapped at word boundaries in all text ("ama" leaves "drama"); model names in free text are not swept. Files that do not read as a playbook: secrets cut, no blanks (the type has no way to say so). `gone` lists only what was cut outright (secrets, eval cases), one entry per file and kind, never the text.
+- `newer` finds the manager's own value of each blank by matching the new template's text and YAML against `given`; one not found takes its best or empty. YAML with blanks and front matter is written again from a parsed document: reformatted, the same playbook.
