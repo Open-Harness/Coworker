@@ -2,7 +2,7 @@
 
 What a mail is, whose it really is, which conversation it belongs to, and what became of the ones we sent.
 
-Not built. `types.ts` is the contract and compiles; `service.ts` says so where it is called. What it must do: spec X2, X8, X15, X16 in
+Built. `types.ts` is the contract; `service.ts` wires `internal/` (`read.ts` reads one message, `bounce.ts`/`dsn.ts`/`why.ts` read what servers send back, `proof.ts` and `suffix.ts` say whose it is, `groups.ts`/`conversation.ts` work out conversations, `told.ts` what became true, `answer.ts` and `aswork.ts` the outputs). What it must do: spec X2, X8, X15, X16 in
 [docs/spec.md](../../../docs/spec.md). What shows it: the evals under `mail-events` and `mail-state` in [docs/book.md](../../../docs/book.md).
 Why it is so, with what was measured: [docs/spikes/real-events.md](../../../docs/spikes/real-events.md).
 

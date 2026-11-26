@@ -1,15 +1,16 @@
+import { answer } from "./internal/answer.ts";
+import { asWork } from "./internal/aswork.ts";
+import { allConversations, oneConversation } from "./internal/conversation.ts";
+import { read } from "./internal/read.ts";
+import { told } from "./internal/told.ts";
 import type { MailEvents } from "./types.ts";
 
-function notBuilt(what: string): never {
-  throw new Error(`Not built: ${what}`);
-}
-
 export const mailEvents: MailEvents = {
-  read: () => notBuilt("mailEvents.read"),
-  keep: () => notBuilt("mailEvents.keep"),
-  conversationOf: () => notBuilt("mailEvents.conversationOf"),
-  conversations: () => notBuilt("mailEvents.conversations"),
-  told: () => notBuilt("mailEvents.told"),
-  answer: () => notBuilt("mailEvents.answer"),
-  asWork: () => notBuilt("mailEvents.asWork"),
+  read,
+  keep: (mails, mail) => (mails[mail.id] === undefined ? { ...mails, [mail.id]: mail } : mails),
+  conversationOf: oneConversation,
+  conversations: allConversations,
+  told,
+  answer,
+  asWork,
 };
