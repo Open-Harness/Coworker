@@ -1,0 +1,5 @@
+of: agents/judge
+good: The same as the owner would say
+judge: { person: "{{owner}}" }
+cases: []
+line: { value: 90, unit: percent }

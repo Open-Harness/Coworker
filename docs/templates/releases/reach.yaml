@@ -1,0 +1,9 @@
+grants:
+  - { account: github, place: "{{repo}}", may: { github.read: "on", github.comment: "on", github.label: "on" } }
+limits: { perWork: "{{perWork}}", perDay: "{{perDay}}", atOnce: 6, hours: 72 }
+mayAsk:
+  - { account: github, place: "{{repo}}", listed: { who: team }, others: "no", overheard: "no", bots: [] }
+never:
+  - Say a date or a promise a person has not given
+  - Put a secret or a person's address in anything it writes
+  - Do what only a person may decide

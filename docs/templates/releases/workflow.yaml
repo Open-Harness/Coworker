@@ -1,0 +1,15 @@
+kinds:
+  - id: release
+    name: A release
+    when: Someone asks for a release, or enough has changed since the last one that it is time.
+    alone: ask
+    steps:
+      - { id: gather, name: Gather it, by: { agent: writer }, does: "List what changed since the last release, each with its pull request.", skills: [release-notes], leaves: [{ id: listed, says: "Every merged pull request since the last release is listed", by: connector }], checkedBy: { agent: reviewer }, otherwise: { ask: "{{owner}}" } }
+      - { id: write, name: Write the notes, by: { agent: writer }, does: "Write the notes for people who use it, not for people who made it, and put them on the issue.", skills: [release-notes], leaves: [{ id: posted, says: "The notes are on the issue, and say what to do", by: connector }], checkedBy: { agent: reviewer }, otherwise: { ask: "{{owner}}" } }
+    doneWhen:
+      - { id: notes, says: The notes say what changed and what to do, by: agent }
+      - { id: posted, says: They are where the person will look, by: connector }
+    may:
+      - { account: github, place: "{{repo}}", may: { github.read: "on", github.comment: "on", github.label: "on" } }
+    limits: { perWork: "{{perWork}}", hours: 72, atOnce: 3 }
+    look: 3d

@@ -26,7 +26,13 @@ export async function test(dependencies: ModelsDependencies, connection: ModelCo
       : probeOpenAICompatible(send, connection.baseUrl, key === "" ? undefined : key),
   );
   const probe: Probe = used._tag === "Used" ? used.value : { _tag: "Failed", error: "The stored key could not be read. Add it again" };
-  return { ...connection, models: probe._tag === "Works" ? probe.models : connection.models, check: toCheck(probe, clock.now()) };
+  const prices = probe._tag === "Works" ? probe.prices : connection.prices;
+  return {
+    ...connection,
+    models: probe._tag === "Works" ? probe.models : connection.models,
+    ...(prices === undefined || Object.keys(prices).length === 0 ? {} : { prices }),
+    check: toCheck(probe, clock.now()),
+  };
 }
 
 async function connect(

@@ -1,0 +1,5 @@
+of: skills/release-notes
+good: The same cases come out better with it
+judge: { person: "{{owner}}" }
+cases: []
+line: { value: 60, unit: percent }

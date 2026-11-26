@@ -11,6 +11,13 @@ export type Check =
   | { readonly _tag: "Works"; readonly checkedAt: number }
   | { readonly _tag: "Failed"; readonly checkedAt: number; readonly error: string };
 
+/** Dollars per million tokens, as the provider's own list says them. */
+export interface ModelPrice {
+  readonly input: number;
+  readonly output: number;
+  readonly cached?: number;
+}
+
 /** A connection as anyone may see it. The key itself stays in the vault. */
 export interface ModelConnection {
   readonly id: string;
@@ -18,6 +25,8 @@ export interface ModelConnection {
   readonly label: string;
   readonly baseUrl: string;
   readonly models: readonly string[];
+  /** What its list said some models cost. A model that is not here has no price known. */
+  readonly prices?: Readonly<Record<string, ModelPrice>>;
   readonly check: Check;
   /** When the stored token expires, for sign-ins that have one. */
   readonly expiresAt?: number;

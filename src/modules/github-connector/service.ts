@@ -1,0 +1,46 @@
+import { verify } from "@octokit/webhooks-methods";
+import { githubEvents } from "~/modules/github-events/service.ts";
+import type { Raw } from "~/modules/connectors/types.ts";
+import { itemOf } from "./internal/item.ts";
+import type { Delivered, GithubConnector } from "./types.ts";
+
+const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> => typeof value === "object" && value !== null;
+
+/** The installation a payload names, as far as it says one. It is only believed after the signature held. */
+function installationOf(payload: unknown): number | null {
+  const named = isRecord(payload) && isRecord(payload["installation"]) ? payload["installation"]["id"] : undefined;
+  return typeof named === "number" ? named : null;
+}
+
+const refused = (why: "not signed" | "not ours" | "broken", installation: number | null = null): Delivered => ({
+  _tag: "Refused",
+  why,
+  installation,
+});
+
+export const githubConnector: GithubConnector = {
+  receive: async (raw: Raw, secret, usFor) => {
+    const signature = raw.headers["x-hub-signature-256"];
+    const signed = secret !== "" && signature !== undefined && (await verify(secret, raw.body, signature).catch(() => false));
+    if (!signed) return refused("not signed");
+    const payload: unknown = (() => {
+      try {
+        return JSON.parse(raw.body);
+      } catch {
+        return undefined;
+      }
+    })();
+    const installation = installationOf(payload);
+    const read = githubEvents.read(raw.headers["x-github-event"] ?? "", payload, await usFor(installation));
+    switch (read._tag) {
+      case "Heard":
+        return { _tag: "Item", item: itemOf(read), follows: [], installation: read.installation ?? installation };
+      case "Account":
+        return { _tag: "Account", says: read.says, works: read.works, installation: read.installation };
+      case "Noise":
+        return { _tag: "Noise", why: read.why, installation };
+      case "Broken":
+        return refused("broken", installation);
+    }
+  },
+};

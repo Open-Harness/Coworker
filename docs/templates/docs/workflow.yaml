@@ -1,0 +1,15 @@
+kinds:
+  - id: stale
+    name: Docs that are not true any more
+    when: A change to the code makes something the docs say untrue, or someone says the docs are wrong.
+    alone: ask
+    steps:
+      - { id: find, name: Find it, by: { agent: writer }, does: "Find the lines of the docs that are untrue, and what is true.", skills: [doc-style], leaves: [{ id: located, says: "Each untrue line is named, with what is true instead", by: agent }], checkedBy: { agent: reviewer }, otherwise: { ask: "{{owner}}" } }
+      - { id: mend, name: Mend it, by: { agent: writer }, does: "Change only the docs, and open a pull request that says what changed and why.", skills: [doc-style], leaves: [{ id: opened, says: "A pull request changes only docs", by: connector }], checkedBy: { agent: reviewer }, otherwise: { ask: "{{owner}}" } }
+    doneWhen:
+      - { id: accurate, says: The docs say what the code does, by: agent }
+      - { id: merged, says: A person merged it, by: connector }
+    may:
+      - { account: github, place: "{{repo}}", may: { github.read: "on", github.comment: "on", github.push: "on", github.open_pull_request: "on", github.label: "on" } }
+    limits: { perWork: "{{perWork}}", hours: 72, atOnce: 3 }
+    look: 3d

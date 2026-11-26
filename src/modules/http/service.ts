@@ -2,6 +2,7 @@ import { encodePerson, PERSON_HEADER, personOf } from "~/modules/protocol/servic
 import type { Person } from "~/modules/protocol/types.ts";
 import { type Control, routeControl } from "./internal/control.ts";
 import { isSameOrigin } from "./internal/origin.ts";
+import { routeWs, WS } from "./internal/ws.ts";
 import type { CreateHttp, HttpDependencies } from "./types.ts";
 
 const WORKSPACE_SOCKET = /^\/api\/workspaces\/([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})\/socket$/u;
@@ -43,6 +44,8 @@ export const createHttp: CreateHttp = (dependencies) => async (request) => {
   if (pathname === "/api/health") return Response.json({ ok: true });
   if (pathname === "/api/me") return me(dependencies, request);
   if (pathname === "/api/directory/socket") return openSocket(request, ({ directory }) => directory(), dependencies);
+  const ws = WS.exec(pathname);
+  if (ws !== null && dependencies.console !== undefined) return routeWs(dependencies.control(), dependencies.console, request, ws);
   const control = await routeControl(dependencies.control, request, pathname);
   if (control !== undefined) return control;
   const workspaceId = WORKSPACE_SOCKET.exec(pathname)?.[1];

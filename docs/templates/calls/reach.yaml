@@ -1,0 +1,9 @@
+grants:
+  - { account: email, place: "{{mailbox}}", may: { email.search: "on", email.draft: "on", email.reply: ask, email.send_inside: "on", email.send_outside: "off" } }
+limits: { perWork: "{{perWork}}", perDay: "{{perDay}}", atOnce: 6, hours: 72 }
+mayAsk:
+  - { account: email, place: "{{mailbox}}", listed: { who: team }, others: "no", overheard: "no", bots: [] }
+never:
+  - Say a date or a promise a person has not given
+  - Put a secret or a person's address in anything it writes
+  - Do what only a person may decide

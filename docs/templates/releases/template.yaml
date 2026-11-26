@@ -1,0 +1,15 @@
+id: releases
+version: 1
+name: Releases
+about: Gathers what changed since the last release into notes a person reads and sends.
+whose: ours
+needs: [github]
+blanks:
+  - { id: repo, ask: Which repo?, is: { a: place, connector: github }, best: null }
+  - { id: name, ask: What is it called?, is: { a: text }, best: { value: Releases, from: the template } }
+  - { id: owner, ask: Who answers for it?, is: { a: person }, best: { value: whoever makes it, from: you } }
+  - { id: perWork, ask: Most it may spend on one piece of work, is: { a: number, unit: dollars }, best: { value: "5", from: the template } }
+  - { id: perDay, ask: Most it may spend in a day, is: { a: number, unit: dollars }, best: { value: "20", from: the template } }
+  - { id: writer, ask: Which model writes the notes?, is: { a: model, agent: writer }, best: { value: inherit, from: the workspace } }
+  - { id: reviewer, ask: Which model reads them again?, is: { a: model, agent: reviewer }, best: { value: inherit, from: the workspace } }
+  - { id: judge, ask: Which model judges what comes in?, is: { a: model, agent: judge }, best: { value: inherit, from: the workspace } }

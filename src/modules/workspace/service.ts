@@ -15,6 +15,8 @@ import type { BillingView, SpendLimit } from "~/modules/billing/types.ts";
 import { meteredCommand } from "./internal/metered.ts";
 import type { CommandRequest, EnvironmentView, ExecOutcome, SaveEnvironment, SaveResult } from "~/modules/sandboxes/types.ts";
 import { commandToken } from "./internal/token.ts";
+import { runStore } from "./internal/console-store.ts";
+import type { StoreAnswer, StoreOp } from "~/modules/console/types.ts";
 import { connect, connection, lostConnection, removed, setSources } from "./internal/github.ts";
 import type {
   AddHandleResult,
@@ -211,6 +213,12 @@ export class WorkspaceHost<Env = unknown> extends SettingsHost<Env> implements W
   async membersChanged(members: number): Promise<void> {
     const profile = readProfile(this.ctx.storage.sql);
     if (profile !== undefined) await this.account(profile).membersChanged(members, this.sandboxes().used);
+  }
+
+  async consoleStore(op: StoreOp): Promise<StoreAnswer | NotProvisioned> {
+    if (!this.provisioned()) return { _tag: "NotProvisioned" };
+    const { ids, clock } = this.dependencies;
+    return runStore({ sql: this.ctx.storage.sql, now: clock.now(), id: ids.next }, op);
   }
 
   async destroy(): Promise<{ readonly _tag: "Destroyed" }> {

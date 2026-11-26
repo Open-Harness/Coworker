@@ -1,4 +1,5 @@
 import type { Installation, Installations } from "~/modules/github/types.ts";
+import type { WorkspaceApi } from "~/modules/workspace/types.ts";
 import type { ConnectGitHubResult, TenantObjects, WorkspacesDependencies } from "../types.ts";
 import { findRow, ownersOf } from "./directory.ts";
 
@@ -59,3 +60,12 @@ export const gitHubInstallations = (database: D1Database, objects: TenantObjects
     await database.prepare(`DELETE FROM "github_installation" WHERE "installationId" = ?`).bind(installation).run();
   },
 });
+
+/** The object of the workspace that claimed an installation: where what its repos say goes. */
+export const installedObject =
+  (database: D1Database, objects: TenantObjects) =>
+  async (installation: number): Promise<WorkspaceApi | undefined> => {
+    const workspaceId = await claimed(database, installation);
+    const row = workspaceId === undefined ? undefined : await findRow(database, workspaceId);
+    return row === undefined ? undefined : objects.get(row.objectId, row.region);
+  };

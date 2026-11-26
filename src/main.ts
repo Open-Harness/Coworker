@@ -2,23 +2,22 @@ import handler from "@tanstack/react-start/server-entry";
 import { createAuth } from "~/modules/auth/service.ts";
 import type { AuthSettings, OAuthClient } from "~/modules/auth/types.ts";
 import { randomIds, systemClock } from "~/modules/clock/service.ts";
-import { createAgent } from "~/modules/agent/service.ts";
-import type { Agent } from "~/modules/agent/types.ts";
 import { createAdminCheck, createDirectoryPort, DIRECTORY_NAME, DirectoryHost } from "~/modules/directory/service.ts";
 import { BoxHost } from "~/modules/sandboxes/service.ts";
 import { createHttp } from "~/modules/http/service.ts";
 import { createWorkspacePort, WorkspaceHost } from "~/modules/chat-host/service.ts";
 import type { Report } from "~/modules/chat-host/types.ts";
+import { durableManagerStores, ManagerStoreHost } from "~/modules/manager-store/service.ts";
+import type { ManagerStoreApi } from "~/modules/manager-store/types.ts";
 import { durableManagerObjects, ManagerHost } from "~/modules/manager/service.ts";
 import type { ManagerApi, ManagerObjects } from "~/modules/manager/types.ts";
 import { email } from "~/modules/email/service.ts";
 import { triggers } from "~/modules/triggers/service.ts";
 import { WorkspaceHost as TenantHost } from "~/modules/workspace/service.ts";
-import { createWorkspaces, durableTenantObjects, gitHubInstallations, workspaceAt } from "~/modules/workspaces/service.ts";
+import { createWorkspaces, durableTenantObjects, gitHubInstallations, installedObject, workspaceAt } from "~/modules/workspaces/service.ts";
 import { github } from "~/modules/github/service.ts";
 import {
   FAKE_AUTHSERV,
-  fakeFetch,
   fakeInbound,
   fakeMail,
   lapseInvite,
@@ -31,9 +30,14 @@ import {
   billingFrom,
   brainFrom,
   tenantClockFrom,
+  outsideFetch,
+  agentFrom,
 } from "./world.ts";
 import { FAKE_APP_SLUG, FAKE_GITHUB_SECRET } from "~/modules/github/testing.ts";
 import { faultyObjects, localJurisdictions } from "~/modules/workspaces/testing.ts";
+import { consoleFrom } from "./console-root.ts";
+import { gitHubIn } from "./github-root.ts";
+import { readOurs } from "./templates-root.ts";
 
 /** Bindings and settings of the deployment. See README.md for what each setting does. */
 export interface Env {
@@ -41,6 +45,7 @@ export interface Env {
   readonly WORKSPACES: DurableObjectNamespace;
   readonly WORKSPACE: DurableObjectNamespace<WorkspaceObject>;
   readonly MANAGER: DurableObjectNamespace<ManagerObject>;
+  readonly MANAGER_STORE: DurableObjectNamespace<ManagerStore>;
   readonly AUTH: D1Database;
   readonly FILES: R2Bucket;
   readonly EMAIL: SendEmail;
@@ -49,6 +54,8 @@ export interface Env {
   readonly BOXES?: DurableObjectNamespace<CommandBox>;
   /** `fake` builds every outside service from its fake: tests and local runs without network. */
   readonly DT_WORLD?: string;
+  /** `http` with the fake world: the real adapters over the network, answered by whatever the deployment is given (the flows tier). */
+  readonly DT_OUTSIDE?: string;
   /** Where the app is served. Defaults to the request's own origin. */
   readonly DT_APP_URL?: string;
   /** The address sign-in links and invites are sent from. */
@@ -86,23 +93,6 @@ export interface Env {
 
 const mailDomainOf = (env: Env): string => present(env.DT_MAIL_DOMAIN) ?? "co-worker.tech";
 const sendFromOf = (env: Env): string => present(env.DT_SEND_FROM) ?? `hello@${mailDomainOf(env)}`;
-
-function proxyFrom(env: Env) {
-  const [url, key] = [present(env.PI_EXP_PROXY_URL), present(env.PI_EXP_PROXY_KEY)];
-  if (url === undefined) return undefined;
-  const models = (present(env.PI_EXP_PROXY_MODELS) ?? "gpt-6-luna").split(",").map((model) => model.trim());
-  return { url, models, ...(key === undefined ? {} : { key }) };
-}
-
-const agentFrom = (env: Env): Agent =>
-  createAgent({
-    openaiKey: present(env.OPENAI_API_KEY),
-    anthropicKey: present(env.ANTHROPIC_API_KEY),
-    proxy: proxyFrom(env),
-    defaultModel: present(env.PI_EXP_DEFAULT_MODEL),
-    fakeModel: env.PI_EXP_FAKE_MODEL === "1",
-    fetch: (input, init) => fetch(input, init),
-  });
 
 const report: Report = (message, error, details = {}) =>
   console.error(JSON.stringify({ message, ...details, error: error instanceof Error ? (error.stack ?? error.message) : String(error) }));
@@ -166,7 +156,7 @@ export class WorkspaceObject extends TenantHost<Env> {
       clock: tenantClockFrom(env),
       masterKeys: masterKeysFrom(env),
       ids: randomIds,
-      fetch: env.DT_WORLD === "fake" ? fakeFetch : (input, init) => fetch(input, init),
+      fetch: outsideFetch(env),
       managers: managerObjectsFrom(env),
       mailDomain: mailDomainOf(env),
       sandboxes: sandboxHostFrom(env),
@@ -181,16 +171,14 @@ export class WorkspaceObject extends TenantHost<Env> {
 /** Where replies go out, per Source kind. */
 const channelFrom = (env: Env) => triggers.channels({ email: email.channel(mailerFrom(env)), github: github.channel(gitHubApiFrom(env)) });
 
-/** GitHub's webhooks, to the workspace that claimed the installation. */
-const gitHubIn = (request: Request, env: Env): Promise<Response> =>
-  github
-    .source({
-      secret: present(env.GITHUB_WEBHOOK_SECRET) ?? (env.DT_WORLD === "fake" ? FAKE_GITHUB_SECRET : ""),
-      appSlug: present(env.GITHUB_APP_SLUG) ?? FAKE_APP_SLUG,
-      installations: gitHubInstallations(env.AUTH, tenantsFrom(env)),
-      now: systemClock.now,
-    })
-    .webhook(request);
+/** GitHub's webhooks, to the workspace that claimed the installation: what its managers hear is kept for them. */
+const gitHubInFrom = (request: Request, env: Env): Promise<Response> =>
+  gitHubIn(request, {
+    secret: present(env.GITHUB_WEBHOOK_SECRET) ?? (env.DT_WORLD === "fake" ? FAKE_GITHUB_SECRET : ""),
+    slug: present(env.GITHUB_APP_SLUG) ?? FAKE_APP_SLUG,
+    objectOf: installedObject(env.AUTH, tenantsFrom(env)),
+    removed: (installation) => gitHubInstallations(env.AUTH, tenantsFrom(env)).removed(installation),
+  });
 
 /** Mail to `<manager>.<workspace>@<mail domain>`, from Email Routing, up to 25 MiB. */
 const emailSourceFrom = (env: Env) =>
@@ -224,6 +212,13 @@ export class ManagerObject extends ManagerHost<Env> {
   }
 }
 
+/** The new managers' objects: one each, made in the workspace's jurisdiction. */
+const managerStoresFrom = (env: Env) =>
+  durableManagerStores(env.DT_WORLD === "fake" ? localJurisdictions<ManagerStoreApi>(env.MANAGER_STORE) : env.MANAGER_STORE);
+
+export class ManagerStore extends ManagerStoreHost<Env> {}
+const ours = readOurs((message) => console.error(message));
+
 export default {
   /** Mail to a manager's address becomes a Trigger; Email Routing bounces what is rejected, with the reason. */
   email: async (message: ForwardableEmailMessage, env: Env): Promise<void> => {
@@ -233,7 +228,7 @@ export default {
   },
   fetch: async (request: Request, env: Env): Promise<Response> => {
     const { pathname } = new URL(request.url);
-    if (pathname === "/in/github") return gitHubIn(request, env);
+    if (pathname === "/in/github") return gitHubInFrom(request, env);
     if (env.DT_WORLD === "fake" && pathname === "/api/test/mail") return fakeMail(request);
     if (env.DT_WORLD === "fake" && pathname === "/api/test/inbound-mail") return fakeInbound(request, emailSourceFrom(env));
     if (env.DT_WORLD === "fake" && pathname === "/api/test/lapse-invite") return lapseInvite(request, env.AUTH);
@@ -241,6 +236,13 @@ export default {
       directory: () => env.DIRECTORY.getByName(DIRECTORY_NAME),
       workspace: (workspaceId) => env.WORKSPACES.getByName(workspaceId),
       pages: async (page) => handler.fetch(page),
+      console: consoleFrom({
+        managers: managerStoresFrom(env),
+        ours,
+        clock: tenantClockFrom(env),
+        app: present(env.GITHUB_APP_SLUG) ?? (env.DT_WORLD === "fake" ? FAKE_APP_SLUG : null),
+        mailDomain: mailDomainOf(env),
+      }),
       control: () => controlFrom(env, request),
     })(request);
   },

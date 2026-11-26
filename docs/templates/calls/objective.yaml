@@ -1,0 +1,13 @@
+said: "Every call has someone ready, and a follow-up within a day."
+measure:
+  counts: Calls with a follow-up sent within a day
+  unit: a week
+  better: more
+  read: { from: connector, account: email, query: "call-done {{mailbox}} 14d" }
+  settles: 14d
+  before: { unknown: Read from the last 90 days when it is made }
+aim: { value: 10, by: "2027-02-28" }
+notWorse:
+  - measure: { counts: People who say it was wrong, unit: in 100, better: less, read: { from: person, person: "{{owner}}", asks: Was this right? }, settles: 1d, before: { unknown: Nobody counted } }
+    limit: 5
+owner: "{{owner}}"

@@ -1,0 +1,5 @@
+of: workflow/release/gather
+good: Goes on the first time
+judge: code
+cases: []
+line: { value: 80, unit: percent }

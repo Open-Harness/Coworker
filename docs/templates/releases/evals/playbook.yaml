@@ -1,0 +1,5 @@
+of: playbook
+good: Done, and right a fortnight later
+judge: { person: "{{owner}}" }
+cases: []
+line: { value: 4, unit: a week }

@@ -1,0 +1,3 @@
+triggers:
+  - { id: came, name: "What happens on {{mailbox}}", on: true, makes: { kinds: any }, only: "It is about something this does", atMost: no limit, by: event, account: email, place: "{{mailbox}}", events: [mail] }
+  - { id: asked, name: Asked by the team, on: true, makes: { kinds: any }, only: "Someone of the team says so", atMost: no limit, by: asked, where: chat }

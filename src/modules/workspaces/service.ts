@@ -9,7 +9,7 @@ import { joinByDomain, joinByLink, joining, setApprovedDomains, setInviteLinks }
 import { listWorkspaces, openWorkspace, reachWorkspace, removeWorkspace } from "./internal/members.ts";
 import type { TenantObjects, WorkspaceAt, Workspaces, WorkspacesDependencies } from "./types.ts";
 
-export { gitHubInstallations } from "./internal/github.ts";
+export { gitHubInstallations, installedObject } from "./internal/github.ts";
 export { durableTenantObjects, type TenantNamespace } from "./internal/objects.ts";
 
 export const createWorkspaces = (dependencies: WorkspacesDependencies): Workspaces => ({

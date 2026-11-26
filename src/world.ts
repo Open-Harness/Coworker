@@ -1,3 +1,5 @@
+import { createAgent } from "~/modules/agent/service.ts";
+import type { Agent } from "~/modules/agent/types.ts";
 import { systemClock } from "~/modules/clock/service.ts";
 import { worldClock } from "~/modules/clock/testing.ts";
 import type { Clock } from "~/modules/clock/types.ts";
@@ -32,6 +34,9 @@ import type { Env } from "./main.ts";
 export const present = (value: string | undefined): string | undefined => (value === undefined || value === "" ? undefined : value);
 
 export { FAKE_AUTHSERV };
+
+/** `DT_OUTSIDE=http`: the fake world's own people, clock and mail, but the real adapters over the network, which the evals answer. */
+export const overHttp = (env: Env): boolean => env.DT_OUTSIDE === "http";
 
 /** The fast tier's fixed key, or the Secrets Store one. Rotation adds the old one to `retired` until `rewrap` runs. */
 export const masterKeysFrom = (env: Env): MasterKeys => ({
@@ -86,7 +91,7 @@ const gitHubClient = (env: Env) => {
 
 /** GitHub in memory in the fake world. Without the App's settings, GitHub is out of reach. */
 export const gitHubApiFrom = (env: Env): GitHubApi =>
-  env.DT_WORLD === "fake"
+  env.DT_WORLD === "fake" && !overHttp(env)
     ? gitHubWorld
     : appApi({
         appId: env.GITHUB_APP_ID,
@@ -116,3 +121,24 @@ export const tenantClockFrom = (env: Env): Clock => (env.DT_WORLD === "fake" ? w
 /** What managers think with: their workspace's own model connection. The fake world scripts it, unless a test asks for the real path. */
 export const brainFrom = (env: Env): MakeBrain =>
   env.DT_WORLD === "fake" && present(env.DT_MANAGER_MODEL) !== "workspace" ? () => scriptedBrain() : workspaceBrain;
+
+/** What a tenant's own calls to the outside go through: the fake world's fake, or the network. */
+export const outsideFetch = (env: Env): typeof fetch =>
+  env.DT_WORLD === "fake" && !overHttp(env) ? fakeFetch : (input, init) => fetch(input, init);
+
+function proxyFrom(env: Env) {
+  const [url, key] = [present(env.PI_EXP_PROXY_URL), present(env.PI_EXP_PROXY_KEY)];
+  if (url === undefined) return undefined;
+  const models = (present(env.PI_EXP_PROXY_MODELS) ?? "gpt-6-luna").split(",").map((model) => model.trim());
+  return { url, models, ...(key === undefined ? {} : { key }) };
+}
+
+export const agentFrom = (env: Env): Agent =>
+  createAgent({
+    openaiKey: present(env.OPENAI_API_KEY),
+    anthropicKey: present(env.ANTHROPIC_API_KEY),
+    proxy: proxyFrom(env),
+    defaultModel: present(env.PI_EXP_DEFAULT_MODEL),
+    fakeModel: env.PI_EXP_FAKE_MODEL === "1",
+    fetch: (input, init) => fetch(input, init),
+  });

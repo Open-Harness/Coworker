@@ -1,0 +1,13 @@
+said: "The docs of this repo say what its code does."
+measure:
+  counts: Pull requests that mended the docs, merged and not undone
+  unit: a month
+  better: more
+  read: { from: connector, account: github, query: "stale-done {{repo}} 14d" }
+  settles: 14d
+  before: { unknown: Read from the last 90 days when it is made }
+aim: { value: 8, by: "2027-02-28" }
+notWorse:
+  - measure: { counts: People who say it was wrong, unit: in 100, better: less, read: { from: person, person: "{{owner}}", asks: Was this right? }, settles: 1d, before: { unknown: Nobody counted } }
+    limit: 5
+owner: "{{owner}}"

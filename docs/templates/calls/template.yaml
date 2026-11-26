@@ -1,0 +1,15 @@
+id: calls
+version: 1
+name: Calls
+about: Prepares each call from what is known of the person, and follows it up with a short mail.
+whose: ours
+needs: [email]
+blanks:
+  - { id: mailbox, ask: Which mailbox?, is: { a: place, connector: email }, best: null }
+  - { id: name, ask: What is it called?, is: { a: text }, best: { value: Calls, from: the template } }
+  - { id: owner, ask: Who answers for it?, is: { a: person }, best: { value: whoever makes it, from: you } }
+  - { id: perWork, ask: Most it may spend on one piece of work, is: { a: number, unit: dollars }, best: { value: "3", from: the template } }
+  - { id: perDay, ask: Most it may spend in a day, is: { a: number, unit: dollars }, best: { value: "15", from: the template } }
+  - { id: writer, ask: Which model writes?, is: { a: model, agent: writer }, best: { value: inherit, from: the workspace } }
+  - { id: reader, ask: Which model reads it again?, is: { a: model, agent: reader }, best: { value: inherit, from: the workspace } }
+  - { id: judge, ask: Which model judges what comes in?, is: { a: model, agent: judge }, best: { value: inherit, from: the workspace } }

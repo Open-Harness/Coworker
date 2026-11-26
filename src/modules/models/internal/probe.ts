@@ -1,5 +1,9 @@
+import type { ModelPrice } from "../types.ts";
+
 /** The result of one test call against a provider. */
-export type Probe = { readonly _tag: "Works"; readonly models: readonly string[] } | { readonly _tag: "Failed"; readonly error: string };
+export type Probe =
+  | { readonly _tag: "Works"; readonly models: readonly string[]; readonly prices: Readonly<Record<string, ModelPrice>> }
+  | { readonly _tag: "Failed"; readonly error: string };
 
 const PING = [{ role: "user", content: "Reply with one word." }];
 
@@ -14,10 +18,29 @@ async function providerError(response: Response): Promise<string> {
   return `The provider answered ${response.status} ${response.statusText}`.trim();
 }
 
-async function modelIds(response: Response): Promise<readonly string[]> {
+/** The models a provider lists, and what a list that says its prices (dollars per token, as text) says they cost per million. */
+async function listing(
+  response: Response,
+): Promise<{ readonly models: readonly string[]; readonly prices: Readonly<Record<string, ModelPrice>> }> {
   const body: unknown = await response.json().catch(() => undefined);
   const data = isRecord(body) && Array.isArray(body["data"]) ? body["data"] : [];
-  return data.flatMap((model: unknown) => (isRecord(model) && typeof model["id"] === "string" ? [model["id"]] : []));
+  const models = data.flatMap((model: unknown) => (isRecord(model) && typeof model["id"] === "string" ? [model["id"]] : []));
+  const prices = Object.fromEntries(data.flatMap((model: unknown) => (isRecord(model) ? priced(model) : [])));
+  return { models, prices };
+}
+
+const perMillion = (value: unknown): number | undefined => {
+  const dollars = typeof value === "string" || typeof value === "number" ? Number(value) : Number.NaN;
+  return Number.isFinite(dollars) && dollars >= 0 ? Math.round(dollars * 1e12) / 1e6 : undefined;
+};
+
+function priced(model: Readonly<Record<string, unknown>>): readonly (readonly [string, ModelPrice])[] {
+  const { id, pricing } = model;
+  if (typeof id !== "string" || !isRecord(pricing)) return [];
+  const [input, output] = [perMillion(pricing["prompt"]), perMillion(pricing["completion"])];
+  if (input === undefined || output === undefined) return [];
+  const cached = perMillion(pricing["input_cache_read"]);
+  return [[id, { input, output, ...(cached === undefined ? {} : { cached }) }]];
 }
 
 /** Lists the models, then asks the smallest one for a single token. */
@@ -29,11 +52,11 @@ async function probe(
   try {
     const listed = await list();
     if (!listed.ok) return { _tag: "Failed", error: await providerError(listed) };
-    const models = await modelIds(listed);
+    const { models, prices } = await listing(listed);
     const model = smallest(models);
     if (model === undefined) return { _tag: "Failed", error: "The provider lists no models" };
     const answered = await call(model);
-    return answered.ok ? { _tag: "Works", models } : { _tag: "Failed", error: await providerError(answered) };
+    return answered.ok ? { _tag: "Works", models, prices } : { _tag: "Failed", error: await providerError(answered) };
   } catch (error) {
     return { _tag: "Failed", error: error instanceof Error ? error.message : String(error) };
   }

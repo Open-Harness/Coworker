@@ -1,0 +1,13 @@
+said: "Every release has notes that are true and that people read."
+measure:
+  counts: Releases whose notes went out unchanged
+  unit: a month
+  better: more
+  read: { from: connector, account: github, query: "release-done {{repo}} 14d" }
+  settles: 14d
+  before: { unknown: Read from the last 90 days when it is made }
+aim: { value: 4, by: "2027-02-28" }
+notWorse:
+  - measure: { counts: People who say it was wrong, unit: in 100, better: less, read: { from: person, person: "{{owner}}", asks: Was this right? }, settles: 1d, before: { unknown: Nobody counted } }
+    limit: 5
+owner: "{{owner}}"

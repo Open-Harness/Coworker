@@ -1,0 +1,15 @@
+kinds:
+  - id: call
+    name: A call
+    when: Someone has a call coming, or one just took place, and a person should be ready or followed up.
+    alone: ask
+    steps:
+      - { id: prepare, name: Prepare it, by: { agent: writer }, does: "Find what we know of them and what we last said, in five lines.", skills: [call-notes], leaves: [{ id: ready, says: "Five lines, each with where it is from", by: agent }], checkedBy: { agent: reader }, otherwise: { ask: "{{owner}}" } }
+      - { id: follow, name: Follow up, by: { agent: writer }, does: "Draft one short mail with what was agreed and what happens next.", skills: [call-notes], leaves: [{ id: drafted, says: "One mail, one thing to do, nothing promised that was not said", by: agent }], checkedBy: { agent: reader }, otherwise: { ask: "{{owner}}" } }
+    doneWhen:
+      - { id: ready, says: The person was ready for the call, by: agent }
+      - { id: followed, says: They had the follow-up, by: connector }
+    may:
+      - { account: email, place: "{{mailbox}}", may: { email.search: "on", email.draft: "on", email.reply: ask, email.send_inside: "on", email.send_outside: "off" } }
+    limits: { perWork: "{{perWork}}", hours: 72, atOnce: 3 }
+    look: 3d

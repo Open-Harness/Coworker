@@ -1,0 +1,5 @@
+of: agents/writer
+good: Taken as it is
+judge: { person: "{{owner}}" }
+cases: []
+line: { value: 80, unit: percent }
