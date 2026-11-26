@@ -1,14 +1,85 @@
 import { DurableObject } from "cloudflare:workers";
-import { migrate, pushVersion, readRecord, versionAt, versionsOf, writeRecord } from "./internal/tables.ts";
-import type { ManagerRecord, ManagerStoreApi, ManagerStores, OpenManager, Opened } from "./types.ts";
+import { createBoxes } from "~/modules/boxes/service.ts";
+import type { BoxHost } from "~/modules/boxes/types.ts";
+import type { Clock } from "~/modules/clock/types.ts";
+import { playbooks } from "~/modules/playbook/service.ts";
+import type { Files, Playbook, Version } from "~/modules/playbook/types.ts";
+import { clonePlace, createWorking } from "~/modules/working/service.ts";
+import type { Outside, TakeInput, Working } from "~/modules/working/types.ts";
 import type { Region } from "~/modules/workspace/types.ts";
-import type { Files, Version } from "~/modules/playbook/types.ts";
+import { migrate, pushVersion, readRecord, versionAt, versionsOf, writeRecord } from "./internal/tables.ts";
+import { workStore } from "./internal/work-tables.ts";
+import { usageOf } from "./internal/usage.ts";
+import type { BoardRow, Hearing, ManagerRecord, ManagerStoreApi, ManagerStores, OpenManager, Opened, UsageRow } from "./types.ts";
 
-/** One manager's object. The composition root subclasses it, so that a later dependency (a clock, a box host) is given and not reached for. */
+const DAY = 86_400_000;
+
+/** What a manager's object is given: time, containers, and what is outside it, built once its workspace is known. */
+export interface ManagerStoreDeps {
+  readonly clock: Clock;
+  readonly host: BoxHost;
+  readonly outside: (record: ManagerRecord) => Outside;
+  readonly report: (message: string, error: unknown) => void;
+}
+
+/** One manager's object. The composition root subclasses it, so that what it needs is given and not reached for. */
 export class ManagerStoreHost<Env = unknown> extends DurableObject<Env> implements ManagerStoreApi {
-  constructor(ctx: DurableObjectState, env: Env) {
+  readonly #deps: ManagerStoreDeps;
+  #working: Working | undefined;
+  readonly #playbooks = new Map<number, Playbook>();
+
+  constructor(ctx: DurableObjectState, env: Env, deps: ManagerStoreDeps) {
     super(ctx, env);
-    ctx.blockConcurrencyWhile(async () => migrate(ctx.storage.sql));
+    this.#deps = deps;
+    // Work that a lost object left goes on as soon as it is back, and its tables are there.
+    void ctx.blockConcurrencyWhile(async () => migrate(ctx.storage.sql)).then(() => this.#resume());
+  }
+
+  /** The playbook as it was at a version, read once. A version that does not read is none. */
+  #playbookAt(number: number): Playbook | undefined {
+    const known = this.#playbooks.get(number);
+    if (known !== undefined) return known;
+    const version = versionAt(this.ctx.storage.sql, number);
+    const read = version === undefined ? undefined : playbooks.read(version.files);
+    if (read?._tag !== "Playbook") return undefined;
+    this.#playbooks.set(number, read.playbook);
+    return read.playbook;
+  }
+
+  #arm(at: number | null): void {
+    const { storage } = this.ctx;
+    const set = at === null ? storage.deleteAlarm() : storage.setAlarm(Date.now() + Math.max(at - this.#deps.clock.now(), 0));
+    set.catch((error: unknown) => this.#deps.report("A manager could not set its alarm", error));
+  }
+
+  /** What the manager does with its work, once it is made. */
+  #works(): Working | undefined {
+    if (this.#working !== undefined) return this.#working;
+    const record = readRecord(this.ctx.storage.sql);
+    if (record === undefined) return undefined;
+    const { clock, host } = this.#deps;
+    const store = workStore(this.ctx.storage);
+    const outside = this.#deps.outside(record);
+    const boxes = createBoxes({ sql: this.ctx.storage.sql, host, clock, place: clonePlace(outside, store) });
+    this.#working = createWorking({
+      store,
+      boxes,
+      outside,
+      clock,
+      playbook: (number) => this.#playbookAt(number),
+      manager: { id: record.id, name: record.name },
+      alarm: (at) => this.#arm(at),
+      later: (running) => this.ctx.waitUntil(running.catch((error: unknown) => this.#deps.report("A manager's work stopped", error))),
+    });
+    return this.#working;
+  }
+
+  async #resume(): Promise<void> {
+    try {
+      await this.#works()?.run();
+    } catch (error) {
+      this.#deps.report("A manager could not go on with its work", error);
+    }
   }
 
   async open(input: OpenManager): Promise<Opened> {
@@ -50,6 +121,51 @@ export class ManagerStoreHost<Env = unknown> extends DurableObject<Env> implemen
     readonly from: Version["from"];
   }): Promise<Version> {
     return pushVersion(this.ctx.storage.sql, input);
+  }
+
+  async hearing(): Promise<Hearing | undefined> {
+    const { sql } = this.ctx.storage;
+    const [record, version, working] = [readRecord(sql), versionAt(sql), this.#works()];
+    if (record === undefined || version === undefined || working === undefined) return undefined;
+    const today = Math.floor(this.#deps.clock.now() / DAY) * DAY;
+    const spent = workStore(this.ctx.storage)
+      .spends()
+      .filter(({ at }) => at >= today)
+      .reduce((sum, { dollars }) => sum + (dollars ?? 0), 0);
+    return { record, version, open: working.open(), spent };
+  }
+
+  async take(input: TakeInput): Promise<{ readonly work: string }> {
+    const working = this.#works();
+    if (working === undefined) throw new Error("This manager was never opened.");
+    return working.take(input);
+  }
+
+  async heard(input: { readonly work: string; readonly item: TakeInput["item"] }): Promise<void> {
+    await this.#works()?.heard(input);
+  }
+
+  async board(): Promise<readonly BoardRow[]> {
+    const store = workStore(this.ctx.storage);
+    return store
+      .works()
+      .map((work) => ({ work, hold: store.hold(work.id) ?? null, cost: store.spendOf(work.id), threads: store.threadsOf(work.id) }));
+  }
+
+  async usage(): Promise<readonly UsageRow[]> {
+    return usageOf(workStore(this.ctx.storage).spends());
+  }
+
+  async tick(): Promise<void> {
+    await this.#works()?.due();
+  }
+
+  override async alarm(): Promise<void> {
+    try {
+      await this.#works()?.due();
+    } catch (error) {
+      this.#deps.report("A manager's alarm could not finish", error);
+    }
   }
 }
 

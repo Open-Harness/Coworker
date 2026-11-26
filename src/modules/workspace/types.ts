@@ -28,6 +28,7 @@ import type {
   Readiness,
 } from "~/modules/models/types.ts";
 import type { MasterKeys, SecretInfo } from "~/modules/vault/types.ts";
+import type { ManagerStores } from "~/modules/manager-store/types.ts";
 import type { Handle, Policy, Routed, Trigger } from "~/modules/triggers/types.ts";
 import type { CommandRequest, EnvironmentView, ExecOutcome, SandboxHost, SaveEnvironment, SaveResult } from "~/modules/sandboxes/types.ts";
 
@@ -217,6 +218,8 @@ export interface WorkspaceApi {
   membersChanged(members: number): Promise<void>;
   /** The console's own rows: what each doing did, the audit log, settings, the tree, what came in. See `console`. */
   consoleStore(op: StoreOp): Promise<StoreAnswer | NotProvisioned>;
+  /** Does what is due now: what came in is decided, and what a judge did not answer is asked again. */
+  tick(): Promise<void>;
   /** Erases everything the object holds, its data key and its managers included. */
   destroy(): Promise<{ readonly _tag: "Destroyed" }>;
 }
@@ -228,6 +231,8 @@ export interface WorkspaceDependencies {
   /** Reaches model providers for test calls. */
   readonly fetch: typeof fetch;
   readonly managers: ManagerObjects;
+  /** Where the new managers' own objects are: what came in is handed to them. */
+  readonly stores: ManagerStores;
   /** Where managers' addresses live: `launch.acme@<mailDomain>`. */
   readonly mailDomain: string;
   /** Where sandboxes run. */

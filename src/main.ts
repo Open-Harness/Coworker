@@ -14,7 +14,14 @@ import type { ManagerApi, ManagerObjects } from "~/modules/manager/types.ts";
 import { email } from "~/modules/email/service.ts";
 import { triggers } from "~/modules/triggers/service.ts";
 import { WorkspaceHost as TenantHost } from "~/modules/workspace/service.ts";
-import { createWorkspaces, durableTenantObjects, gitHubInstallations, installedObject, workspaceAt } from "~/modules/workspaces/service.ts";
+import {
+  createWorkspaces,
+  durableTenantObjects,
+  gitHubInstallations,
+  installedObject,
+  workspaceAt,
+  workspaceById,
+} from "~/modules/workspaces/service.ts";
 import { github } from "~/modules/github/service.ts";
 import {
   FAKE_AUTHSERV,
@@ -32,64 +39,19 @@ import {
   tenantClockFrom,
   outsideFetch,
   agentFrom,
+  boxHostFrom,
+  gitPortFrom,
+  passTime,
 } from "./world.ts";
 import { FAKE_APP_SLUG, FAKE_GITHUB_SECRET } from "~/modules/github/testing.ts";
 import { faultyObjects, localJurisdictions } from "~/modules/workspaces/testing.ts";
 import { consoleFrom } from "./console-root.ts";
 import { gitHubIn } from "./github-root.ts";
 import { readOurs } from "./templates-root.ts";
+import { outsideFor } from "./working-root.ts";
+import type { Env } from "./env.ts";
 
-/** Bindings and settings of the deployment. See README.md for what each setting does. */
-export interface Env {
-  readonly DIRECTORY: DurableObjectNamespace;
-  readonly WORKSPACES: DurableObjectNamespace;
-  readonly WORKSPACE: DurableObjectNamespace<WorkspaceObject>;
-  readonly MANAGER: DurableObjectNamespace<ManagerObject>;
-  readonly MANAGER_STORE: DurableObjectNamespace<ManagerStore>;
-  readonly AUTH: D1Database;
-  readonly FILES: R2Bucket;
-  readonly EMAIL: SendEmail;
-  readonly VAULT_MASTER_KEY: SecretsStoreSecret;
-  /** One object per container, where Cloudflare Containers are bound (staging). Without it, sandboxes are unavailable. */
-  readonly BOXES?: DurableObjectNamespace<CommandBox>;
-  /** `fake` builds every outside service from its fake: tests and local runs without network. */
-  readonly DT_WORLD?: string;
-  /** `http` with the fake world: the real adapters over the network, answered by whatever the deployment is given (the flows tier). */
-  readonly DT_OUTSIDE?: string;
-  /** Where the app is served. Defaults to the request's own origin. */
-  readonly DT_APP_URL?: string;
-  /** The address sign-in links and invites are sent from. */
-  readonly DT_SEND_FROM?: string;
-  /** `workspace` makes managers think with their workspace's model connection even in the fake world; the fast tier's script otherwise. */
-  readonly DT_MANAGER_MODEL?: string;
-  /** The domain managers' addresses are on. Defaults to `co-worker.tech`. */
-  readonly DT_MAIL_DOMAIN?: string;
-  /** The receiving MTA whose `Authentication-Results` decide DKIM. Cloudflare Email Routing by default. */
-  readonly DT_AUTHSERV_ID?: string;
-  readonly BETTER_AUTH_SECRET?: string;
-  /** The id recorded with each wrapped data key. Change it with the master key. */
-  readonly DT_MASTER_KEY_ID?: string;
-  readonly GOOGLE_CLIENT_ID?: string;
-  readonly GOOGLE_CLIENT_SECRET?: string;
-  readonly GITHUB_CLIENT_ID?: string;
-  readonly GITHUB_CLIENT_SECRET?: string;
-  /** The GitHub App: its id, its private key (PKCS #8 PEM), its webhook secret and its slug. */
-  readonly GITHUB_APP_ID?: string;
-  readonly GITHUB_APP_PRIVATE_KEY?: string;
-  readonly GITHUB_WEBHOOK_SECRET?: string;
-  readonly GITHUB_APP_SLUG?: string;
-  /** The App's own sign-in client, which proves who installed it. */
-  readonly GITHUB_APP_CLIENT_ID?: string;
-  readonly GITHUB_APP_CLIENT_SECRET?: string;
-  readonly OPENAI_API_KEY?: string;
-  readonly ANTHROPIC_API_KEY?: string;
-  readonly PI_EXP_PROXY_URL?: string;
-  readonly PI_EXP_PROXY_MODELS?: string;
-  readonly PI_EXP_PROXY_KEY?: string;
-  readonly PI_EXP_DEFAULT_MODEL?: string;
-  readonly PI_EXP_FAKE_MODEL?: string;
-  readonly PI_EXP_ADMINS?: string;
-}
+export type { Env };
 
 const mailDomainOf = (env: Env): string => present(env.DT_MAIL_DOMAIN) ?? "co-worker.tech";
 const sendFromOf = (env: Env): string => present(env.DT_SEND_FROM) ?? `hello@${mailDomainOf(env)}`;
@@ -158,6 +120,7 @@ export class WorkspaceObject extends TenantHost<Env> {
       ids: randomIds,
       fetch: outsideFetch(env),
       managers: managerObjectsFrom(env),
+      stores: managerStoresFrom(env),
       mailDomain: mailDomainOf(env),
       sandboxes: sandboxHostFrom(env),
       billing: billingFrom(env),
@@ -216,7 +179,22 @@ export class ManagerObject extends ManagerHost<Env> {
 const managerStoresFrom = (env: Env) =>
   durableManagerStores(env.DT_WORLD === "fake" ? localJurisdictions<ManagerStoreApi>(env.MANAGER_STORE) : env.MANAGER_STORE);
 
-export class ManagerStore extends ManagerStoreHost<Env> {}
+/** One manager's own object: its playbook, its work, its conversations and its container. */
+export class ManagerStore extends ManagerStoreHost<Env> {
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env, {
+      clock: tenantClockFrom(env),
+      host: boxHostFrom(env),
+      outside: outsideFor({
+        workspace: workspaceById(env.AUTH, tenantsFrom(env)),
+        github: gitHubApiFrom(env),
+        git: gitPortFrom(env),
+        fetch: outsideFetch(env),
+      }),
+      report: (message, error) => report(message, error),
+    });
+  }
+}
 const ours = readOurs((message) => console.error(message));
 
 export default {
@@ -232,6 +210,8 @@ export default {
     if (env.DT_WORLD === "fake" && pathname === "/api/test/mail") return fakeMail(request);
     if (env.DT_WORLD === "fake" && pathname === "/api/test/inbound-mail") return fakeInbound(request, emailSourceFrom(env));
     if (env.DT_WORLD === "fake" && pathname === "/api/test/lapse-invite") return lapseInvite(request, env.AUTH);
+    if (env.DT_WORLD === "fake" && pathname === "/api/test/time")
+      return passTime(request, { workspace: workspaceById(env.AUTH, tenantsFrom(env)), stores: managerStoresFrom(env) });
     return createHttp({
       directory: () => env.DIRECTORY.getByName(DIRECTORY_NAME),
       workspace: (workspaceId) => env.WORKSPACES.getByName(workspaceId),

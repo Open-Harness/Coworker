@@ -32,6 +32,14 @@ const nobody: ManagerStoreApi = {
   versions: async () => [],
   version: async () => undefined,
   copy: async () => undefined,
+  hearing: async () => undefined,
+  take: async () => {
+    throw new Error("not used");
+  },
+  heard: async () => undefined,
+  board: async () => [],
+  usage: async () => [],
+  tick: async () => undefined,
   save: async () => {
     throw new Error("not used");
   },

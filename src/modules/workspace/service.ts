@@ -5,7 +5,7 @@ import { answerAndWake, hearFor } from "./internal/answers.ts";
 import { requestJoin } from "./internal/requests.ts";
 import { createManager, destroyManagers, listManagers } from "./internal/managers.ts";
 import { migrate, readProfile, writeProfile } from "./internal/store.ts";
-import { SettingsHost } from "./internal/settings-host.ts";
+import { DecidingHost } from "./internal/decider-host.ts";
 import { allowsJoin, readJoinSettings, setApprovedDomains, setInviteLinks } from "./internal/joining.ts";
 import { eventsOf, follow, logEvent, readPolicy, writePolicy } from "./internal/hearing.ts";
 import type { Handle, Policy, Routed, Trigger } from "~/modules/triggers/types.ts";
@@ -45,7 +45,7 @@ import type {
  * One tenant: its people, sources, vault, Inbox, audit log and list of managers, in one Durable Object. The
  * composition root subclasses it to pass the dependencies.
  */
-export class WorkspaceHost<Env = unknown> extends SettingsHost<Env> implements WorkspaceApi {
+export class WorkspaceHost<Env = unknown> extends DecidingHost<Env> implements WorkspaceApi {
   async provision(profile: WorkspaceProfile): Promise<ProvisionResult> {
     const existing = readProfile(this.ctx.storage.sql);
     if (existing !== undefined) return { _tag: "AlreadyProvisioned", workspaceId: existing.workspaceId };
@@ -218,7 +218,10 @@ export class WorkspaceHost<Env = unknown> extends SettingsHost<Env> implements W
   async consoleStore(op: StoreOp): Promise<StoreAnswer | NotProvisioned> {
     if (!this.provisioned()) return { _tag: "NotProvisioned" };
     const { ids, clock } = this.dependencies;
-    return runStore({ sql: this.ctx.storage.sql, now: clock.now(), id: ids.next }, op);
+    const answer = runStore({ sql: this.ctx.storage.sql, now: clock.now(), id: ids.next }, op);
+    // What came in is decided from the object's alarm, so that a lost object still decides it when it is back.
+    if (answer.op === "item.keep" && answer.isNew) await this.wakeFor(0);
+    return answer;
   }
 
   async destroy(): Promise<{ readonly _tag: "Destroyed" }> {

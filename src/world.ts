@@ -17,6 +17,9 @@ import type { MakeBrain } from "~/modules/manager/types.ts";
 import { emailServiceMailer } from "~/modules/mail/service.ts";
 import { outbox } from "~/modules/mail/testing.ts";
 import { modelProviders } from "~/modules/models/testing.ts";
+import { noBoxes, noPush } from "~/modules/boxes/service.ts";
+import { httpBoxes, httpGit } from "~/modules/boxes/testing.ts";
+import type { BoxHost, GitPort } from "~/modules/boxes/types.ts";
 import { cloudflareContainers, noContainers } from "~/modules/sandboxes/service.ts";
 import { sandboxWorld } from "~/modules/sandboxes/testing.ts";
 import type { BoxHandle, SandboxHost } from "~/modules/sandboxes/types.ts";
@@ -24,7 +27,9 @@ import { r2Files } from "~/modules/triggers/service.ts";
 import { secretsStoreMasterKey } from "~/modules/vault/service.ts";
 import { testMasterKey } from "~/modules/vault/testing.ts";
 import type { MasterKeys } from "~/modules/vault/types.ts";
-import type { Env } from "./main.ts";
+import type { ManagerStores } from "~/modules/manager-store/types.ts";
+import type { WorkspaceApi } from "~/modules/workspace/types.ts";
+import type { Env } from "./env.ts";
 
 /*
  * Part of the composition root, beside `main.ts`: for each outside thing in book section 2, the fake world's fake or
@@ -112,6 +117,12 @@ export const sandboxHostFrom = (env: Env): SandboxHost =>
       ? noContainers
       : cloudflareContainers({ open: (name) => env.BOXES?.getByName(name) as BoxHandle }, () => crypto.randomUUID().slice(0, 8));
 
+/** Containers for a manager's work: the evals' own over the network in the fake world; elsewhere none until Cloudflare's are behind this. */
+export const boxHostFrom = (env: Env): BoxHost => (overHttp(env) ? httpBoxes((input, init) => fetch(input, init)) : noBoxes);
+
+/** Where a branch is pushed from: the same, and nowhere else. */
+export const gitPortFrom = (env: Env): GitPort => (overHttp(env) ? httpGit((input, init) => fetch(input, init)) : noPush);
+
 /** Stripe test mode is not set up yet (book section 3): the fake world records, anywhere else nothing is charged. */
 export const billingFrom = (env: Env): Billing => (env.DT_WORLD === "fake" ? billingWorld : unbilled);
 
@@ -142,3 +153,25 @@ export const agentFrom = (env: Env): Agent =>
     fakeModel: env.PI_EXP_FAKE_MODEL === "1",
     fetch: (input, init) => fetch(input, init),
   });
+
+/**
+ * The fake world's time, which a test moves: `{workspace, pass}` moves the clock by `pass` milliseconds and does everything of that
+ * workspace that is due, before it answers. Time does not pass by itself here: what waits for a date waits until this.
+ */
+export async function passTime(
+  request: Request,
+  deps: { readonly workspace: (id: string) => Promise<WorkspaceApi | undefined>; readonly stores: ManagerStores },
+): Promise<Response> {
+  const body: unknown = await request.json().catch(() => undefined);
+  const asked = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+  const [id, pass] = [typeof asked["workspace"] === "string" ? asked["workspace"] : "", Number(asked["pass"] ?? 0)];
+  const object = await deps.workspace(id);
+  if (object === undefined || !Number.isFinite(pass))
+    return Response.json({ says: "There is no such workspace, or no such time." }, { status: 404 });
+  worldClock.set(worldClock.now() + pass);
+  await object.tick();
+  const rows = await object.consoleStore({ op: "manager.list" });
+  if ("op" in rows && rows.op === "manager.list")
+    await Promise.all(rows.rows.map(({ objectId, region }) => deps.stores.get(objectId, region).tick()));
+  return Response.json({ now: worldClock.now() });
+}

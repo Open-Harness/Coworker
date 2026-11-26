@@ -2,7 +2,7 @@ import { createWorkspace } from "./internal/create.ts";
 import { connectGitHub } from "./internal/github.ts";
 import { answer, requestJoin } from "./internal/requests.ts";
 import { addHandle, linkEmail, personChanged } from "./internal/people.ts";
-import { findByAddress } from "./internal/directory.ts";
+import { findByAddress, findRow } from "./internal/directory.ts";
 import { approvalFor } from "./internal/approvals.ts";
 import { exportData, updateGeneral } from "./internal/general.ts";
 import { joinByDomain, joinByLink, joining, setApprovedDomains, setInviteLinks } from "./internal/joining.ts";
@@ -33,6 +33,12 @@ export const createWorkspaces = (dependencies: WorkspacesDependencies): Workspac
   updateGeneral: (userId, workspaceId, input) => updateGeneral(dependencies, userId, workspaceId, input),
   exportData: (userId, workspaceId) => exportData(dependencies, userId, workspaceId),
 });
+
+/** Finds a workspace's object by its id, without a person: for what a manager needs of its own workspace. */
+export const workspaceById = (database: D1Database, objects: TenantObjects) => async (workspaceId: string) => {
+  const row = await findRow(database, workspaceId);
+  return row === undefined ? undefined : objects.get(row.objectId, row.region);
+};
 
 /** Finds a workspace's object by its address, without a person: for mail arriving at it. */
 export const workspaceAt =

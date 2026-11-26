@@ -6,11 +6,15 @@ jurisdiction (`durableManagerStores`), and addressed by the `objectId` the works
 Built: who it is (`ManagerRecord`) and its playbook, version by version (`open`, `head`, `versions`, `version`, `copy`, `save`).
 `save` is the one authoritative path to a new version: the number is taken inside the insert, so two saves never share one.
 
-To come, as tables of this object and calls on `ManagerStoreApi`, in this order: `work` (a `Work` as `work` moves it, keyed by id, with
-its `next` alarm), `thread` (a fork of the manager on one piece of work: `threads` rows and its lines), `run` (what each turn cost, by call
-id, so a replay never counts twice), `box` (the snapshot id and last command of the work's container), `ask` (the open asks of this
-manager's work). The intake of what came in is not here: it is the workspace's (`console_item`), because one thing that comes in is
-decided over every manager that hears its place.
+Built too: its work, as `working` moves it. Tables (`internal/work-tables.ts`, and `boxes`' own): `work` (a `Work` as `work` moves it, by id), `seen` (event keys: an event
+is applied once), `job` (what moving work asked to be done, in order, each once), `thread` and `message` (an agent's conversation, as a model is sent it), `spend` (what each
+model call cost, by call id, priced or counted without a price), `hold` (why a work waits for something that is not a person), `once` (an outside act that was done, by its key),
+`box` and `box_call` (the container, and what each call of it answered). Calls: `hearing` (what intake needs to decide over this manager), `take` (once per item), `heard`,
+`board` (work, hold, cost and threads), `usage` (cost by day and model), `tick` (do what is due now). The object wakes itself by its alarm: for a work's date, for a hold's retry,
+and soon, while something is half done, so that a lost object goes on.
+
+To come: `ask` (the open asks of this manager's work; today an ask job is kept and not sent to the inbox). The intake of what came in is not here: it is the workspace's
+(`console_item`, decided by `deciding`), because one thing that comes in is decided over every manager that hears its place.
 
 ## Invariants
 

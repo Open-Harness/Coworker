@@ -84,11 +84,32 @@ export async function usageView(c: ConsoleDeps): Promise<UsageView> {
     settingOr(c.store, "perDay", 100),
     settingOr(c.store, "tellAt", 0.8),
   ]);
+  const used = await Promise.all(rows.map(async (row) => ({ row, usage: await c.managers.get(row.objectId, row.region).usage() })));
   const today = Math.floor(c.clock.now() / DAY) * DAY;
+  const models = new Map<string, { cost: number; notKnown: number }>();
+  for (const { usage } of used)
+    for (const one of usage) {
+      const was = models.get(one.model) ?? { cost: 0, notKnown: 0 };
+      models.set(one.model, { cost: was.cost + one.dollars, notKnown: was.notKnown + one.notKnown });
+    }
   return {
-    days: Array.from({ length: 7 }, (_, n) => ({ day: today - (6 - n) * DAY, cost: 0, boxes: 0 })),
-    managers: rows.map(({ node }) => ({ id: node.id, name: node.name, cost: 0 })),
-    models: [],
+    days: Array.from({ length: 7 }, (_, n) => {
+      const day = today - (6 - n) * DAY;
+      return {
+        day,
+        cost: used
+          .flatMap(({ usage }) => usage)
+          .filter((one) => one.day === day)
+          .reduce((sum, one) => sum + one.dollars, 0),
+        boxes: 0,
+      };
+    }),
+    managers: used.map(({ row, usage }) => ({
+      id: row.node.id,
+      name: row.node.name,
+      cost: usage.reduce((sum, one) => sum + one.dollars, 0),
+    })),
+    models: [...models].map(([model, one]) => ({ model, ...one })),
     perDay,
     tellAt,
   };

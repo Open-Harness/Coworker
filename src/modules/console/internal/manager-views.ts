@@ -1,6 +1,5 @@
 import { templates } from "~/modules/templates/service.ts";
-import { works } from "~/modules/work/service.ts";
-import type { BoardView, IntakeView, PlaybookView } from "~/modules/views-manager/types.ts";
+import type { IntakeView, PlaybookView } from "~/modules/views-manager/types.ts";
 import type { ConsoleDeps } from "../types.ts";
 import { problem, ok } from "./around.ts";
 import { headOf, openManager, type Open } from "./managers.ts";
@@ -9,19 +8,6 @@ import type { Decision } from "~/modules/intake/types.ts";
 /* What one manager's pages are given. */
 
 const gone = (id: string) => problem(404, `There is no manager "${id}" here.`);
-
-export async function boardView(c: ConsoleDeps, id: string) {
-  const open = await openManager(c, id);
-  if (open === undefined) return gone(id);
-  const kinds = open.playbook?.kinds ?? [];
-  const view: BoardView = {
-    head: await headOf(c, open),
-    totals: { open: 0, outside: 0, person: 0 },
-    columns: works.columns(kinds).map((column) => ({ ...column, waits: false, more: 0 })),
-    cards: [],
-  };
-  return ok(view);
-}
 
 const owner = (open: Open): string => open.playbook?.objective.owner ?? open.version.by;
 
@@ -105,7 +91,12 @@ export async function intakeView(c: ConsoleDeps, id: string, query: URLSearchPar
     rows: found.rows.map(({ item, decision }) => ({
       item,
       decision: decision ?? waiting(item.id),
-      work: null,
+      work:
+        decision?._tag === "Took"
+          ? { id: `work_${item.id}`, title: item.title }
+          : decision?._tag === "Joined"
+            ? { id: decision.work, title: item.title }
+            : null,
       from: item.actor.name,
       line: [{ did: "Found", says: `${item.actor.name} on ${item.place}`, at: item.at }],
       said: null,

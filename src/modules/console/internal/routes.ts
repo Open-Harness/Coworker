@@ -3,7 +3,8 @@ import { doings } from "~/modules/doings/service.ts";
 import type { Call, ConsoleDeps } from "../types.ts";
 import { auditView } from "./audit.ts";
 import { run } from "./do.ts";
-import { intakeView, boardView, playbookView } from "./manager-views.ts";
+import { boardView } from "./board.ts";
+import { intakeView, playbookView } from "./manager-views.ts";
 import { ok, problem } from "./around.ts";
 import { overviewView, treeView } from "./overview.ts";
 import {

@@ -81,6 +81,7 @@ export const faultyObjects = (real: TenantObjects, armed: ObjectFaults = faults)
         billing: () => minted.object.billing(),
         setSpendLimit: (limit) => minted.object.setSpendLimit(limit),
         membersChanged: (members) => minted.object.membersChanged(members),
+        tick: () => minted.object.tick(),
         consoleStore: (op) => minted.object.consoleStore(op),
       },
     };
