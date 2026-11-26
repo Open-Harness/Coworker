@@ -25,7 +25,7 @@ function world() {
   const fetch: typeof globalThis.fetch = async (_url, init) => {
     const body = JSON.parse(String(init?.body)) as { id?: number; method: string; params?: { name?: string } };
     asked.push(body.method === "tools/call" ? `${body.method} ${body.params?.name}` : body.method);
-    if ((init?.headers as Record<string, string>)["authorization"] !== "Bearer right") return new Response("no", { status: 401 });
+    if (new Headers(init?.headers).get("authorization") !== "Bearer right") return new Response("no", { status: 401 });
     if (body.id === undefined) return new Response(null, { status: 202 });
     const result =
       body.method === "tools/list"
