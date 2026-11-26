@@ -36,10 +36,10 @@ This keeps Effect contained, as `AGENTS.md` asks. The blueprint needs Effect's `
 ## Q1 — Where does the app live: at the root, or under `apps/`?
 
 **The problem, in code.** The evals are locked. They reach the app through the `~` alias, which points at `./src`
-(`tsconfig.json:6`, `vite.config.ts:18`, `vitest.config.ts:44`):
+(`tsconfig.json:8`, `vite.config.ts:18`, `vitest.config.ts:44`):
 
 ```jsonc
-// tsconfig.json:6
+// tsconfig.json:8
 "paths": { "~/*": ["./src/*"] }
 ```
 
