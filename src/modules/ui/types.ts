@@ -226,6 +226,12 @@ export interface SeriesChartProps {
   /** What to say instead of a flat chart when every number is zero. */
   readonly emptyText?: string;
   readonly height?: number;
+  /** Where the axis counts: its ticks, how high it goes, and what goes before a number on it (`$`). Bars only. */
+  readonly axis?: { readonly ticks: readonly number[]; readonly top: number; readonly prefix?: string };
+  /** Dashed lines across the bars, at these values: a limit, where to be told. Bars only. */
+  readonly lines?: readonly number[];
+  /** A bar at or above this is drawn red, so that a day over the line shows. One series only. */
+  readonly over?: number;
 }
 
 export interface DonutChartProps {

@@ -8,6 +8,7 @@ import {
   LineChart,
   Pie,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -94,16 +95,34 @@ function Lines({ labels, series, unit, hasDecimals = false, height = HEIGHT }: S
   );
 }
 
-function Bars({ labels, series, unit, isStacked = false, hasDecimals = false, height = HEIGHT }: SeriesChartProps) {
+function Bars({ labels, series, unit, isStacked = false, hasDecimals = false, height = HEIGHT, axis, lines = [], over }: SeriesChartProps) {
+  const prefix = axis?.prefix ?? "";
+  const scale =
+    axis === undefined
+      ? Y_AXIS
+      : {
+          ...Y_AXIS,
+          width: 44,
+          domain: [0, axis.top] as [number, number],
+          ticks: [...axis.ticks],
+          tickFormatter: (value: number) => `${prefix}${value}`,
+        };
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={rowsOf(labels, series) as Record<string, string | number>[]} margin={MARGIN}>
         <CartesianGrid horizontal vertical={false} stroke={GRID} />
         <XAxis dataKey="label" {...X_AXIS} />
-        <YAxis {...Y_AXIS} allowDecimals={hasDecimals} />
+        <YAxis {...scale} allowDecimals={hasDecimals} />
         <Tooltip content={<Hover {...(unit === undefined ? {} : { unit })} />} cursor={{ fill: GRID, fillOpacity: 0.4 }} />
-        {series.map(({ name, color }) => (
-          <Bar key={name} dataKey={name} fill={COLOR(color)} {...(isStacked ? { stackId: "all" } : {})} isAnimationActive={false} />
+        {lines.map((at) => (
+          <ReferenceLine key={at} y={at} stroke={TEXT} strokeDasharray="4 4" />
+        ))}
+        {series.map(({ name, color, values }) => (
+          <Bar key={name} dataKey={name} fill={COLOR(color)} {...(isStacked ? { stackId: "all" } : {})} isAnimationActive={false}>
+            {over === undefined || series.length > 1
+              ? null
+              : values.map((value, at) => <Cell key={labels[at] ?? at} fill={value >= over ? COLOR("red") : COLOR(color)} />)}
+          </Bar>
         ))}
       </BarChart>
     </ResponsiveContainer>
