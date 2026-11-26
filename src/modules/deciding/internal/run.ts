@@ -45,6 +45,14 @@ async function askWhich(
   await c.askWhich?.({ item, to: first.playbook.objective.owner, between, why: decision.why });
 }
 
+/** Two that fit equally are asked which. One that fits alone is asked about too, unless it is asked because its day is spent: that ask is the day's limit, made when the work reached it. */
+function needsWhich(decision: Extract<Decision, { _tag: "Asked" }>, heard: readonly Listener[]): boolean {
+  const [only] = decision.between;
+  if (decision.between.length !== 1 || only === undefined) return decision.between.length > 1;
+  const listener = heard.find(({ row }) => row.node.id === only.manager);
+  return listener === undefined || hearsOf(listener).spent < 1;
+}
+
 /** What follows from a decision: a manager takes it on, or the work that follows it hears it. `NotTaken`: the manager is not there to take it. */
 async function act(c: DecidingDeps, item: Item, decision: Decision, heard: readonly Listener[]): Promise<"Acted" | "NotTaken"> {
   if (decision._tag === "Took") {
@@ -53,7 +61,7 @@ async function act(c: DecidingDeps, item: Item, decision: Decision, heard: reado
     const taken = await c.manager(taker.row).take({ item, took: decision, answers: taker.playbook.objective.owner });
     if ("_tag" in taken) return "NotTaken";
   }
-  if (decision._tag === "Asked" && decision.between.length > 0) await askWhich(c, item, decision, heard);
+  if (decision._tag === "Asked" && needsWhich(decision, heard)) await askWhich(c, item, decision, heard);
   if (decision._tag === "Joined") {
     const owner = heard.find(({ hearing }) => hearing.open.some(({ id }) => id === decision.work));
     if (owner !== undefined) await c.manager(owner.row).heard({ work: decision.work, item });

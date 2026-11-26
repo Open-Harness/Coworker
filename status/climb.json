@@ -823,7 +823,11 @@
     "flow:mcp/a-wrong-secret-a-private-address-and-ours-are-refused-in-words": "462777a",
     "flow:mcp/a-tool-on-ask-parks-and-runs-after-a-yes": "462777a",
     "flow:workspace/is-exported-whole-and-without-a-secret": "462777a",
-    "flow:workspace/is-deleted-for-good-thirty-days-after-its-name-was-typed": "462777a"
+    "flow:workspace/is-deleted-for-good-thirty-days-after-its-name-was-typed": "462777a",
+    "flow:mail/a-customer's-mail-is-judged-and-a-person-says-whether-to-take-it": "61b2a62",
+    "flow:mail/the-answer-is-shown-whole-and-sent-only-after-a-yes-on-the-same-thread": "61b2a62",
+    "flow:mail/what-they-write-back-goes-to-the-same-work": "61b2a62",
+    "flow:mail/quiet-for-three-days-after-our-question-is-one-reminder": "61b2a62"
   },
   "history": [
     {
