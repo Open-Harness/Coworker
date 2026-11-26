@@ -1,4 +1,5 @@
 import type { StoreAnswer, StoreOp } from "~/modules/console/types.ts";
+import type { Us } from "~/modules/github-events/types.ts";
 import type { GitHubApi, GitHubConnection, Installation, LostConnection, RepoSource } from "~/modules/github/types.ts";
 import type { Billing, BillingView, SpendLimit } from "~/modules/billing/types.ts";
 import type { Clock, Ids } from "~/modules/clock/types.ts";
@@ -206,6 +207,7 @@ export interface WorkspaceApi {
   setRepoSources(managerId: string, sources: readonly Omit<RepoSource, "managerId">[]): Promise<SetSourcesResult>;
   /** The App was uninstalled: its sources stop and these Owners get a notice. */
   gitHubRemoved(installation: number, owners: readonly string[]): Promise<void>;
+  gitHubBack(installation: number, us: Us): Promise<void>;
   /** The Environments screen, and which agent runs in which. */
   environments(): Promise<readonly EnvironmentView[]>;
   saveEnvironment(input: SaveEnvironment): Promise<SaveResult | NotProvisioned>;

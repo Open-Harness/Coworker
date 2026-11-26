@@ -38,6 +38,9 @@ function newest(old: GithubRecord | undefined, next: GithubRecord): GithubRecord
   const order = old.at - next.at || old.rank - next.rank;
   if (order > 0) return old;
   if (order < 0) return next;
+  // A delivery never says whether a pull request merges, an answer does: what is known stays over what is not, whichever came first.
+  if (old.is === "pull" && next.is === "pull" && (old.mergeable === null) !== (next.mergeable === null))
+    return plain(old.mergeable === null ? next : old);
   const [a, b] = [stable(old), stable(next)];
   if (a === b) return old;
   return { ...plain(a < b ? old : next), tied: true };

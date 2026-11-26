@@ -5,7 +5,8 @@ import type { GitPort } from "~/modules/boxes/types.ts";
 import type { Decision, Item, OpenWork } from "~/modules/intake/types.ts";
 import type { GitHubApi } from "~/modules/github/types.ts";
 import type { Playbook } from "~/modules/playbook/types.ts";
-import type { ToDo, Work } from "~/modules/work/types.ts";
+import type { Ask } from "~/modules/asks/types.ts";
+import type { ToDo, Work, WorkEvent } from "~/modules/work/types.ts";
 
 /*
  * What a manager does with its work: it moves it (`work`), does what moving it asked, runs the conversations of its agents
@@ -64,6 +65,13 @@ export interface Hold {
   readonly retry: number;
 }
 
+/** One line of what happened to a piece of work, in the words the work's page shows. */
+export interface ActivityLine {
+  readonly who: string;
+  readonly at: number;
+  readonly text: string;
+}
+
 /** Everything a manager keeps. One transaction is all or nothing. */
 export interface Store {
   readonly transaction: <T>(run: () => T) => T;
@@ -90,6 +98,12 @@ export interface Store {
   /** What an outside act did, by a key made for it, so that doing it again finds it. */
   readonly once: (key: string) => string | undefined;
   readonly keepOnce: (key: string, value: string) => void;
+  /** What happened to a work, oldest first. */
+  readonly addActivity: (work: string, line: ActivityLine) => void;
+  readonly activityOf: (work: string) => readonly ActivityLine[];
+  /** What waits for a person, made by this manager's work: one each, by its id. */
+  readonly putAsk: (ask: Ask) => void;
+  readonly asks: () => readonly Ask[];
 }
 
 export type { Models } from "~/modules/completion/types.ts";
@@ -142,6 +156,8 @@ export interface Working {
   readonly take: (input: TakeInput) => Promise<{ readonly work: string } | { readonly _tag: "NoSuchKind"; readonly why: string }>;
   /** What came in on a conversation that work follows goes to that work. */
   readonly heard: (input: { readonly work: string; readonly item: Item }) => Promise<void>;
+  /** Something happened that the work follows or a person said: it moves the work by that event, once by its key. `says`: how its page puts it. */
+  readonly news: (input: { readonly work: string; readonly event: WorkEvent; readonly says?: string }) => Promise<void>;
   /** Open work, as intake counts it. */
   readonly open: () => readonly OpenWork[];
   /** Does what is to be done now, for every piece of work, and says when to wake next. */

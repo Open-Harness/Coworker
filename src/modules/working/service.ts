@@ -32,6 +32,10 @@ export function createWorking(c: WorkingDeps): Working {
       await heard(c, work, item);
       c.later(run());
     },
+    news: async ({ work, event, says }) => {
+      apply(c, work, event, says);
+      c.later(run());
+    },
     open: () => openOf(c.store.works()),
     run,
     due: async () => {

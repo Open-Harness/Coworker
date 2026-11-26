@@ -10,7 +10,9 @@ import type { Region } from "~/modules/workspace/types.ts";
 import { migrate, pushVersion, readRecord, versionAt, versionsOf, writeRecord } from "./internal/tables.ts";
 import { workStore } from "./internal/work-tables.ts";
 import { usageOf } from "./internal/usage.ts";
-import type { BoardRow, Hearing, ManagerRecord, ManagerStoreApi, ManagerStores, OpenManager, Opened, UsageRow } from "./types.ts";
+import type { Ask } from "~/modules/asks/types.ts";
+import type { WorkEvent } from "~/modules/work/types.ts";
+import type { BoardRow, Hearing, ManagerRecord, ManagerStoreApi, ManagerStores, OpenManager, Opened, UsageRow, WorkRow } from "./types.ts";
 
 const DAY = 86_400_000;
 
@@ -146,11 +148,27 @@ export class ManagerStoreHost<Env = unknown> extends DurableObject<Env> implemen
     await this.#works()?.heard(input);
   }
 
+  async news(input: { readonly work: string; readonly event: WorkEvent; readonly says?: string }): Promise<void> {
+    await this.#works()?.news(input);
+  }
+
   async board(): Promise<readonly BoardRow[]> {
     const store = workStore(this.ctx.storage);
     return store
       .works()
       .map((work) => ({ work, hold: store.hold(work.id) ?? null, cost: store.spendOf(work.id), threads: store.threadsOf(work.id) }));
+  }
+
+  async work(id: string): Promise<WorkRow | undefined> {
+    const store = workStore(this.ctx.storage);
+    const work = store.work(id);
+    return work === undefined
+      ? undefined
+      : { work, hold: store.hold(id) ?? null, cost: store.spendOf(id), threads: store.threadsOf(id), activity: store.activityOf(id) };
+  }
+
+  async asks(): Promise<readonly Ask[]> {
+    return workStore(this.ctx.storage).asks();
   }
 
   async usage(): Promise<readonly UsageRow[]> {

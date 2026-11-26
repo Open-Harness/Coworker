@@ -1,7 +1,7 @@
 import { BOXES_MIGRATIONS } from "~/modules/boxes/service.ts";
 import type { Files, Version } from "~/modules/playbook/types.ts";
 import type { ManagerRecord } from "../types.ts";
-import { WORK_MIGRATIONS } from "./work-tables.ts";
+import { STAYS_MIGRATIONS, WORK_MIGRATIONS } from "./work-tables.ts";
 
 /** The object's own tables. Each statement runs once, in order, and new ones are added to the end. */
 const MIGRATIONS: readonly string[] = [
@@ -10,6 +10,7 @@ const MIGRATIONS: readonly string[] = [
   `CREATE TABLE version (number INTEGER PRIMARY KEY, files TEXT NOT NULL, by TEXT NOT NULL, at INTEGER NOT NULL, says TEXT NOT NULL, origin TEXT NOT NULL)`,
   ...WORK_MIGRATIONS,
   ...BOXES_MIGRATIONS,
+  ...STAYS_MIGRATIONS,
 ];
 
 export function migrate(sql: SqlStorage): void {

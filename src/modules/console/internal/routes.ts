@@ -7,6 +7,7 @@ import { boardView } from "./board.ts";
 import { intakeView, playbookView } from "./manager-views.ts";
 import { ok, problem } from "./around.ts";
 import { overviewView, treeView } from "./overview.ts";
+import { workView } from "./work.ts";
 import {
   billingView,
   connectorsView,
@@ -19,7 +20,8 @@ import {
   sharedView,
   usageView,
 } from "./settings.ts";
-import { chatsView, coworkerView, homeView, inboxView, shellView } from "./shell.ts";
+import { inboxView } from "./inbox.ts";
+import { chatsView, coworkerView, homeView, shellView } from "./shell.ts";
 import { fillView, templatesView } from "./templates.ts";
 
 /* The paths of `api/types.ts`, each to the view it answers. A path that is not here is 404 in words. */
@@ -29,7 +31,7 @@ type Part = (c: ConsoleDeps, parts: readonly string[], query: URLSearchParams) =
 const READS: readonly (readonly [RegExp, Part])[] = [
   [/^\/shell$/u, async (c) => ok(await shellView(c))],
   [/^\/home$/u, () => ok(homeView())],
-  [/^\/inbox$/u, () => ok(inboxView())],
+  [/^\/inbox$/u, async (c) => ok(await inboxView(c))],
   [/^\/chats$/u, () => ok(chatsView())],
   [/^\/overview$/u, async (c, _, q) => ok(await overviewView(c, q))],
   [/^\/tree$/u, async (c) => ok(await treeView(c))],
@@ -48,6 +50,7 @@ const READS: readonly (readonly [RegExp, Part])[] = [
   [/^\/settings\/shared$/u, () => ok(sharedView())],
   [/^\/settings\/me$/u, async (c) => ok(await meView(c))],
   [/^\/m\/([^/]+)\/board$/u, (c, [id]) => boardView(c, id ?? "")],
+  [/^\/m\/([^/]+)\/work\/([^/]+)$/u, (c, [id, work]) => workView(c, id ?? "", work ?? "")],
   [/^\/m\/([^/]+)\/playbook$/u, (c, [id], q) => playbookView(c, id ?? "", Number(q.get("version")) || undefined)],
   [/^\/m\/([^/]+)\/intake$/u, (c, [id], q) => intakeView(c, id ?? "", q)],
 ];

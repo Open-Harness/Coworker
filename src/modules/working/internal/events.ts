@@ -2,6 +2,7 @@ import { works } from "~/modules/work/service.ts";
 import type { Kind } from "~/modules/playbook/types.ts";
 import type { Moved, Work, WorkEvent } from "~/modules/work/types.ts";
 import type { WorkingDeps } from "../types.ts";
+import { lineOf } from "./activity.ts";
 
 /* The one way work changes: an event, applied to the work, stored with what it asks to be done, in one transaction, once by its key. */
 
@@ -11,7 +12,8 @@ export function kindOf(c: WorkingDeps, work: Work): Kind | undefined {
   return c.playbook(work.version)?.kinds.find((kind) => kind.id === work.kind);
 }
 
-export function apply(c: WorkingDeps, id: string, event: WorkEvent): Applied {
+/** `says`: the words the page shows for it, when the one who made the event knows better than the event does (a check's name). */
+export function apply(c: WorkingDeps, id: string, event: WorkEvent, says?: string): Applied {
   const done = c.store.transaction((): Applied => {
     const before = c.store.work(id);
     if (before === undefined) return { _tag: "Gone" };
@@ -23,6 +25,8 @@ export function apply(c: WorkingDeps, id: string, event: WorkEvent): Applied {
     c.store.see(event.key);
     c.store.putWork(moved.work);
     c.store.addJobs(id, moved.todo);
+    const line = lineOf(c, moved.work, event, says);
+    if (line !== undefined) c.store.addActivity(id, line);
     return moved;
   });
   rearm(c);

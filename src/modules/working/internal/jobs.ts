@@ -1,4 +1,5 @@
 import type { Job, WorkingDeps } from "../types.ts";
+import { asking } from "./asking.ts";
 import { confirm, runChecks } from "./checks.ts";
 import { rearm } from "./events.ts";
 import { commentOnce } from "./github.ts";
@@ -10,9 +11,15 @@ const RETRY = 60_000;
 /** Said even when the work is over: it is how whoever asked hears so, and how its threads and box are let go. */
 const AFTER_END: ReadonlySet<Job["do"]> = new Set(["say", "end threads", "end box"]);
 
-async function say(c: WorkingDeps, job: Extract<Job, { readonly do: "say" }>): Promise<Outcome> {
+/** What is said where it was asked. A merged pull request is told as `Merged #n`, which is the whole of it: the issue is closed by it. */
+function wordsOf(c: WorkingDeps, workId: string, text: string): string {
+  const ended = c.store.work(workId)?.ended;
+  return ended?.as === "done" && ended.why.startsWith("Merged #") ? ended.why : text;
+}
+
+async function say(c: WorkingDeps, workId: string, job: Extract<Job, { readonly do: "say" }>): Promise<Outcome> {
   if (job.where.connector !== "github") return done;
-  const said = await commentOnce(c.outside, job.where.place, Number(job.where.id), job.text, job.key);
+  const said = await commentOnce(c.outside, job.where.place, Number(job.where.id), wordsOf(c, workId, job.text), job.key);
   return said._tag === "Said" ? done : held(said.why);
 }
 
@@ -25,7 +32,7 @@ async function doJob(c: WorkingDeps, workId: string, job: Job): Promise<Outcome>
     case "tell thread":
       return tellThread(c, workId, job);
     case "say":
-      return say(c, job);
+      return say(c, workId, job);
     case "confirm":
       return confirm(c, workId, job);
     case "run checks":
@@ -37,9 +44,7 @@ async function doJob(c: WorkingDeps, workId: string, job: Job): Promise<Outcome>
       await c.boxes.end(workId);
       return done;
     case "ask":
-      // A person is asked by the inbox; this slice does not reach it. The question is kept, so it is not lost.
-      c.store.keepOnce(job.key, job.question);
-      return done;
+      return asking(c, workId, job);
     case "wake":
       return done;
   }

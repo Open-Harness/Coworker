@@ -142,6 +142,17 @@ const RUN: Readonly<Record<string, (call: Call, args: unknown) => Promise<Result
   "github.label": label,
 };
 
+/** A number said as text ("1037") is the number: a model writes what it read, and it read it in text. */
+function numbered(args: unknown, wanted: readonly string[]): unknown {
+  if (!isRecord(args)) return args;
+  return Object.fromEntries(
+    Object.entries(args).map(([name, value]) => [
+      name,
+      wanted.includes(name) && typeof value === "string" && /^\d+$/u.test(value) ? Number(value) : value,
+    ]),
+  );
+}
+
 const KINDS = { text: { type: "string" }, number: { type: "number" }, list: { type: "array", items: { type: "string" } } } as const;
 
 /** Every action of GitHub as a tool, named as the connector names it. An action that is not built answers so, in words. */
@@ -157,5 +168,12 @@ export const GITHUB_TOOLS: readonly Tool[] =
         required: action.args.filter((one) => one.needed).map((one) => one.name),
         additionalProperties: false,
       },
-      run: RUN[action.id] ?? (async () => wrong(`${action.id} is not available yet.`)),
+      run: (call, args) =>
+        (RUN[action.id] ?? (async () => wrong(`${action.id} is not available yet.`)))(
+          call,
+          numbered(
+            args,
+            action.args.filter((one) => one.is === "number").map((one) => one.name),
+          ),
+        ),
     })) ?? [];

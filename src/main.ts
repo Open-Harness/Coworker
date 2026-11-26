@@ -141,7 +141,7 @@ const gitHubInFrom = (request: Request, env: Env): Promise<Response> =>
     secret: present(env.GITHUB_WEBHOOK_SECRET) ?? (env.DT_WORLD === "fake" ? FAKE_GITHUB_SECRET : ""),
     slug: appSlugFrom(env) ?? "",
     objectOf: installedObject(env.AUTH, tenantsFrom(env)),
-    removed: (installation) => gitHubInstallations(env.AUTH, tenantsFrom(env)).removed(installation),
+    removed: (installation, how) => gitHubInstallations(env.AUTH, tenantsFrom(env)).removed(installation, how),
   });
 
 /** Mail to `<manager>.<workspace>@<mail domain>`, from Email Routing, up to 25 MiB. */

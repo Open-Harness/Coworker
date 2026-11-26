@@ -1,6 +1,7 @@
 import type { Did } from "~/modules/api/types.ts";
 import type { AuditRow, ItemRow, ManagerRow, StoreAnswer, StoreOp } from "~/modules/console/types.ts";
 import type { Decision, Item } from "~/modules/intake/types.ts";
+import { workspaceAsks } from "./github-asks.ts";
 
 /* What the console keeps in the workspace's object: what each doing did (once per key), the audit log, settings, the tree, what came in. */
 
@@ -115,7 +116,7 @@ function listItems({ sql }: StorePlace, op: Extract<StoreOp, { op: "item.list" }
 }
 
 /** One call of the console's store. Everything it holds is here and nowhere else. */
-export function runStore(place: StorePlace, op: StoreOp): StoreAnswer {
+export function runStore(place: StorePlace, op: Exclude<StoreOp, { readonly op: "github.hear" }>): StoreAnswer {
   const { sql, now } = place;
   switch (op.op) {
     case "claim":
@@ -163,6 +164,8 @@ export function runStore(place: StorePlace, op: StoreOp): StoreAnswer {
           .toArray()
           .map((row) => parsed<ManagerRow>(row["row"])),
       };
+    case "ask.list":
+      return { op: "ask.list", asks: workspaceAsks(sql) };
     case "item.keep":
       return keepItem(place, op);
     case "item.list":

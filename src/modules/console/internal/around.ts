@@ -44,10 +44,12 @@ export interface Account {
   readonly works: boolean;
   readonly places: readonly string[];
   readonly since: number;
+  /** Why it does not work, when it does not. */
+  readonly says?: string;
 }
 
 export async function accountsOf(c: ConsoleDeps): Promise<readonly Account[]> {
-  const github = await c.outside.github();
+  const [github, lost] = await Promise.all([c.outside.github(), c.outside.lost()]);
   const found: Account[] = [{ id: "email", as: c.mailbox, works: true, places: [c.mailbox], since: c.workspace.since }];
   if (github.installation !== undefined)
     found.unshift({
@@ -56,6 +58,15 @@ export async function accountsOf(c: ConsoleDeps): Promise<readonly Account[]> {
       works: true,
       places: github.installation.repos,
       since: c.workspace.since,
+    });
+  else if (lost !== undefined)
+    found.unshift({
+      id: "github",
+      as: c.app === null ? lost.account : `${c.app}[bot]`,
+      works: false,
+      says: `The App was uninstalled from ${lost.account}. Install it again, and the managers hear their repos once more.`,
+      places: [...new Set(lost.sources.map(({ repo }) => repo))],
+      since: lost.at,
     });
   return found;
 }

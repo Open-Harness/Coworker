@@ -37,6 +37,18 @@ async function act(c: DecidingDeps, item: Item, decision: Decision, heard: reado
     const owner = heard.find(({ hearing }) => hearing.open.some(({ id }) => id === decision.work));
     if (owner !== undefined) await c.manager(owner.row).heard({ work: decision.work, item });
   }
+  if (decision._tag === "Stopped") {
+    const owner = heard.find(({ hearing }) => hearing.open.some(({ id }) => id === decision.work));
+    const person = item.actor.person ?? item.actor.name;
+    const event = {
+      key: `stopped:${decision.work}:${item.id}`,
+      at: c.clock.now(),
+      is: "stopped",
+      person,
+      why: `${person} said to stop.`,
+    } as const;
+    if (owner !== undefined) await c.manager(owner.row).news({ work: decision.work, event });
+  }
   return "Acted";
 }
 

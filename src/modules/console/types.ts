@@ -1,7 +1,9 @@
 import type { Answer, Did } from "~/modules/api/types.ts";
+import type { Ask } from "~/modules/asks/types.ts";
 import type { Role } from "~/modules/doings/types.ts";
+import type { Heard } from "~/modules/following/types.ts";
 import type { Decision, Item } from "~/modules/intake/types.ts";
-import type { GitHubConnection } from "~/modules/github/types.ts";
+import type { GitHubConnection, LostConnection } from "~/modules/github/types.ts";
 import type { BillingView } from "~/modules/billing/types.ts";
 import type { Clock, Ids } from "~/modules/clock/types.ts";
 import type { ModelConnection } from "~/modules/models/types.ts";
@@ -76,6 +78,9 @@ export type StoreOp =
   | { readonly op: "manager.add"; readonly row: ManagerRow }
   | { readonly op: "manager.list" }
   | { readonly op: "item.keep"; readonly item: Omit<Item, "id" | "trigger">; readonly trigger: string; readonly hears: readonly string[] }
+  /** A delivery of GitHub was heard: what follows a conversation keeps its records, and what became true is made news. */
+  | { readonly op: "github.hear"; readonly heard: Heard }
+  | { readonly op: "ask.list" }
   | {
       readonly op: "item.list";
       readonly manager: string;
@@ -91,6 +96,8 @@ export type StoreAnswer =
   | { readonly op: "setting.get"; readonly value: unknown }
   | { readonly op: "manager.list"; readonly rows: readonly ManagerRow[] }
   | { readonly op: "item.keep"; readonly row: ItemRow; readonly isNew: boolean }
+  | { readonly op: "github.hear" }
+  | { readonly op: "ask.list"; readonly asks: readonly Ask[] }
   | { readonly op: "item.list"; readonly rows: readonly ItemRow[]; readonly next: string | null };
 
 /** The same, with each call named. */
@@ -108,6 +115,8 @@ export interface Store {
   readonly set: (name: string, value: unknown) => Promise<void>;
   readonly managers: () => Promise<readonly ManagerRow[]>;
   readonly addManager: (row: ManagerRow) => Promise<void>;
+  /** What waits for a person and is the workspace's own. */
+  readonly asks: () => Promise<readonly Ask[]>;
   readonly items: (
     manager: string,
     query: { readonly from: string | null; readonly before: string | null; readonly limit: number },
@@ -120,6 +129,8 @@ export interface Outside {
   readonly connections: () => Promise<readonly ModelConnection[]>;
   readonly secrets: () => Promise<readonly SecretInfo[]>;
   readonly github: () => Promise<GitHubConnection>;
+  /** What the App was on when it was uninstalled, until it is installed again. */
+  readonly lost: () => Promise<LostConnection | undefined>;
   readonly billing: () => Promise<BillingView | null>;
   /** Owners: the workspace's name changes in the directory, the object and the organization together. */
   readonly rename: (name: string) => Promise<{ readonly _tag: "Renamed" } | { readonly _tag: "Refused"; readonly why: string }>;

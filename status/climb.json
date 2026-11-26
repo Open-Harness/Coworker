@@ -736,7 +736,21 @@
     "screen:set-security/says-what-is-drawn": "26d995b",
     "screen:set-security/looks-as-drawn": "26d995b",
     "screen:set-security/looks-as-drawn-on-a-phone": "26d995b",
-    "screen:set-security/looks-as-drawn-in-the-dark": "26d995b"
+    "screen:set-security/looks-as-drawn-in-the-dark": "26d995b",
+    "flow:repo/a-line-comment-is-done-pushed-and-answered-on-its-line": "e2295ac",
+    "flow:repo/a-passed-check-is-known-and-shown": "e2295ac",
+    "flow:repo/a-conflict-is-told-and-put-right": "e2295ac",
+    "flow:repo/merged-means-closed-told-done-and-the-box-gone": "e2295ac",
+    "flow:repo/closed-without-merging-means-dropped-with-the-reason-and-told": "e2295ac",
+    "flow:repo/twice-and-backwards-is-the-same-end": "e2295ac",
+    "flow:repo/stop-from-someone-who-may-ask-stops-for-good": "e2295ac",
+    "flow:repo/stop-from-a-stranger-is-only-read": "e2295ac",
+    "flow:repo/quiet-past-its-date-it-says-once-what-it-waits-for": "e2295ac",
+    "flow:repo/uninstalled-it-says-so-asks-once-and-loses-nothing": "e2295ac",
+    "flow:check/leaves-evidence-for-each-done-when-on-the-work-by-who-looked": "e2295ac",
+    "flow:check/sends-it-back-with-its-words-and-the-doer-does-it-again": "e2295ac",
+    "flow:check/sent-back-twice-asks-the-person-who-answers-for-it": "e2295ac",
+    "flow:check/an-honest-no-ends-with-the-reason-told-where-it-was-asked": "e2295ac"
   },
   "history": [
     {
