@@ -125,6 +125,9 @@ function Frame({ shell, here, children }: { readonly shell: ShellView; readonly 
   );
 }
 
+/** The one screen whose drawing (`live`) has the chat beside the page: the co-worker walks the person through Triggers. Everywhere else a drawing reaches it by the home composer, the chat page and the palette. */
+const WITH_CHAT = /^\/m\/[^/]+\/playbook\/triggers(\/|$)/u;
+
 /** The frame around every page of a workspace, drawn as soon as the workspace has said what is in it. */
 export function Shell({ here, children }: { readonly here: Here; readonly children: ReactNode }) {
   const read = useRead("/shell");
@@ -145,7 +148,7 @@ export function Shell({ here, children }: { readonly here: Here; readonly childr
           <Frame shell={shell} here={here}>
             {children}
           </Frame>
-          {here.path !== "/" && !here.path.startsWith("/chats/") && <Dock name={shell.coworker.name} path={here.path} />}
+          {WITH_CHAT.test(here.path) && <Dock name={shell.coworker.name} path={here.path} />}
         </ShowProvider>
       )}
     </Reading>
