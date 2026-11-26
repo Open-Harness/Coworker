@@ -1,0 +1,5 @@
+of: agents/writer
+good: Sent unchanged
+judge: { person: "{{owner}}" }
+cases: []
+line: { value: 80, unit: percent }

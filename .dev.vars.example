@@ -1,0 +1,28 @@
+# Names only. The values live in Bitwarden: `pnpm credentials` asks for them, and `pnpm credentials run <command>` runs a command with
+# them (docs/live-setup.md). Without Bitwarden, copy this to .dev.vars (git-ignored) and fill it in; never commit values.
+
+# The live runner
+LIVE_STAGING_URL=
+LIVE_MAILBOX_URL=
+LIVE_MAILBOX_TOKEN=
+LIVE_ALLOWED_MAILBOX=
+LIVE_STRANGER_MAILBOX=
+LIVE_FAKE_MODEL_URL=
+GH_PERSON_TOKEN=
+LIVE_GITHUB_REPO=
+LIVE_APP_SLUG=
+
+# Deploying staging (only where wrangler is not signed in)
+CLOUDFLARE_API_TOKEN=
+
+# Secrets of the staging Worker and its store
+BETTER_AUTH_SECRET=
+GITHUB_APP_ID=
+GITHUB_APP_SLUG=
+GITHUB_APP_PRIVATE_KEY=
+GITHUB_APP_CLIENT_ID=
+GITHUB_APP_CLIENT_SECRET=
+GITHUB_WEBHOOK_SECRET=
+VAULT_MASTER_KEY=
+FAKE_MODEL_KEY=
+ANTHROPIC_API_KEY=

@@ -1,0 +1,4 @@
+triggers:
+  - { id: mail, name: "Mail to {{mailbox}}", on: true, makes: { kinds: any }, only: "It is really from who it says, and not bulk mail", atMost: no limit, by: event, account: email, place: "{{mailbox}}", events: [mail] }
+  - { id: quiet, name: No answer for three days, on: true, makes: tells, only: "We wrote last, and they are not away", atMost: { a: day, count: 50 }, by: wait, for: 3d, of: Conversations we asked something in, holds: We wrote last, account: email }
+  - { id: asked, name: Asked by the team, on: true, makes: { kinds: any }, only: "Someone of the team says so", atMost: no limit, by: asked, where: chat }

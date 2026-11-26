@@ -1,0 +1,30 @@
+kinds:
+  - id: question
+    name: A question
+    when: Someone asks how something works, where something is, or why something happened to them.
+    alone: ask
+    steps:
+      - { id: find, name: Find it, by: { agent: writer }, does: "Find what is true, with where it says so.", skills: [our-answers], leaves: [{ id: source, says: Every fact has a source, by: agent }], checkedBy: { agent: reader }, otherwise: { ask: "{{owner}}" } }
+      - { id: write, name: Write, by: { agent: writer }, does: "Write the answer, short, in their language.", skills: [our-answers, short-mail], leaves: [{ id: sourced, says: Nothing in it that is not in the facts, by: agent }], checkedBy: { agent: reader }, otherwise: { back: write, times: 2, then: { ask: "{{owner}}" } } }
+      - { id: answer, name: Answer and wait, by: { manager: true }, does: "Send it, answer what comes back, close it when it is quiet.", skills: [our-answers], leaves: [{ id: quiet, says: "They said thanks, or three days passed after the reminder", by: connector }], checkedBy: { code: true }, otherwise: { ask: "{{owner}}" } }
+    doneWhen:
+      - { id: answered, says: Their question is answered from a source, by: agent }
+      - { id: heard, says: "They said so, or were reminded once and are quiet", by: connector }
+    may: &may
+      - { account: email, place: "{{mailbox}}", may: { email.search: "on", email.draft: "on", email.reply: ask, email.send_inside: "on", email.send_outside: "off" } }
+    limits: { perWork: "{{perWork}}", hours: 168, atOnce: 30 }
+    look: 3d
+  - id: fault
+    name: A fault
+    when: Something of ours does not work for them, and an answer alone does not help.
+    alone: ask
+    steps:
+      - { id: see, name: See it, by: { agent: writer }, does: "Find out exactly what happens, for whom, since when.", skills: [our-answers], leaves: [{ id: clear, says: "Someone who mends it would not have to ask again", by: agent }], checkedBy: { agent: reader }, otherwise: { ask: "{{owner}}" } }
+      - { id: hand, name: Hand it on, by: { manager: true }, does: "Hand it to the manager that mends it, or to a person. Tell the customer it is being looked at, with no date.", skills: [], leaves: [{ id: taken, says: Someone has it, by: connector }], checkedBy: { code: true }, otherwise: { ask: "{{owner}}" } }
+      - { id: tell, name: Tell them, by: { agent: writer }, does: "When it is mended, say so, and what they do now.", skills: [short-mail], leaves: [{ id: told, says: They were told after it was mended, by: connector }], checkedBy: { agent: reader }, otherwise: { ask: "{{owner}}" } }
+    doneWhen:
+      - { id: mended, says: It is mended, by: connector }
+      - { id: told, says: They were told, by: connector }
+    may: *may
+    limits: { perWork: "{{perWork}}", hours: 336, atOnce: 30 }
+    look: 1d

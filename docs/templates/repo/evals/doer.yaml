@@ -1,0 +1,5 @@
+of: agents/doer
+good: Hidden tests pass
+judge: code
+cases: []
+line: { value: 70, unit: percent }

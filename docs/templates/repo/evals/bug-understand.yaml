@@ -1,0 +1,5 @@
+of: workflow/bug/understand
+good: Nobody put right what it understood
+judge: { person: "{{owner}}" }
+cases: []
+line: { value: 85, unit: percent }

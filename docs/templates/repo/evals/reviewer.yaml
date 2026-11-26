@@ -1,0 +1,5 @@
+of: agents/reviewer
+good: Planted faults it found, and nothing it made up
+judge: code
+cases: []
+line: { value: 90, unit: percent }

@@ -1,0 +1,5 @@
+of: workflow/bug/check
+good: Planted faults it found
+judge: code
+cases: []
+line: { value: 90, unit: percent }

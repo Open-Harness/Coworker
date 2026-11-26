@@ -1,0 +1,5 @@
+of: workflow/upkeep/check
+good: The same as for a bug
+judge: code
+cases: []
+line: { value: 70, unit: percent }

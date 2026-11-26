@@ -1,0 +1,43 @@
+{
+  "files": [
+    "src/modules/auth/auth.test.ts",
+    "src/modules/billing/billing.test.ts",
+    "src/modules/brain/brain.test.ts",
+    "src/modules/clock/clock.test.ts",
+    "src/modules/credentials/credentials.test.ts",
+    "src/modules/github/github.test.ts",
+    "src/modules/github/claim.test.ts",
+    "src/modules/http/http.test.ts",
+    "src/modules/mail/mail.test.ts",
+    "src/modules/mailbox/mailbox.test.ts",
+    "src/modules/models/models.test.ts",
+    "src/modules/models/choice.test.ts",
+    "src/modules/models/forwarding.test.ts",
+    "src/modules/outsiders/outsiders.test.ts",
+    "src/modules/live/live.test.ts",
+    "src/modules/live/image.test.ts",
+    "src/modules/fake-model/fake-model.test.ts",
+    "src/modules/vault/vault.test.ts",
+    "src/modules/web/web.test.ts",
+    "src/modules/workspaces/workspaces.test.ts",
+    "src/modules/workspace/workspace.test.ts",
+    "src/modules/chat-sdk/chat-sdk.test.ts",
+    "src/flows/join.test.ts",
+    "src/flows/models.test.ts",
+    "src/flows/chatgpt.test.ts",
+    "src/flows/github-claim.test.ts",
+    "src/flows/settings-account.test.ts",
+    "src/flows/settings-keys.test.ts",
+    "src/flows/settings-people.test.ts",
+    "src/flows/settings-general.test.ts",
+    "src/flows/billing.test.ts"
+  ],
+  "not": [
+    "renames the workspace and its address, and every manager's address follows",
+    "starts an environment to test it, and deletes it only on confirmation",
+    "lets an Owner change one action for one person, and the same check holds for the button",
+    "turns a whole category off for a person, and refuses what a preset cannot make it",
+    "sends a press whose setting is ask to an Owner's Inbox, and does it as that person's only if the Owner allows",
+    "mails a question only when asked to, and not outside working hours when quiet hours are on"
+  ]
+}

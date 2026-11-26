@@ -1,0 +1,12 @@
+grants:
+  - account: github
+    place: "{{repo}}"
+    may: { github.read: "on", github.comment: "on", github.reply_on_line: "on", github.push: "on", github.open_pull_request: "on", github.update_pull_request: "on", github.rerun_checks: ask, github.close_issue: ask, github.merge: ask, github.label: "on" }
+limits: { perWork: "{{perWork}}", perDay: "{{perDay}}", atOnce: 4, hours: 48 }
+mayAsk:
+  - { account: github, place: "{{repo}}", listed: { who: writers }, others: maybe, overheard: maybe, bots: [] }
+never:
+  - Push to the default branch, or to a branch that is not mine
+  - Change anything under .github/workflows
+  - Merge or close without a yes
+  - Put a secret, a person's address or a customer's name in a commit

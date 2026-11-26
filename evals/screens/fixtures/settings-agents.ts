@@ -1,0 +1,80 @@
+import type { AgentRole } from "~/modules/playbook/types.ts";
+import type { SharedView } from "~/modules/views-workspace/types.ts";
+import { at } from "./read.ts";
+
+/* Roles saved to use again, from any manager. The three of Sales, and two of Coding’s. */
+const HAIKU: AgentRole["model"] = { connection: "anthropic", model: "claude-haiku-5-5", thinking: "low" };
+const SONNET: AgentRole["model"] = { connection: "anthropic", model: "claude-sonnet-5-5", thinking: "medium" };
+
+export const AGENTS: SharedView["agents"] = [
+  {
+    id: "researcher",
+    name: "Researcher",
+    is: "Finds and checks. Never writes to anyone",
+    told: "Find out whether this company fits, and give three facts with where you read them. Stop after four pages. If it does not fit, say why in one line. Never write to anyone.",
+    skills: ["company", "sign", "crm"],
+    tools: ["web", "crm.read"],
+    model: HAIKU,
+    from: "Sales",
+    saved: { by: "Bo Larsen", at: at("5 Oct 12:00") },
+    usedBy: ["Sales"],
+    version: 1,
+    measure: { counts: "Facts Bo does not correct", first: 0.88, now: 0.94, line: 0.85, of: null },
+  },
+  {
+    id: "writer",
+    name: "Writer",
+    is: "Writes one mail at a time",
+    told: "Write one mail, in Bo’s way, that uses one of the facts you were given and asks one question. Under 90 words. Use nothing you were not given. Leave it as a draft.",
+    skills: ["short-mail", "bos-voice", "mail"],
+    tools: ["email.draft"],
+    model: SONNET,
+    from: "Sales",
+    saved: { by: "Bo Larsen", at: at("5 Oct 12:00") },
+    usedBy: ["Sales"],
+    version: 1,
+    measure: { counts: "Mails Bo sends unchanged", first: 0.46, now: 0.79, line: 0.7, of: null },
+  },
+  {
+    id: "reader",
+    name: "Reader",
+    is: "Reads what Writer wrote, and has not seen how",
+    told: "You get a mail, the facts, and what we never say. Say for each sentence where it comes from. Anything that comes from nowhere, send back. Do not rewrite it.",
+    skills: ["source"],
+    tools: [],
+    model: SONNET,
+    from: "Sales",
+    saved: { by: "Bo Larsen", at: at("5 Oct 12:00") },
+    usedBy: ["Sales", "Support"],
+    version: 1,
+    measure: { counts: "Mistakes it caught, of those there were", first: 9, now: 10, line: 9, of: 11 },
+  },
+  {
+    id: "fixer",
+    name: "Fixer",
+    is: "Makes one change in its own copy of the repo",
+    told: "Make the change the done-when asks for, and nothing wider. Write a test that fails without it. Push to your own branch and open a pull request. Never merge.",
+    skills: ["tools", "work", "GitHub"],
+    tools: ["box", "github.push", "github.open_pull_request"],
+    model: SONNET,
+    from: "Coding",
+    saved: { by: "Ama Mensah", at: at("12 Nov 12:00") },
+    usedBy: ["Coding"],
+    version: 1,
+    measure: { counts: "Pull requests that merge without a second round", first: 0.61, now: 0.81, line: 0.7, of: null },
+  },
+  {
+    id: "checker",
+    name: "Fresh checker",
+    is: "Compares the result with done-when, and has not seen how it was made",
+    told: "You get the done-when and the result. For each line, say what shows it is true. If nothing shows it, send it back and say what is missing. Do not fix it.",
+    skills: ["source", "tools", "GitHub"],
+    tools: ["box.read", "github.read"],
+    model: SONNET,
+    from: "Coding",
+    saved: { by: "Ama Mensah", at: at("12 Nov 12:00") },
+    usedBy: ["Coding", "Docs", "Releases"],
+    version: 1,
+    measure: { counts: "Mistakes caught, of those put in", first: 7, now: 10, line: 9, of: 11 },
+  },
+];

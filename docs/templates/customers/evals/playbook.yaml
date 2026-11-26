@@ -1,0 +1,5 @@
+of: playbook
+good: Solved, and quiet for 7 days, a week
+judge: { person: "{{owner}}" }
+cases: []
+line: { value: 40, unit: a week }

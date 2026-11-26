@@ -1,0 +1,5 @@
+of: agents/reader
+good: Mistakes it caught, of those put in
+judge: code
+cases: []
+line: { value: 90, unit: percent }

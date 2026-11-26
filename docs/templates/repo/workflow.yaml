@@ -1,0 +1,74 @@
+kinds:
+  - id: bug
+    name: Bug
+    when: Something in the repo does not do what it says, or what its tests or docs say. Not a wish, and not a question.
+    alone: watch
+    steps: &steps
+      - id: understand
+        name: Understand
+        by: { agent: doer }
+        does: Read the issue and the code it is about. Say what you understood and what will be true when it is done, or ask one question.
+        skills: [this-repo]
+        leaves:
+          - { id: said, says: What done means is said on the issue, by: connector }
+        checkedBy: { code: true }
+        otherwise: { ask: "{{owner}}" }
+      - id: build
+        name: Build
+        by: { agent: doer }
+        does: Make the change in the clone, with a test that fails without it. Run what the repo runs.
+        skills: [this-repo]
+        leaves:
+          - { id: tests, says: The repo's own tests pass, by: command, run: "{{test}}" }
+        checkedBy: { code: true }
+        otherwise: { back: build, times: 2, then: { ask: "{{owner}}" } }
+      - id: check
+        name: Check
+        by: { agent: reviewer }
+        does: Read the diff against what done means. Run the tests. Say for each part whether it is true, and what is wrong, at its line.
+        skills: [this-repo, review]
+        leaves:
+          - { id: met, says: Everything that done means is true, by: agent }
+        checkedBy: { code: true }
+        otherwise: { back: build, times: 2, then: { ask: "{{owner}}" } }
+      - id: review
+        name: With a person
+        by: { manager: true }
+        does: Open the pull request, answer or do every comment, put failed checks right, keep it on top of main.
+        skills: [this-repo, answer-a-review]
+        leaves:
+          - { id: merged, says: A person merged it, by: connector }
+        checkedBy: { code: true }
+        otherwise: { drop: The pull request was closed }
+    doneWhen:
+      - { id: fixed, says: "What the issue says is no longer so, and a test shows it", by: agent }
+      - { id: closed, says: The issue is closed and whoever asked is told, by: connector }
+    may: &may
+      - account: github
+        place: "{{repo}}"
+        may: { github.read: "on", github.comment: "on", github.reply_on_line: "on", github.push: "on", github.open_pull_request: "on", github.update_pull_request: "on", github.rerun_checks: ask, github.close_issue: ask, github.merge: ask, github.label: "on" }
+    limits: { perWork: "{{perWork}}", hours: 48, atOnce: 3 }
+    look: 1d
+  - id: feature
+    name: Small feature
+    when: Something the repo does not do yet, that one pull request can add, and that says what it should do.
+    alone: watch
+    steps: *steps
+    doneWhen:
+      - { id: does, says: "It does what the issue asked, and a test shows it", by: agent }
+      - { id: told, says: The docs that name it say so, by: agent }
+      - { id: closed, says: The issue is closed and whoever asked is told, by: connector }
+    may: *may
+    limits: { perWork: "{{perWork}}", hours: 48, atOnce: 2 }
+    look: 1d
+  - id: upkeep
+    name: Upkeep
+    when: A dependency, a warning, a flaky test or a document that is no longer true. Nothing a user would see.
+    alone: watch
+    steps: *steps
+    doneWhen:
+      - { id: clean, says: "The warning, the flake or the untruth is gone", by: agent }
+      - { id: closed, says: The issue is closed, by: connector }
+    may: *may
+    limits: { perWork: "{{perWork}}", hours: 24, atOnce: 1 }
+    look: 2d

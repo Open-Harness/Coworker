@@ -1,0 +1,5 @@
+of: playbook
+good: Issues fixed that stay fixed, a week
+judge: { person: "{{owner}}" }
+cases: []
+line: { value: 5, unit: a week }

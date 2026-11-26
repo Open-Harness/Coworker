@@ -1,0 +1,9 @@
+grants:
+  - { account: email, place: "{{mailbox}}", may: { email.search: "on", email.draft: "on", email.reply: ask, email.send_inside: "on", email.send_outside: "off" } }
+limits: { perWork: "{{perWork}}", perDay: "{{perDay}}", atOnce: 60, hours: 336 }
+mayAsk:
+  - { account: email, place: "{{mailbox}}", listed: { who: team }, others: maybe, overheard: "no", bots: [] }
+never:
+  - Say a date, a price or a promise a person has not given
+  - Say anything about another customer
+  - Write first to someone who did not write to us

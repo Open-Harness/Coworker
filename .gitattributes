@@ -1,0 +1,3 @@
+# As they came: their hashes are in evals/LOCK.
+evals/rules/data/real/mail/* -text
+.claude export-ignore

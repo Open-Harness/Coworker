@@ -1,0 +1,63 @@
+/* One manager, all the way through: what comes in, what its playbook decides, how far each piece of work may go. Seven days to 25 Nov. */
+
+export type Mode = "off" | "watch" | "ask" | "do";
+export const MODE: Readonly<Record<Mode, string>> = { off: "Off", watch: "Watch", ask: "Ask", do: "Do" };
+
+export interface Kind { readonly id: string; readonly name: string; readonly when: string; readonly alone: Mode; readonly record: string; readonly path: readonly string[]; readonly done: string; readonly may: string }
+export const KINDS: readonly Kind[] = [
+  { id: "asked", name: "Someone asks", when: "They ask for a price, a demo, or whether we fit. Not support, not a supplier.", alone: "do", record: "56 in 30 days, 2 corrected",
+    path: ["check", "write", "read", "send"], done: "A call is booked, or they said no", may: "Reply in the thread, look up prices, book in Bo’s calendar. $2 each." },
+  { id: "signal", name: "A sign at a company", when: "It opened a new site, or hired its first head of operations, in the last 30 days. Not raising money, not a single job advert.", alone: "ask", record: "22 in 30 days, Bo said yes to 19",
+    path: ["check", "write", "read", "yes", "send"], done: "A mail that names the sign is sent, or it is dropped with the reason", may: "Read the CRM and the web, draft. Sending asks Bo. $1 each." },
+  { id: "like", name: "A company like our best", when: "40 to 400 people, takes orders in two systems, in a country we sell to.", alone: "watch", record: "18 in 30 days, Bo marked 9 right and 4 wrong",
+    path: ["check", "add"], done: "A lead with three facts and a person", may: "Read the web. Writing to the CRM asks." , },
+  { id: "quiet", name: "A lead that went quiet", when: "We wrote last, and three days passed. At most two reminders.", alone: "do", record: "22 in 30 days, none corrected",
+    path: ["write", "read", "send"], done: "They answered, or the second reminder is three days old", may: "Reply in the same thread. $0.20 each." },
+];
+export const kind = (id: string) => KINDS.find((k) => k.id === id)!;
+
+export type By = "event" | "search" | "waiting" | "hand";
+export interface Feed { readonly id: string; readonly by: By; readonly name: string; readonly from: string; readonly when: string; readonly came: number; readonly took: number; readonly cost: number; readonly makes: string; readonly more: readonly (readonly [string, string])[]; readonly note?: string }
+export const FEEDS: readonly Feed[] = [
+  { id: "mail", by: "event", name: "Mail about buying", from: "juno@acme.co-worker.tech", when: "As it arrives", came: 14, took: 13, cost: 3, makes: "Someone asks",
+    more: [["Listens for", "Mail to Juno that is about buying. Other mail goes to Support."], ["Who may ask", "Anyone. A stranger’s mail counts as asking."], ["Left alone", "Suppliers and newsletters, by rule"]] },
+  { id: "deals", by: "event", name: "A deal moves in the CRM", from: "Acme’s CRM, all deals", when: "As it happens", came: 9, took: 9, cost: 1, makes: "Work that is already open",
+    more: [["Listens for", "Stage, owner, or close date changed"], ["Who may ask", "Nobody: it tells open work, it starts nothing"], ["Own changes", "Dropped, so it never hears itself"]] },
+  { id: "signals", by: "search", name: "Look for signs", from: "Researcher, 140 target accounts", when: "Weekdays, 08:30", came: 6, took: 4, cost: 3, makes: "A sign at a company",
+    more: [["Looks at", "CRM list “Target accounts”, read fresh each time"], ["Looks for", "A new site, or a first head of operations"], ["Same again", "Same company and same sign within 60 days"], ["Brings back", "At most 10 a day, each with its source"]] },
+  { id: "like", by: "search", name: "Find companies like our best", from: "Researcher, from 12 best customers", when: "Mondays, 06:00", came: 5, took: 0, cost: 2, makes: "A company like our best", note: "Watching",
+    more: [["Looks at", "The 12 best customers of the last year, then companies like them"], ["Looks for", "Size, two order systems, a country we sell to"], ["Same again", "Same company, ever"], ["Brings back", "At most 5 a week"]] },
+  { id: "quiet", by: "waiting", name: "No answer for three days", from: "Leads we wrote to last", when: "Looked at every hour", came: 5, took: 5, cost: 1, makes: "A lead that went quiet",
+    more: [["True when", "We wrote last, and 72 hours passed"], ["Not when", "They are away, or Bo took it over"], ["Each lead", "Twice, then never again"]] },
+  { id: "people", by: "hand", name: "Asked by the team", from: "Here, Slack #sales", when: "When they ask", came: 2, took: 2, cost: 0, makes: "Anything within its reach",
+    more: [["Who may ask", "Ama and Bo, here or in Slack #sales"], ["Others in #sales", "Heard, never acted on"]] },
+];
+export const feed = (id: string) => FEEDS.find((f) => f.id === id)!;
+
+export type Verdict = "ask" | "watch" | "took" | "left";
+export interface Came { readonly id: string; readonly title: string; readonly feed: string; readonly who: string; readonly at: string; readonly state: Verdict; readonly kind?: string; readonly why: string; readonly gate: string; readonly judged: readonly (readonly [string, boolean, string])[]; readonly work?: string; readonly mandate?: { readonly because: string; readonly may: string; readonly not: string; readonly until: string; readonly limit: string }; readonly line: readonly (readonly [string, string, string])[] }
+const m = (because: string, may: string, not: string, until: string, limit: string) => ({ because, may, not, until, limit });
+export const CAME: readonly Came[] = [
+  { id: "i1", title: "Harbor Foods opened a site in Ghent", feed: "signals", who: "Found by Researcher", at: "25 Nov, 08:34", state: "ask", kind: "signal", why: "A new site, opened 19 Nov. The mail is ready",
+    gate: "From a trigger of this manager’s", judged: [["A sign at a company", true, "New site, 6 days ago, named on its own page"], ["A company like our best", false, "Already a target account"], ["Someone asks", false, "Nobody asked"], ["A lead that went quiet", false, "We never wrote"]],
+    mandate: m("Bo’s yes, under version 6", "Read the web and the CRM, draft one mail to its head of operations. Sending asks Bo", "Write to anyone else there, offer a price", "9 Dec", "$1, one mail"),
+    line: [["Found", "Look for signs, run of 25 Nov", "08:34"], ["Let through", "One of its triggers", "08:34"], ["Judged", "Matches one kind", "08:35"], ["Prepared", "Looked up, written, read fresh", "08:52"], ["Asked Bo", "This kind is set to ask", "08:52"]] },
+  { id: "i2", title: "Orrin Dairy: 120 people, two order systems", feed: "like", who: "Found by Researcher", at: "23 Nov, 06:12", state: "watch", kind: "like", why: "Would have added a lead",
+    gate: "From a trigger of this manager’s", judged: [["A company like our best", true, "Size, systems and country all fit"], ["A sign at a company", false, "Nothing happened there lately"]],
+    line: [["Found", "Find companies like our best", "06:12"], ["Judged", "Matches one kind", "06:13"], ["Watched", "Nothing was done", "06:13"]] },
+  { id: "i3", title: "Pell & Daughters: 60 people, sells in Ireland", feed: "like", who: "Found by Researcher", at: "23 Nov, 06:12", state: "watch", kind: "like", why: "Would have added a lead", gate: "From a trigger of this manager’s", judged: [["A company like our best", true, "Size and country fit, one system is a guess"]], line: [["Found", "Find companies like our best", "06:12"], ["Judged", "Matches one kind", "06:13"], ["Watched", "Nothing was done", "06:13"]] },
+  { id: "i4", title: "Castor Pharma: 380 people, three sites", feed: "like", who: "Found by Researcher", at: "23 Nov, 06:12", state: "watch", kind: "like", why: "Would have added a lead", gate: "From a trigger of this manager’s", judged: [["A company like our best", true, "Everything fits"]], line: [["Found", "Find companies like our best", "06:12"], ["Judged", "Matches one kind", "06:13"], ["Watched", "Nothing was done", "06:13"]] },
+  { id: "i5", title: "Quarry & Co asks for a price for 40 seats", feed: "mail", who: "Declan Shaw, Quarry & Co", at: "25 Nov, 09:05", state: "took", kind: "asked", work: "SALES-19", why: "Added to SALES-19, the same thread", gate: "Work already follows this thread, so nothing was decided again", judged: [],
+    mandate: m("Declan Shaw asked, 19 Nov, under version 5", "Reply in this thread, look up prices, book in Bo’s calendar", "Give a price that is not on the site", "19 Dec", "$2, spent $0.64"),
+    line: [["Arrived", "Mail about buying", "09:05"], ["Joined", "SALES-19 follows this thread", "09:05"], ["Told", "The thread that has SALES-19", "09:05"]] },
+  { id: "i6", title: "Fernhill Dental: 10 seats", feed: "mail", who: "Mara Voss, Fernhill Dental", at: "25 Nov, 08:47", state: "took", kind: "asked", work: "SALES-31", why: "Asked for a price", gate: "A stranger’s mail counts as asking here, and it is really from fernhill.example", judged: [["Someone asks", true, "Asks what ten seats cost"]],
+    mandate: m("Mara Voss asked, 25 Nov, under version 6", "Reply in this thread, look up prices, book in Bo’s calendar", "Give a price that is not on the site, write to others at Fernhill", "25 Dec", "$2, spent $0.22"),
+    line: [["Arrived", "Mail about buying", "08:47"], ["Let through", "A stranger may ask by mail", "08:47"], ["Judged", "Asks about buying", "08:47"], ["Taken on", "SALES-31, with its mandate", "08:48"]] },
+  { id: "i7", title: "Tidewater Foods has not answered for three days", feed: "quiet", who: "Nobody: it became true", at: "25 Nov, 08:00", state: "took", kind: "quiet", work: "SALES-30", why: "First reminder", gate: "From a trigger of this manager’s", judged: [["A lead that went quiet", true, "We wrote last, 72 hours ago"]], mandate: m("Version 6, A lead that went quiet", "Reply once in the same thread", "Write anywhere else", "28 Nov", "$0.20"), line: [["Became true", "No answer for three days", "08:00"], ["Taken on", "Added to SALES-30", "08:00"], ["Sent", "Reminder 1 of 2", "08:02"]] },
+  { id: "i8", title: "Harbor Logistics: meeting booked for Friday", feed: "deals", who: "CRM", at: "24 Nov, 15:40", state: "took", work: "SALES-28", why: "Tells open work, starts nothing", gate: "This trigger only tells work that is open", judged: [], mandate: m("Ama Mensah asked, 20 Nov, under version 5", "Reply in this thread, read the CRM", "Move the deal to Offer sent without a yes", "20 Dec", "$5, spent $1.90"), line: [["Arrived", "A deal moves in the CRM", "15:40"], ["Joined", "SALES-28", "15:40"]] },
+  { id: "i9", title: "Write to Brightside about spring", feed: "people", who: "Bo Larsen", at: "25 Nov, 09:12", state: "took", work: "SALES-32", why: "Bo may ask", gate: "Bo is on the list, and wrote to it", judged: [], mandate: m("Bo Larsen asked, 25 Nov", "Read the CRM, send one mail to Brightside", "Offer a discount", "8 Dec", "$1, spent $0.30"), line: [["Asked", "Here, by Bo", "09:12"], ["Taken on", "SALES-32", "09:12"]] },
+  { id: "i10", title: "SalesWeek: 7 tricks for Q4", feed: "mail", who: "news@salesweek.example", at: "25 Nov, 06:30", state: "left", why: "A newsletter", gate: "Stopped by rule: bulk mail", judged: [], line: [["Arrived", "Mail about buying", "06:30"], ["Left alone", "Bulk mail, no judgement was needed", "06:30"]] },
+  { id: "i11", title: "Orbit Labs raised money", feed: "signals", who: "Found by Researcher", at: "24 Nov, 08:36", state: "left", why: "Raising money is not one of the signs", gate: "From a trigger of this manager’s", judged: [["A sign at a company", false, "Says: not raising money"], ["A company like our best", false, "Too small"]], line: [["Found", "Look for signs", "08:36"], ["Judged", "Matches none", "08:37"], ["Left alone", "Kept, so you can say it was wrong", "08:37"]] },
+  { id: "i12", title: "Vanna Linen: 90 people, one warehouse", feed: "like", who: "Found by Researcher", at: "23 Nov, 06:12", state: "watch", kind: "like", why: "Would have added a lead", gate: "From a trigger of this manager’s", judged: [["A company like our best", true, "Size and systems fit"]], line: [["Found", "Find companies like our best", "06:12"], ["Judged", "Matches one kind", "06:13"], ["Watched", "Nothing was done", "06:13"]] },
+  { id: "i13", title: "Rowan Tools: 210 people, sells in Norway", feed: "like", who: "Found by Researcher", at: "23 Nov, 06:12", state: "watch", kind: "like", why: "Would have added a lead", gate: "From a trigger of this manager’s", judged: [["A company like our best", true, "Everything fits"]], line: [["Found", "Find companies like our best", "06:12"], ["Judged", "Matches one kind", "06:13"], ["Watched", "Nothing was done", "06:13"]] },
+];

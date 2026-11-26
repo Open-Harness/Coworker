@@ -1,0 +1,4 @@
+triggers:
+  - { id: issues, name: "An issue on {{repo}}", on: true, makes: { kinds: any }, only: "It is open, and not a pull request", atMost: no limit, by: event, account: github, place: "{{repo}}", events: [issue, label, comment] }
+  - { id: own, name: A pull request of mine, on: true, makes: tells, only: "It is one of mine", atMost: no limit, by: event, account: github, place: "{{repo}}", events: [line_comment, review, check, push, merged, closed] }
+  - { id: asked, name: Asked by the team, on: true, makes: { kinds: any }, only: "Someone of the team says so", atMost: no limit, by: asked, where: chat }

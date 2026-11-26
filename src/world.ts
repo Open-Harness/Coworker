@@ -1,0 +1,118 @@
+import { systemClock } from "~/modules/clock/service.ts";
+import { worldClock } from "~/modules/clock/testing.ts";
+import type { Clock } from "~/modules/clock/types.ts";
+import { unbilled } from "~/modules/billing/service.ts";
+import { billingWorld } from "~/modules/billing/testing.ts";
+import type { Billing } from "~/modules/billing/types.ts";
+import { eml, FAKE_AUTHSERV, fakeFiles } from "~/modules/email/testing.ts";
+import type { EmailSource } from "~/modules/email/types.ts";
+import { appApi } from "~/modules/github/service.ts";
+import { gitHubWorld } from "~/modules/github/testing.ts";
+import type { GitHubApi } from "~/modules/github/types.ts";
+import { workspaceBrain } from "~/modules/brain/service.ts";
+import { scriptedBrain } from "~/modules/manager/testing.ts";
+import type { MakeBrain } from "~/modules/manager/types.ts";
+import { emailServiceMailer } from "~/modules/mail/service.ts";
+import { outbox } from "~/modules/mail/testing.ts";
+import { modelProviders } from "~/modules/models/testing.ts";
+import { cloudflareContainers, noContainers } from "~/modules/sandboxes/service.ts";
+import { sandboxWorld } from "~/modules/sandboxes/testing.ts";
+import type { BoxHandle, SandboxHost } from "~/modules/sandboxes/types.ts";
+import { r2Files } from "~/modules/triggers/service.ts";
+import { secretsStoreMasterKey } from "~/modules/vault/service.ts";
+import { testMasterKey } from "~/modules/vault/testing.ts";
+import type { MasterKeys } from "~/modules/vault/types.ts";
+import type { Env } from "./main.ts";
+
+/*
+ * Part of the composition root, beside `main.ts`: for each outside thing in book section 2, the fake world's fake or
+ * the real one. Nothing else builds either.
+ */
+
+export const present = (value: string | undefined): string | undefined => (value === undefined || value === "" ? undefined : value);
+
+export { FAKE_AUTHSERV };
+
+/** The fast tier's fixed key, or the Secrets Store one. Rotation adds the old one to `retired` until `rewrap` runs. */
+export const masterKeysFrom = (env: Env): MasterKeys => ({
+  current: env.DT_WORLD === "fake" ? testMasterKey() : secretsStoreMasterKey(present(env.DT_MASTER_KEY_ID) ?? "v1", env.VAULT_MASTER_KEY),
+  retired: [],
+});
+
+/** The fake world has no network: model providers answer from their fake, and nothing else answers. */
+export const fakeFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> =>
+  (await modelProviders(new Request(input, init))) ?? new Response("The fake world has no network", { status: 502 });
+
+/** What the fake world mailed an address last, so a browser test can follow a sign-in link. */
+export const fakeMail = (request: Request): Response =>
+  Response.json({ text: outbox.lastTo(new URL(request.url).searchParams.get("to") ?? "")?.text ?? null });
+
+/**
+ * Mail arriving as Email Routing would hand it to the Worker, so a browser test can send a manager mail. The body is
+ * `{from, to, subject, text, messageId?, dkim?}`; it answers what the Source made of it.
+ */
+export async function fakeInbound(request: Request, source: EmailSource): Promise<Response> {
+  const body: unknown = await request.json().catch(() => undefined);
+  const field = (key: string): string => {
+    const value = typeof body === "object" && body !== null ? (body as Record<string, unknown>)[key] : undefined;
+    return typeof value === "string" ? value : "";
+  };
+  const raw = eml({
+    from: field("from"),
+    to: field("to"),
+    subject: field("subject"),
+    text: field("text"),
+    messageId: field("messageId") || `<${crypto.randomUUID()}@fake.test>`,
+    dkim: !(typeof body === "object" && body !== null && (body as Record<string, unknown>)["dkim"] === false),
+  });
+  return Response.json(await source.receive({ from: field("from"), to: field("to"), raw, rawSize: raw.length }));
+}
+
+/** Makes an invite seven days old, so a browser test can open one that expired. */
+export async function lapseInvite(request: Request, database: D1Database): Promise<Response> {
+  const id = new URL(request.url).searchParams.get("id") ?? "";
+  const lapsed = new Date(systemClock.now() - 1_000).toISOString();
+  const { meta } = await database.prepare(`UPDATE "invitation" SET "expiresAt" = ? WHERE "id" = ?`).bind(lapsed, id).run();
+  return Response.json({ lapsed: meta.changes });
+}
+
+export const mailerFrom = (env: Env) => (env.DT_WORLD === "fake" ? outbox : emailServiceMailer(env.EMAIL));
+
+/** The App's sign-in client: proves who installed it. Not the sign-in client of `GITHUB_CLIENT_ID`. */
+const gitHubClient = (env: Env) => {
+  const [clientId, clientSecret] = [present(env.GITHUB_APP_CLIENT_ID), present(env.GITHUB_APP_CLIENT_SECRET)];
+  return clientId === undefined || clientSecret === undefined ? undefined : { clientId, clientSecret };
+};
+
+/** GitHub in memory in the fake world. Without the App's settings, GitHub is out of reach. */
+export const gitHubApiFrom = (env: Env): GitHubApi =>
+  env.DT_WORLD === "fake"
+    ? gitHubWorld
+    : appApi({
+        appId: env.GITHUB_APP_ID,
+        privateKey: env.GITHUB_APP_PRIVATE_KEY,
+        slug: present(env.GITHUB_APP_SLUG),
+        client: gitHubClient(env),
+        fetch: (i, init) => fetch(i, init),
+        now: systemClock.now,
+      });
+
+export const filesFrom = (env: Env) => (env.DT_WORLD === "fake" ? fakeFiles : r2Files(env.FILES));
+
+/** The fake world's scripted containers. A deployment with the `BOXES` binding (staging) runs on Cloudflare Containers; without it, none. */
+export const sandboxHostFrom = (env: Env): SandboxHost =>
+  env.DT_WORLD === "fake"
+    ? sandboxWorld
+    : env.BOXES === undefined
+      ? noContainers
+      : cloudflareContainers({ open: (name) => env.BOXES?.getByName(name) as BoxHandle }, () => crypto.randomUUID().slice(0, 8));
+
+/** Stripe test mode is not set up yet (book section 3): the fake world records, anywhere else nothing is charged. */
+export const billingFrom = (env: Env): Billing => (env.DT_WORLD === "fake" ? billingWorld : unbilled);
+
+/** The fake world's tenants keep a clock a test can move a month on. */
+export const tenantClockFrom = (env: Env): Clock => (env.DT_WORLD === "fake" ? worldClock : systemClock);
+
+/** What managers think with: their workspace's own model connection. The fake world scripts it, unless a test asks for the real path. */
+export const brainFrom = (env: Env): MakeBrain =>
+  env.DT_WORLD === "fake" && present(env.DT_MANAGER_MODEL) !== "workspace" ? () => scriptedBrain() : workspaceBrain;

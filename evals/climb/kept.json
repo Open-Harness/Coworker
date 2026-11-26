@@ -1,0 +1,218 @@
+{
+  "src/modules/auth/auth.test.ts": [
+    "acc:auth/tailscale-gone",
+    "acc:auth/sign-up",
+    "says when the sign-in email could not be sent",
+    "acc:auth/google-github",
+    "refuses to create or delete an organization from outside"
+  ],
+  "src/modules/billing/billing.test.ts": [
+    "renews on the same day next month, or the month's last day",
+    "charges each hour past the plan once, and stops at the limit"
+  ],
+  "src/modules/brain/brain.test.ts": [
+    "sends the workspace a path and a body, never a credential, and reads the streamed answer",
+    "speaks Anthropic's path to an Anthropic connection",
+    "says in words that no model is connected",
+    "says in words what the provider refused",
+    "keeps the words it had said when the answer breaks off, and says so",
+    "says in words that the workspace did not answer at all",
+    "is ready when a connection answers, and says why when none does"
+  ],
+  "src/modules/clock/clock.test.ts": [
+    "the fake clock only moves when told",
+    "counting ids count per prefix; random ids differ"
+  ],
+  "src/modules/credentials/credentials.test.ts": [
+    "has every setting a live test needs, and says only whether each is there",
+    "asks a person for three things, and not for what is there",
+    "has a page with what is known filled in",
+    "waits for what it is checked against",
+    "is tidied and kept with what follows from it",
+    "is not kept when it cannot be right or its service refuses it, and the reason never repeats it",
+    "is checked with the service it belongs to",
+    "are made once: a master key that is there is never made again",
+    "are worked out from answers kept before, and one that is there stays, except a mailbox",
+    "come from GitHub when the App is made",
+    "makes the item once, then edits it, and never puts a value in an argument",
+    "says what to do when it is not signed in, and when it did not keep a value",
+    "finds the note under the product's old name, keeps what it holds and gives it the new one",
+    "does not guess between two items of the same name",
+    "is made with its test only where it is missing"
+  ],
+  "src/modules/github/github.test.ts": [
+    "flw:github/fork",
+    "flw:github/token"
+  ],
+  "src/modules/github/claim.test.ts": [
+    "is for someone who administers every repo it reaches",
+    "is not for someone who only reads its repos, or administers some of them",
+    "looks past the first page, and takes no part for the whole",
+    "says the same of an installation that does not exist, or reaches nothing",
+    "takes no code GitHub does not take",
+    "cannot happen, or be started, without the App's sign-in client"
+  ],
+  "src/modules/http/http.test.ts": [
+    "serves pages and the health check",
+    "never forwards the objects' internal requests",
+    "needs an upgrade and a session",
+    "sets the person itself from the session, replacing what a client claims",
+    "refuses sockets opened by another site",
+    "says who the session says you are, and nobody without one"
+  ],
+  "src/modules/mail/mail.test.ts": [
+    "the Email Service mailer passes the message on and returns its id",
+    "turns a refusal into a value",
+    "the fake keeps what it sent and can be made to fail"
+  ],
+  "src/modules/mailbox/mailbox.test.ts": [
+    "is listed by subject, newest first, and read",
+    "is refused for any other address, and dropped after 7 days",
+    "goes out as the person, and its Message-ID is the one on the copy that comes back",
+    "reaches the test domain's own addresses only, and a refusal is said",
+    "is sent with the binding, and what it throws becomes a value",
+    "is needed for everything, and without one set nothing is answered"
+  ],
+  "src/modules/models/models.test.ts": [
+    "acc:models/none",
+    "takes a Google and an OpenCode key, and says which is which when one fails",
+    "refuses an empty key and an endpoint that is not https",
+    "rechecks and removes a connection, and its key with it"
+  ],
+  "src/modules/models/choice.test.ts": [
+    "follows the choice made for the caller, then the workspace's default, then the first working connection",
+    "says so, and uses the next choice, when a chosen connection stopped working or no longer lists the model"
+  ],
+  "src/modules/models/forwarding.test.ts": [
+    "holds the key only while the answer streams, and adds it itself",
+    "lets go of the key when the manager stops listening",
+    "speaks Anthropic's format with its own header, and picks Sonnet",
+    "scrubs the key from a refusal and does not follow a redirect",
+    "refuses a connection that is gone, a wrong format and a body that is not JSON"
+  ],
+  "src/modules/outsiders/outsiders.test.ts": [
+    "sends as the mailbox and gives the Message-ID other people see",
+    "finds a reply by subject in the inbox, with what it answers, and reads it",
+    "says why, without the token, when the token is wrong, mail is refused or a message is not there",
+    "gives up on a copy that never comes back",
+    "opens an issue, reads its comments and closes it",
+    "reports a refusal as a value, never the token",
+    "returns the first value, tries again after a throw, and gives up when time is up",
+    "is the one in mail that arrives after the ask, not an older one",
+    "is none when the app refuses to send one or no mail comes",
+    "is the user id and login the token belongs to"
+  ],
+  "src/modules/live/live.test.ts": [
+    "name, for each live eval, exactly the settings that are missing",
+    "are listed, by name only, in .dev.vars.example",
+    "asks for exactly the permissions and events of the book's section 3",
+    "finds the placeholders of the staging block, and none is outside it in the real config",
+    "fills in what it knows, and leaves what it does not and what is written already",
+    "names the account in the image only when there is exactly one, and says when it is missing",
+    "runs nothing without a way in, and only the create steps while a placeholder or a secret is missing",
+    "leaves out what the account has, so a second run never makes it again or replaces the master key",
+    "gives secrets on a command's input by name, never in a command, and uses the store id written in the config",
+    "sends the two people's mail to their mailboxes, once, and gives the Worker its token on its input",
+    "is only printed unless apply is asked for"
+  ],
+  "src/modules/live/image.test.ts": [
+    "is named by its digest in Cloudflare's registry",
+    "is copied whole, in parts of one size, and its manifest last, byte for byte",
+    "sends only what is missing",
+    "sends again what the line dropped, and says so when it stays down",
+    "says which registry refused"
+  ],
+  "src/modules/fake-model/fake-model.test.ts": [
+    "lists its models like an OpenAI-compatible endpoint",
+    "accepts an explicit candidate, ignores an inferred one, and answers a follow-up on its Task",
+    "tells a new Task where it came from once it is accepted",
+    "turns 'add a task' into task_create, a worker's run into a report, and anything else into words",
+    "starts a run when asked, runs the command in its brief, and reports what happened",
+    "never asks for a tool that was not offered",
+    "streams the same answer as server-sent chunks that end with [DONE]",
+    "refuses a wrong key when one is set, and a body that is not a chat request"
+  ],
+  "src/modules/vault/vault.test.ts": [
+    "acc:vault/at-rest",
+    "acc:vault/use-once",
+    "acc:vault/rewrap"
+  ],
+  "src/modules/web/web.test.ts": [
+    "reads a page as text with its title",
+    "refuses this machine without asking anyone",
+    "refuses this machine, written oddly without asking anyone",
+    "refuses this machine over IPv6 without asking anyone",
+    "refuses IPv4 inside IPv6 without asking anyone",
+    "refuses the tailnet without asking anyone",
+    "refuses the cloud's metadata without asking anyone",
+    "refuses a private network without asking anyone",
+    "refuses a tailnet name without asking anyone",
+    "refuses a bare name without asking anyone",
+    "refuses localhost without asking anyone",
+    "refuses another protocol without asking anyone",
+    "refuses credentials without asking anyone",
+    "refuses another port without asking anyone",
+    "refuses nonsense without asking anyone",
+    "refuses a public name that points at the tailnet",
+    "refuses a public name that points at this machine",
+    "refuses a public name that points at a private network",
+    "checks every redirect",
+    "refuses what is not text and cuts what is too long"
+  ],
+  "src/modules/workspaces/workspaces.test.ts": [
+    "acc:workspace/address",
+    "lists, opens and removes a workspace for its members only",
+    "leaves no organization behind when the object fails"
+  ],
+  "src/modules/workspace/workspace.test.ts": [
+    "answers NotProvisioned until provisioned, then its profile",
+    "is provisioned once; a second provision changes nothing",
+    "forgets everything when destroyed"
+  ],
+  "src/modules/chat-sdk/chat-sdk.test.ts": [
+    "spike:chat-sdk/slack-in-do",
+    "answers the same event once even when Slack sends it without a retry header",
+    "loses the dedupe when the object is evicted and the state was the SDK's memory adapter",
+    "keeps the dedupe across an eviction when the state is the object's SQLite"
+  ],
+  "src/flows/join.test.ts": [
+    "flw:join/invite",
+    "flw:join/link",
+    "flw:join/domain",
+    "flw:join/request"
+  ],
+  "src/flows/models.test.ts": [
+    "flw:models/test-key",
+    "flw:models/endpoint"
+  ],
+  "src/flows/chatgpt.test.ts": [
+    "flw:models/chatgpt"
+  ],
+  "src/flows/github-claim.test.ts": [
+    "needs a code from someone who may give the installation",
+    "needs the state this Owner opened the install page with, for this workspace",
+    "is an Owner's to do"
+  ],
+  "src/flows/settings-account.test.ts": [
+    "changes their name, which a workspace then shows, and signs out every other session"
+  ],
+  "src/flows/settings-keys.test.ts": [
+    "tests a key again, replaces it, edits an endpoint and removes a connection",
+    "never sends a stored key to a changed address",
+    "keeps the default model from naming a connection that is gone",
+    "refuses anyone but an Owner, and anyone outside the workspace",
+    "lists secret names without values, and deletes one only when asked to"
+  ],
+  "src/flows/settings-people.test.ts": [
+    "refuses everyone but an Owner, and anyone outside the workspace",
+    "keeps a profile per person, and refuses a bad time zone or hours"
+  ],
+  "src/flows/settings-general.test.ts": [
+    "keeps a time zone and a default model that one of its working connections lists",
+    "serves a logo as the picture it proved to be, and refuses anything else or too big",
+    "exports everything the workspace holds, with no secret value in it"
+  ],
+  "src/flows/billing.test.ts": [
+    "flw:billing/seats"
+  ]
+}

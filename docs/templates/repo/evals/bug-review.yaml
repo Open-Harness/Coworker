@@ -1,0 +1,5 @@
+of: workflow/bug/review
+good: Merged without a commit of someone else
+judge: code
+cases: []
+line: { value: 70, unit: percent }

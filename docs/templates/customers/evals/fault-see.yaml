@@ -1,0 +1,5 @@
+of: workflow/fault/see
+good: Goes on the first time
+judge: code
+cases: []
+line: { value: 80, unit: percent }

@@ -1,0 +1,15 @@
+said: "People who write in get a true answer soon, and need not write twice."
+measure:
+  counts: Conversations solved, with nothing more about it within 7 days
+  unit: a week
+  better: more
+  read: { from: connector, account: email, query: "solved-and-quiet {{mailbox}} 7d" }
+  settles: 7d
+  before: { unknown: Read from the last 90 days when it is made }
+aim: { value: 40, by: "2027-02-28" }
+notWorse:
+  - measure: { counts: Hours until the first answer, unit: hours, better: less, read: { from: connector, account: email, query: "first-answer {{mailbox}}" }, settles: 0d, before: { unknown: Read from the last 90 days when it is made } }
+    limit: 2
+  - measure: { counts: People who say it was wrong, unit: in 100, better: less, read: { from: person, person: "{{owner}}", asks: Was this answer right? }, settles: 1d, before: { unknown: Nobody counted } }
+    limit: 3
+owner: "{{owner}}"

@@ -1,0 +1,15 @@
+said: "Issues on {{repo}} get fixed, and stay fixed, without taking more of our time."
+measure:
+  counts: Issues closed by a merged pull request of mine, not opened again and not undone for 14 days
+  unit: a week
+  better: more
+  read: { from: connector, account: github, query: "fixed-and-stayed {{repo}} 14d" }
+  settles: 14d
+  before: { unknown: Read from the last 90 days when it is made }
+aim: { value: 5, by: "2027-02-28" }
+notWorse:
+  - measure: { counts: Minutes of a reviewer per merged pull request, unit: minutes, better: less, read: { from: connector, account: github, query: "review-minutes {{repo}}" }, settles: 0d, before: { unknown: Read from the last 90 days when it is made } }
+    limit: 15
+  - measure: { counts: Pull requests of mine that were undone, unit: a month, better: less, read: { from: connector, account: github, query: "reverted {{repo}} 30d" }, settles: 14d, before: { unknown: There were none of mine } }
+    limit: 1
+owner: "{{owner}}"
