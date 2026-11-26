@@ -108,7 +108,7 @@ function keepItem({ sql, now, id }: StorePlace, op: Extract<StoreOp, { op: "item
 }
 
 /** An issue opened with our label on it is heard as the issue and again as the label: one speech, kept once. */
-function spokenTwice(sql: StorePlace["sql"], item: Item): Record<string, SqlStorageValue> | undefined {
+function spokenTwice(sql: StorePlace["sql"], item: Omit<Item, "id" | "trigger">): Record<string, SqlStorageValue> | undefined {
   if (item.event !== "issue" && item.event !== "label") return undefined;
   return sql
     .exec("SELECT * FROM console_item WHERE json_extract(item, '$.thread') = ?", item.thread)
