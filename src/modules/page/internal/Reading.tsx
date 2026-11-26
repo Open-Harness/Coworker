@@ -23,5 +23,6 @@ export function Reading<P extends keyof Reads>({ from, parts, loading, gone, fai
     );
   if (read._tag === "Failed")
     return <Unread what={failed ?? "We could not read this page"} says={read.says} onRetry={() => reads.refresh(workspace)} />;
-  return isOffline ? <Offline>{children(read.value)}</Offline> : <>{children(read.value)}</>;
+  // The frame around the page keeps its own face: the notice is in the page, under its header, as drawn.
+  return isOffline && from !== "/shell" ? <Offline>{children(read.value)}</Offline> : <>{children(read.value)}</>;
 }

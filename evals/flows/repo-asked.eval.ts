@@ -104,7 +104,7 @@ describe("a crash loses nothing and does nothing twice", () => {
     ["it-came-in", async (repo) => repo.deliver()],
     ["done-was-said", (repo) => until(repo, () => repo.said(1), (said) => said.length > 0, "a comment")],
     ["it-built", (repo) => until(repo, async () => (await repo.look()).boxes.flatMap((box) => box.ran), (ran) => ran.some((one: any) => one.command.includes("add.sh")), "a command ran")],
-    ["it-was-checked", (_, f) => until(null, () => f.seen(f.models.reviewer), (seen) => seen.length > 0, "the reviewer was asked")],
+    ["it-was-checked", (repo, f) => until(repo, () => f.seen(f.models.reviewer), (seen) => seen.length > 0, "the reviewer was asked")],
     ["the-pull-request-opened", pulled],
   ];
   it.each(AFTER)("flow:repo/crash-after-%s", async (_name, happens) => {

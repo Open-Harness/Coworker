@@ -79,10 +79,10 @@ test("screen:live/shows-what-it-is-about-to-do-before-doing-it", async ({ page }
   expect(await editor(page).count(), "it has said it will press the pencil, and the form is not open yet").toBe(0);
   await until(page, "the form opens", async () => (await editor(page).count()) > 0);
   await reaches(page, 3);
-  expect(await editor(page).getByLabel("When").inputValue(), "it has said what it will change When to, and has not typed it yet").not.toBe(
+  expect(await editor(page).getByLabel("When", { exact: true }).inputValue(), "it has said what it will change When to, and has not typed it yet").not.toBe(
     WALK[3]?.value,
   );
-  await until(page, "it has typed it", async () => (await editor(page).getByLabel("When").inputValue()) === WALK[3]?.value);
+  await until(page, "it has typed it", async () => (await editor(page).getByLabel("When", { exact: true }).inputValue()) === WALK[3]?.value);
 });
 
 test("screen:live/moves-the-pointer-to-the-control-it-names", async ({ page }) => {
