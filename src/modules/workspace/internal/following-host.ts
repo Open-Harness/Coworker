@@ -41,19 +41,25 @@ export function followStoreOver(sql: SqlStorage): FollowStore {
         .toArray()
         .map((row) => parsed<News>(row["json"])),
     told: (id) => void sql.exec("UPDATE follow_news SET told = 1 WHERE id = ?", id),
-    want: (wanted) =>
-      void sql.exec(
-        "INSERT OR IGNORE INTO follow_want (repo, number, json) VALUES (?, ?, ?)",
+    want: (wanted) => {
+      const row = sql.exec("SELECT json FROM follow_want WHERE repo = ? AND number = ?", wanted.repo, wanted.number).toArray()[0];
+      const was = row === undefined ? undefined : parsed<Wanted>(row["json"]);
+      // Strictly newer than what is wanted already, so an ask that began before it cannot be taken for having answered it.
+      const next: Wanted = { ...wanted, all: wanted.all || was?.all === true, since: Math.max(wanted.since, (was?.since ?? -1) + 1) };
+      sql.exec(
+        "INSERT INTO follow_want (repo, number, json) VALUES (?, ?, ?) ON CONFLICT (repo, number) DO UPDATE SET json = excluded.json",
         wanted.repo,
         wanted.number,
-        JSON.stringify(wanted),
-      ),
+        JSON.stringify(next),
+      );
+    },
     wanted: () =>
       sql
         .exec("SELECT json FROM follow_want ORDER BY repo, number")
         .toArray()
         .map((row) => parsed<Wanted>(row["json"])),
-    got: (repo, number) => void sql.exec("DELETE FROM follow_want WHERE repo = ? AND number = ?", repo, number),
+    got: (repo, number, since) =>
+      void sql.exec("DELETE FROM follow_want WHERE repo = ? AND number = ? AND json_extract(json, '$.since') <= ?", repo, number, since),
     repos: () =>
       sql
         .exec("SELECT repo FROM follow_kept ORDER BY repo")

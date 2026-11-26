@@ -47,7 +47,7 @@ async function followed(c: FollowDeps, repo: string): Promise<readonly number[]>
 async function ask(c: FollowDeps, wanted: Wanted): Promise<void> {
   const numbers = wanted.number === 0 ? await followed(c, wanted.repo) : [wanted.number];
   const answered = await Promise.all(numbers.map((number) => refresh(c, wanted, number)));
-  if (answered.every(Boolean) || c.clock.now() - wanted.since > STALE) c.store.got(wanted.repo, wanted.number);
+  if (answered.every(Boolean) || c.clock.now() - wanted.since > STALE) c.store.got(wanted.repo, wanted.number, wanted.since);
 }
 
 /** Tells each piece of work that follows the conversation what became true. `false`: nobody followed it yet. */

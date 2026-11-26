@@ -10,6 +10,8 @@ import type { Us } from "~/modules/github-events/types.ts";
 /** What `receive` made of a delivery, and which installation it says it is for: the workspace is found by it. */
 export type Delivered = Received & {
   readonly installation: number | null;
+  /** An installation event that stopped the App: it was suspended (it is the same installation when it is back), not uninstalled. */
+  readonly suspended?: boolean;
   /** The records the delivery carried, for what follows a conversation to keep: its item, or noise that still said something. */
   readonly heard?: Heard;
 };

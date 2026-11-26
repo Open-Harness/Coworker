@@ -52,9 +52,14 @@ function world(answer: unknown = undefined) {
     addNews: (more) => more.forEach((one) => news.has(one.id) || news.set(one.id, { news: one, told: false })),
     news: () => [...news.values()].filter(({ told }) => !told).map((one) => one.news),
     told: (id) => void (news.get(id) !== undefined && (news.get(id)!.told = true)),
-    want: (one) => void wanted.set(`${one.repo}#${one.number}`, one),
+    want: (one) => {
+      const was = wanted.get(`${one.repo}#${one.number}`);
+      wanted.set(`${one.repo}#${one.number}`, { ...one, all: one.all || was?.all === true });
+    },
     wanted: () => [...wanted.values()],
-    got: (repo, number) => void wanted.delete(`${repo}#${number}`),
+    got: (repo, number, since) => {
+      if ((wanted.get(`${repo}#${number}`)?.since ?? 0) <= since) wanted.delete(`${repo}#${number}`);
+    },
     repos: () => [...kept.keys()],
   };
   const open: OpenWork = {

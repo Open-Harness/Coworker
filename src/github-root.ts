@@ -34,7 +34,7 @@ export async function gitHubIn(request: Request, dependencies: GitHubIn): Promis
   if (heard._tag === "Refused" && heard.why === "not signed")
     return Response.json({ error: "The signature does not match" }, { status: 401 });
   if (heard._tag === "Account" && !heard.works && heard.installation !== null) {
-    await dependencies.removed(heard.installation, heard.says.includes("suspended") ? "suspended" : undefined);
+    await dependencies.removed(heard.installation, heard.suspended ? "suspended" : undefined);
     return Response.json({ _tag: "Uninstalled" }, { status: 202 });
   }
   // The App is back, as it was: what it had is restored, and what it missed meanwhile is asked of GitHub.

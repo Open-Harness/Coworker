@@ -55,9 +55,11 @@ export interface FollowStore {
   readonly addNews: (news: readonly News[]) => void;
   readonly news: () => readonly News[];
   readonly told: (id: string) => void;
+  /** A want for what is already wanted is the newer of the two, and asks for everything if either does. */
   readonly want: (wanted: Wanted) => void;
   readonly wanted: () => readonly Wanted[];
-  readonly got: (repo: string, number: number) => void;
+  /** Done with what was asked since `since`: a want that came after it is still owed. */
+  readonly got: (repo: string, number: number, since: number) => void;
   /** The repos it has heard. */
   readonly repos: () => readonly string[];
 }
