@@ -1,10 +1,12 @@
 import { DurableObject } from "cloudflare:workers";
+import type { Agent } from "~/modules/agent/types.ts";
 import { createBoxes } from "~/modules/boxes/service.ts";
 import type { BoxHost } from "~/modules/boxes/types.ts";
 import type { Clock } from "~/modules/clock/types.ts";
 import { playbooks } from "~/modules/playbook/service.ts";
 import type { Files, Playbook, Version } from "~/modules/playbook/types.ts";
-import { clonePlace, createWorking } from "~/modules/working/service.ts";
+import { createWorking } from "~/modules/working/service.ts";
+import { clonePlace } from "./internal/place.ts";
 import type { Answer, AdoptInput, Changed, Outside, TakeInput, Working } from "~/modules/working/types.ts";
 import type { WorkEvent } from "~/modules/work/types.ts";
 import type { Region } from "~/modules/workspace/types.ts";
@@ -21,6 +23,8 @@ export interface ManagerStoreDeps {
   readonly clock: Clock;
   readonly host: BoxHost;
   readonly outside: (record: ManagerRecord) => Outside;
+  /** The loop, over this object's storage. */
+  readonly agent: Agent;
   readonly report: (message: string, error: unknown) => void;
 }
 
@@ -65,6 +69,7 @@ export class ManagerStoreHost<Env = unknown> extends DurableObject<Env> implemen
     const boxes = createBoxes({ sql: this.ctx.storage.sql, host, clock, place: clonePlace(outside, store) });
     this.#working = createWorking({
       store,
+      agent: this.#deps.agent,
       boxes,
       outside,
       clock,

@@ -7,7 +7,6 @@ import type { CaseRun, Trial } from "~/modules/trials/types.ts";
 import type { ConsoleDeps } from "../types.ts";
 import { accountsOf, surroundings, wholeOf } from "./around.ts";
 import { judgeCases, type JudgeCase } from "./cases.ts";
-import { modelsOf } from "./models-of.ts";
 import type { Open } from "./managers.ts";
 
 /* A change tried beside what is there: the same cases, each judged again with the words as they are and as they would become. */
@@ -41,15 +40,7 @@ async function runOnce(
   version: "now" | "next",
 ): Promise<CaseRun> {
   const hears = hearsOf(open, playbook);
-  const models = await modelsOf(c);
-  const judgement = await askJudge(
-    async () => models,
-    (path, body) => c.outside.call(path, body),
-    one.item,
-    [hears],
-    [],
-    judge,
-  );
+  const judgement = await askJudge(c.agent.ask, one.item, [hears], [], judge);
   const at = c.clock.now();
   if (judgement._tag === "CouldNot")
     return { case: one.case.id, version, time: at, passed: false, says: `The judge did not answer: ${judgement.why}`, cost: 0 };

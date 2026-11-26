@@ -1,5 +1,5 @@
 import type { SignedIn } from "~/modules/auth/types.ts";
-import type { Answer } from "~/modules/manager/types.ts";
+import type { Answer } from "~/modules/workspace/types.ts";
 import { personOf } from "~/modules/protocol/service.ts";
 import type { InboxItem } from "~/modules/workspace/types.ts";
 import type { Workspaces } from "~/modules/workspaces/types.ts";

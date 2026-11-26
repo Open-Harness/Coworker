@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { Theme } from "@astryxdesign/core/theme";
 import { neutralTheme } from "@astryxdesign/theme-neutral/built";
-import { Failed, Gone } from "~/modules/app/service.ts";
+import { Failed, Gone } from "~/modules/ui/service.ts";
 import css from "../styles.css?url";
 
 function Document({ children }: { readonly children: ReactNode }) {
@@ -28,5 +28,5 @@ export const Route = createRootRoute({
   errorComponent: ({ error }) => (
     <Failed message={error instanceof Error ? error.message : String(error)} onReload={() => window.location.reload()} />
   ),
-  notFoundComponent: () => <Gone kind="page" />,
+  notFoundComponent: () => <Gone />,
 });

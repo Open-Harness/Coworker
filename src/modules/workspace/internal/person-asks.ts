@@ -1,4 +1,4 @@
-import type { Answer } from "~/modules/manager/types.ts";
+import type { Answer } from "../types.ts";
 import type { ApprovalRequest } from "~/modules/actions/types.ts";
 
 /*

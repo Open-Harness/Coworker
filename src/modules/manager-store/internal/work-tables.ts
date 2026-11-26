@@ -1,5 +1,5 @@
 import type { Ask } from "~/modules/asks/types.ts";
-import type { ActivityLine, Hold, Job, Message, Spend, Store, StoredJob, ThreadRow } from "~/modules/working/types.ts";
+import type { ActivityLine, Hold, Job, Spend, Store, StoredJob, ThreadRow } from "~/modules/working/types.ts";
 import type { Work } from "~/modules/work/types.ts";
 
 /** What a manager keeps of its work. Every statement runs once, in order, after the manager's own tables. */
@@ -105,18 +105,6 @@ export function workStore(storage: DurableObjectStorage): Store {
         row.brief,
         row.said,
         row.model,
-      ),
-    messages: (thread) =>
-      sql
-        .exec("SELECT json FROM message WHERE thread = ? ORDER BY n", thread)
-        .toArray()
-        .map((row) => parsed<Message>(row["json"])),
-    addMessage: (thread, message) =>
-      void sql.exec(
-        "INSERT INTO message (thread, n, json) VALUES (?, (SELECT COALESCE(MAX(n), -1) + 1 FROM message WHERE thread = ?), ?)",
-        thread,
-        thread,
-        JSON.stringify(message),
       ),
     addSpend: (spend: Spend) =>
       void sql.exec(

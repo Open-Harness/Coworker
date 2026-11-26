@@ -3,7 +3,6 @@ import type { AgentConfig } from "~/modules/agents/types.ts";
 import type { Account } from "~/modules/billing/types.ts";
 import type { Clock, Ids } from "~/modules/clock/types.ts";
 import type { Mailer } from "~/modules/mail/types.ts";
-import type { ManagerApi } from "~/modules/manager/types.ts";
 import type { ModelConnection, Models } from "~/modules/models/types.ts";
 import type { Sandboxes } from "~/modules/sandboxes/types.ts";
 import type { Policy } from "~/modules/triggers/types.ts";
@@ -62,7 +61,6 @@ export interface SettingsPlace {
   /** The address the workspace's own mail is sent from. */
   readonly sendFrom: string;
   readonly roster: readonly RosterEntry[];
-  readonly manager: (entry: RosterEntry) => ManagerApi;
   /** One line in the audit log; `managerId` is empty for the workspace itself. */
   readonly audit: (record: ActionRecord, managerId?: string) => void;
   /** Changes the profile's name and address, and every manager's address with it. */

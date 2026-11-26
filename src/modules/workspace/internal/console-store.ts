@@ -226,22 +226,6 @@ export function runStore(place: StorePlace, op: Exclude<StoreOp, { readonly op: 
           .toArray()
           .map((row) => parsed<unknown>(row["json"])),
       };
-    case "message.list":
-      return {
-        op: "message.list",
-        messages: sql
-          .exec("SELECT json FROM console_message WHERE thread = ? ORDER BY n", op.thread)
-          .toArray()
-          .map((row) => parsed<unknown>(row["json"])),
-      };
-    case "message.add":
-      sql.exec(
-        "INSERT INTO console_message (thread, n, json) VALUES (?, (SELECT COALESCE(MAX(n), -1) + 1 FROM console_message WHERE thread = ?), ?)",
-        op.thread,
-        op.thread,
-        JSON.stringify(op.message),
-      );
-      return { op: "message.add" };
     default:
       return runMore(sql, now, op);
   }

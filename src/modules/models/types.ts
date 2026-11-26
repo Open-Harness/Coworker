@@ -1,3 +1,4 @@
+import type { Models as PiAiModels } from "@earendil-works/pi-ai/models";
 import type { Clock, Ids } from "~/modules/clock/types.ts";
 import type { Vault } from "~/modules/vault/types.ts";
 
@@ -125,4 +126,13 @@ export interface Models {
    * the response streams. The response carries the provider's answer and nothing of the credential. Never throws.
    */
   readonly forward: (call: ModelCall) => Promise<Response>;
+}
+
+/**
+ * The workspace's connections as pi-ai providers: how the loop (`agent`) calls a model. Each connection is spoken to in its own
+ * format (Anthropic Messages, OpenAI Completions), never through a translation, and its key is opened in the vault for each
+ * request. Not built: the loop is not either.
+ */
+export interface PiModels {
+  readonly registry: () => Promise<PiAiModels | { readonly _tag: "NotBuilt"; readonly what: string }>;
 }

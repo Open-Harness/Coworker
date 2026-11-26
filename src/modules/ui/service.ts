@@ -1,14 +1,3 @@
-export { DocumentDialog, DocumentPanel } from "./internal/DocumentPanel.tsx";
-export { Library } from "./internal/Library.tsx";
-export { NameDialog } from "./internal/NameDialog.tsx";
-export { Page, PageSection } from "./internal/Page.tsx";
-export { PeopleHere, typingNote } from "./internal/People.tsx";
-export { PromptComposer } from "./internal/PromptComposer.tsx";
-export { RowMenu } from "./internal/RowMenu.tsx";
-export { SearchPalette } from "./internal/SearchPalette.tsx";
-export { ScheduleList, SettingsForm, UsageReport } from "./internal/Settings.tsx";
-export { SuggestionPicker } from "./internal/SuggestionPicker.tsx";
-export { Transcript } from "./internal/Transcript.tsx";
-export { WorkspaceNav } from "./internal/WorkspaceNav.tsx";
 export { BarChart, DonutChart, LineChart } from "./internal/ChartFrame.tsx";
+export { Failed, Gone } from "./internal/Failed.tsx";
 export { TrendChart } from "./internal/TrendFrame.tsx";

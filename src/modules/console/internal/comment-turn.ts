@@ -1,9 +1,7 @@
-import { completion } from "~/modules/completion/service.ts";
 import type { Playbook } from "~/modules/playbook/types.ts";
 import { playbooks } from "~/modules/playbook/service.ts";
 import type { Comment, PartName } from "~/modules/views-manager/types.ts";
 import type { ConsoleDeps } from "../types.ts";
-import { modelsOf } from "./models-of.ts";
 
 /* A comment on a line comes back from the co-worker as a change to accept, an answer, or a case (spec B5). Nothing is changed by it: a person accepts. */
 
@@ -47,18 +45,11 @@ function becameOf(reply: string, comment: Comment, was: string): Comment["became
 
 /** Asks the co-worker's model about the comment. Open when it cannot be asked: a person can still read it, and nothing is lost. */
 export async function comeBack(c: ConsoleDeps, comment: Comment, was: string): Promise<Comment["became"]> {
-  const { chosen } = completion.pick(await modelsOf(c), "inherit");
-  if (chosen._tag === "None") return comment.became;
-  const replied = await completion.ask((path, body) => c.outside.call(path, body), {
-    connection: chosen.connection,
-    model: chosen.model,
-    thinking: chosen.thinking,
-    messages: [
-      { role: "system", content: SYSTEM },
-      { role: "user", content: `The line is ${comment.on}. Its words now:\n${was}\n\nThe comment, by ${comment.by}:\n${comment.text}` },
-    ],
-    tools: [],
+  const replied = await c.agent.ask({
+    instructions: SYSTEM,
+    text: `The line is ${comment.on}. Its words now:\n${was}\n\nThe comment, by ${comment.by}:\n${comment.text}`,
+    model: "inherit",
   });
-  const said = replied._tag === "Replied" ? (replied.message.content ?? "").trim() : "";
+  const said = replied._tag === "Said" ? replied.text.trim() : "";
   return said === "" ? comment.became : becameOf(said, comment, was);
 }

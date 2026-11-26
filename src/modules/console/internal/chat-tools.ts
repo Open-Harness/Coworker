@@ -2,12 +2,11 @@ import type { Did } from "~/modules/api/types.ts";
 import { doings } from "~/modules/doings/service.ts";
 import type { Doing, Who } from "~/modules/doings/types.ts";
 import { threads } from "~/modules/threads/service.ts";
-import type { TurnTool } from "~/modules/turns/types.ts";
+import type { AppTool } from "~/modules/agent/types.ts";
 import { COWORKER, type ChatDid, type ChatLineRow } from "~/modules/talks/types.ts";
 import type { ConsoleDeps, Member } from "../types.ts";
 import { whoOf } from "./around.ts";
 import { findWords, lookAt } from "./chat-look.ts";
-import { threadOf } from "./chat-rows.ts";
 import { keepNote } from "./coworker-memory.ts";
 import { run } from "./do.ts";
 
@@ -102,7 +101,7 @@ function didOf(doing: Doing | undefined, id: string, did: Did): { readonly says:
 const asObject = (properties: Readonly<Record<string, unknown>>, required: readonly string[]) => ({ type: "object", properties, required });
 const values = { type: "object", additionalProperties: { type: "string" } };
 
-export function chatTools(c: ConsoleDeps, chat: string, name: string, place: string, trace: Trace): readonly TurnTool[] {
+export function chatTools(c: ConsoleDeps, chat: string, name: string, place: string, trace: Trace): readonly AppTool[] {
   const self: Who = { id: COWORKER, name, is: "coworker", role: "Owner", own: {} };
   const timed = async (tool: string, target: string, work: () => Promise<string>): Promise<string> => {
     const started = c.clock.now();
@@ -148,12 +147,12 @@ export function chatTools(c: ConsoleDeps, chat: string, name: string, place: str
       description:
         "Do one thing that a person could do with a button: its id from the registry, and its fields as text. What only a person decides waits for their yes.",
       parameters: asObject({ doing: { type: "string" }, values }, ["doing", "values"]),
-      run: (args) => {
+      run: (args, call) => {
         const read = threads.read("act", args);
         if (read._tag === "Wrong") return Promise.resolve(read.says);
         const { doing: id, values: given } = read.args;
         return timed("act", id, async () => {
-          const key = `${chat}:${(await c.store.messages(threadOf(chat))).length}:${id}`;
+          const key = `${chat}:${call}:${id}`;
           const doing = doings.all.find((one) => one.id === id);
           const answered = await run({ ...c, via: chat }, { doing: id, values: given, key }, self, {
             for: whoOf(c.who),

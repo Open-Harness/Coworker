@@ -2,7 +2,7 @@ import type { Auth, SignedIn } from "~/modules/auth/types.ts";
 import type { Workspaces } from "~/modules/workspaces/types.ts";
 import { routeGeneral } from "./settings-general.ts";
 import { routeKeys } from "./settings-keys.ts";
-import { routeWorkspaceLevel } from "./settings-manager.ts";
+import { routeWorkspaceLevel } from "./settings-workspace.ts";
 import { routePeopleSettings } from "./settings-people.ts";
 import { routeWork } from "./settings-work.ts";
 

@@ -24,7 +24,7 @@ async function decide(c: DecidingDeps, item: Item, heard: readonly Listener[], n
   if (settled !== undefined) return settled;
   const first = heard.find(({ row }) => row.node.state === "runs") ?? heard[0];
   const agent = first?.playbook.agents.find(({ id }) => id === "judge");
-  const judgement = await judge(c.models, c.call, item, hears, open, agent);
+  const judgement = await judge(c.ask, item, hears, open, agent);
   return intake.decide({ item, hears, open, judgement, now });
 }
 

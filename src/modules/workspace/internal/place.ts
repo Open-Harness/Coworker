@@ -36,10 +36,9 @@ function allAudit(sql: SqlStorage) {
 
 /** The profile's name and address, and every manager's address, which is made of the workspace's. */
 async function rename({ sql, dependencies, profile }: Pieces, name: string, address: string): Promise<void> {
-  const { managers, mailDomain } = dependencies;
+  const { mailDomain } = dependencies;
   for (const entry of listManagers(sql, profile)) {
     const next = addressFor(entry.slug, address, mailDomain);
-    await managers.get(entry.objectId, entry.region).readdress(next);
     sql.exec("UPDATE manager SET address = ? WHERE manager_id = ?", next, entry.managerId);
   }
   sql.exec("UPDATE profile SET name = ?, address = ?", name, address);
@@ -47,7 +46,7 @@ async function rename({ sql, dependencies, profile }: Pieces, name: string, addr
 
 export function settingsPlace(pieces: Pieces): SettingsPlace {
   const { sql, dependencies, profile, vault, models, sandboxes, account } = pieces;
-  const { clock, ids, managers, mailer, sendFrom, mailDomain } = dependencies;
+  const { clock, ids, mailer, sendFrom, mailDomain } = dependencies;
   return {
     sql,
     clock,
@@ -61,7 +60,6 @@ export function settingsPlace(pieces: Pieces): SettingsPlace {
     mailer,
     sendFrom,
     roster: listManagers(sql, profile),
-    manager: (entry) => managers.get(entry.objectId, entry.region),
     audit: (record, managerId = "") => recordActions(sql, [{ key: `settings:${ids.next("set")}`, managerId, record }]),
     rename: (name, address) => rename(pieces, name, address),
     notice: (notice) => notify(sql, notice, clock.now()),

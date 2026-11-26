@@ -1,4 +1,4 @@
-import type { Answer } from "~/modules/manager/types.ts";
+import type { Answer } from "~/modules/workspace/types.ts";
 import type { JoinRequester } from "~/modules/workspace/types.ts";
 import type { AnswerOutcome, RequestJoinOutcome, WorkspacesDependencies } from "../types.ts";
 import { findByAddress, ownersOf } from "./directory.ts";

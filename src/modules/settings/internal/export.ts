@@ -41,12 +41,7 @@ export async function exportAll(place: SettingsPlace, input: Parameters<Settings
       entries.push({ path: `skills/${skill.name}/${path}`, bytes: encoder.encode(body) });
   }
   for (const [path, value] of Object.entries(await place.extras())) entries.push(json(`${path}.json`, value));
-  for (const manager of place.roster) {
-    const api = place.manager(manager);
-    const [board, pages] = await Promise.all([api.board(), api.pages()]);
-    entries.push(json(`managers/${manager.slug}/manager.json`, manager), json(`managers/${manager.slug}/board.json`, board));
-    entries.push(json(`managers/${manager.slug}/pages.json`, pages));
-  }
+  for (const manager of place.roster) entries.push(json(`managers/${manager.slug}/manager.json`, manager));
   const logo = readLogo(place);
   if (logo._tag === "Logo") entries.push({ path: `logo.${EXTENSION[logo.type] ?? "bin"}`, bytes: logo.bytes });
   said(place, by, "settings.export", `${by.name} exported the workspace's data`);

@@ -33,7 +33,6 @@ const ROUTES: readonly (readonly [method: string, path: string, body: object | u
   ["DELETE", "/agents/agent_nothing", { confirm: "agent_nothing" }, 403],
   ["GET", "/skills", undefined, 200],
   ["POST", "/skills", { name: "a", files: {} }, 403],
-  ["GET", "/templates", undefined, 200],
   ["GET", "/email", undefined, 200],
   ["POST", "/email/test", { managerId: "mgr_x" }, 403],
   ["GET", "/audit", undefined, 403],
@@ -45,12 +44,7 @@ describe("who may reach the Settings routes", () => {
     const launch = await team("access");
     const other = await team("access-other");
     const bo = await member(launch, "access-bo@example.test", "Bo");
-    const manager = `${launch.workspace}/managers/${launch.manager.managerId}`;
-    const all = [
-      ...ROUTES.map(([method, path, body, status]) => [method, `${launch.workspace}${path}`, body, status] as const),
-      ["GET", `${manager}/permissions`, undefined, 200],
-      ["GET", `${manager}/tasks/DT-1`, undefined, 404],
-    ] as const;
+    const all = ROUTES.map(([method, path, body, status]) => [method, `${launch.workspace}${path}`, body, status] as const);
     for (const [method, path, body, memberStatus] of all) {
       const label = `${method} ${path.replace(launch.workspace, "")}`;
       const unsigned = await browser().send(method, path, body);

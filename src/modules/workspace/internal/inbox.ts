@@ -1,4 +1,4 @@
-import type { Answer, AskResult, AuditLine, InboxRequest, QuestionDetail, Waiter } from "~/modules/manager/types.ts";
+import type { Answer, AskResult, AuditLine, InboxRequest, QuestionDetail, Waiter } from "../types.ts";
 import type { AuditEntry, InboxItem, AnswerResult } from "../types.ts";
 
 /*

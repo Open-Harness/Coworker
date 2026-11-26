@@ -1,3 +1,4 @@
+import { noAgent } from "~/modules/agent/service.ts";
 import { randomIds } from "~/modules/clock/service.ts";
 import { readPlace } from "./console-place.ts";
 import { createConsole, remoteStore } from "~/modules/console/service.ts";
@@ -31,6 +32,8 @@ export const consoleFrom =
       who: me,
       people,
       store: remoteStore((op) => object.consoleStore(op), root.clock),
+      // The loop is not built: the co-worker's chat, comments and weekly look answer that it is not.
+      agent: noAgent,
       outside: {
         connections: () => object.modelConnections(),
         secrets: () => object.secrets(),
@@ -40,7 +43,6 @@ export const consoleFrom =
           const billed = await object.billing();
           return "_tag" in billed ? null : billed;
         },
-        call: (path, body) => object.modelCall({ path, body, headers: { accept: "text/event-stream" } }),
         retire: async (at) => {
           const scheduled = await workspaces.scheduleRemoval(person.userId, entry.workspaceId, at);
           return scheduled._tag === "Scheduled" ? { _tag: "Scheduled" } : { _tag: "Refused", why: "Only an Owner deletes a workspace." };

@@ -1,6 +1,6 @@
 import type { AskAnswer, AskOp } from "~/modules/asking/types.ts";
 import type { Boxes } from "~/modules/boxes/types.ts";
-import type { Message, Models } from "~/modules/completion/types.ts";
+import type { Agent } from "~/modules/agent/types.ts";
 import type { Clock } from "~/modules/clock/types.ts";
 import type { GitPort } from "~/modules/boxes/types.ts";
 import type { Decision, Item, OpenWork } from "~/modules/intake/types.ts";
@@ -12,9 +12,12 @@ import type { McpAnswer, McpCall } from "~/modules/mcp-servers/types.ts";
 import type { ToDo, Work, WorkEvent } from "~/modules/work/types.ts";
 
 /*
- * What a manager does with its work: it moves it (`work`), does what moving it asked, runs the conversations of its agents
- * (`threads`), and keeps their box (`boxes`). Everything it knows it keeps in a `Store` and everything outside is in `Outside`,
- * both given: the manager's Durable Object builds them. A crash loses nothing that was stored and does nothing twice.
+ * What a manager does with its work: it moves it (`work`), does what moving it asked, has its agents' threads run (`agent`,
+ * the loop on pi-durable), and keeps their box (`boxes`). Everything it knows it keeps in a `Store` and everything outside is in
+ * `Outside`, both given: the manager's Durable Object builds them. A crash loses nothing that was stored and does nothing twice.
+ *
+ * The contract the manager's object holds the core to. Not built: the hand-written loop that was here is gone (audit,
+ * 26 November); `service.ts` says so where it is called. A thread's messages are the loop's, never this store's.
  */
 
 /** What the manager does that `work` does not ask of it: it confirms what a connector did, and it runs a step's own commands. */
@@ -31,7 +34,7 @@ export interface StoredJob {
   readonly job: Job;
 }
 
-/** One agent's conversation on one piece of work. Its lines are the messages, as a model is sent them. */
+/** One agent's thread on one piece of work, as the board shows it. Its lines are the loop's (`Agent.lines`). */
 export interface ThreadRow {
   readonly id: string;
   readonly work: string;
@@ -46,8 +49,6 @@ export interface ThreadRow {
   readonly said: string;
   readonly model: string | null;
 }
-
-export type { Message } from "~/modules/completion/types.ts";
 
 /** One model call's cost, by the call that made it: a replay changes nothing. */
 export interface Spend {
@@ -93,8 +94,6 @@ export interface Store {
   readonly thread: (id: string) => ThreadRow | undefined;
   readonly threadsOf: (work: string) => readonly ThreadRow[];
   readonly putThread: (row: ThreadRow) => void;
-  readonly messages: (thread: string) => readonly Message[];
-  readonly addMessage: (thread: string, message: Message) => void;
   readonly addSpend: (spend: Spend) => void;
   readonly spendOf: (work: string) => { readonly dollars: number; readonly notKnown: number };
   readonly spends: () => readonly Spend[];
@@ -114,13 +113,8 @@ export interface Store {
   readonly kept: (kind: string) => readonly unknown[];
 }
 
-export type { Models } from "~/modules/completion/types.ts";
-
 /** What is outside the manager's object. */
 export interface Outside {
-  readonly models: () => Promise<Models>;
-  /** One call to a model, made for the workspace with its credential. Never holds or shows a key. */
-  readonly call: (path: string, body: string) => Promise<Response>;
   /** The GitHub installation the workspace has, if it has one. */
   readonly installation: () => Promise<number | undefined>;
   readonly github: GitHubApi;
@@ -162,6 +156,8 @@ export interface Answer {
 
 export interface WorkingDeps {
   readonly store: Store;
+  /** The loop: threads are opened, told, signalled and stopped through it, and it says when one ended. */
+  readonly agent: Agent;
   readonly boxes: Boxes & BoxPut;
   readonly outside: Outside;
   readonly clock: Clock;

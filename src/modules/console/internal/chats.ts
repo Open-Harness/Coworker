@@ -2,7 +2,9 @@ import type { Answer } from "~/modules/api/types.ts";
 import type { ChatsView, ChatView } from "~/modules/views-workspace/types.ts";
 import type { ChatLineRow, ChatRow } from "~/modules/talks/types.ts";
 import type { ConsoleDeps } from "../types.ts";
-import { answerChat, hearing, heardOf, systemOf } from "./chat-turn.ts";
+import { saysWhy } from "~/modules/agent/service.ts";
+import { COWORKER } from "~/modules/talks/types.ts";
+import { answerChat, hearing } from "./chat-turn.ts";
 import { chatOf, ownChat, saveChat, threadOf, viewOf } from "./chat-rows.ts";
 import { ok, problem } from "./around.ts";
 import { identityOf } from "./shell.ts";
@@ -26,15 +28,12 @@ export async function chatView(c: ConsoleDeps, id: string): Promise<Answer<ChatV
   return row === undefined ? problem(404, `There is no chat ${id} of yours.`) : ok(await viewOf(c, row, (await identityOf(c)).name));
 }
 
-/** What a person says: kept in the conversation and as a line, and the co-worker answers. A second press with the same key is the first. */
+/** What a person says: kept as a line, and the co-worker answers it. A second press with the same key is the first. */
 async function hear(c: ConsoleDeps, row: ChatRow, said: string, key: string, place: string): Promise<string> {
   const line: ChatLineRow = { id: `${row.id}:${key}`, by: c.who.id, at: c.clock.now(), text: said };
   if (row.lines.some(({ id }) => id === line.id)) return line.id;
-  const thread = threadOf(row.id);
-  if ((await c.store.messages(thread)).length === 0) await c.store.addMessage(thread, { role: "system", content: await systemOf(c) });
-  await c.store.addMessage(thread, { role: "user", content: heardOf(said, place) });
-  await saveChat(c, hearing(row, { ...line, upto: (await c.store.messages(thread)).length }));
-  await answerChat(c, row.id, place);
+  await saveChat(c, hearing(row, line));
+  await answerChat(c, row.id, { key: line.id, text: said }, place);
   return line.id;
 }
 
@@ -62,16 +61,18 @@ export async function sayInChat(c: ConsoleDeps, id: string, body: unknown): Prom
   return row === undefined ? problem(404, `There is no chat ${id} of yours.`) : ok({ line: await hear(c, row, said, key, place) });
 }
 
-/** A fork knows what the chat knew up to a line, and nothing after it. */
+/** A fork knows what the chat knew up to a line, and nothing after it: the loop forks the conversation at what the person said there. */
 export async function forkChat(c: ConsoleDeps, id: string, body: unknown): Promise<Answer<{ readonly chat: string }>> {
   const row = await ownChat(c, id);
   if (row === undefined) return problem(404, `There is no chat ${id} of yours.`);
   const at = row.lines.findIndex(({ id: line }) => line === text(body, "line"));
   const line = row.lines[at];
   if (line === undefined) return problem(404, "There is no such line in that chat.");
+  const said = row.lines.slice(0, at + 1).findLast(({ by }) => by !== COWORKER);
+  if (said === undefined) return problem(404, "There is nothing said before that line.");
   const fork = c.ids.next("chat");
-  const known = (await c.store.messages(threadOf(id))).slice(0, line.upto ?? 0);
-  for (const message of known) await c.store.addMessage(threadOf(fork), message);
+  const forked = await c.agent.fork(threadOf(id), said.id, threadOf(fork));
+  if (forked._tag !== "Forked") return problem(500, `The chat could not be forked: ${saysWhy(forked)}.`);
   await saveChat(c, {
     id: fork,
     by: c.who.id,

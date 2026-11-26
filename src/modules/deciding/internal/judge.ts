@@ -1,5 +1,4 @@
-import { completion } from "~/modules/completion/service.ts";
-import type { Call, Models } from "~/modules/completion/types.ts";
+import type { Agent } from "~/modules/agent/types.ts";
 import { intake } from "~/modules/intake/service.ts";
 import type { Hears, Item, Judgement, OpenWork } from "~/modules/intake/types.ts";
 import type { AgentRole } from "~/modules/playbook/types.ts";
@@ -33,38 +32,37 @@ const JUDGE = {
 
 /** A model that can only read says what kind of thing came in. It grants nothing: what it says is narrowed, and code decides. */
 export async function judge(
-  models: () => Promise<Models>,
-  call: Call,
+  ask: Agent["ask"],
   item: Item,
   hears: readonly Hears[],
   open: readonly OpenWork[],
   agent: AgentRole | undefined,
 ): Promise<Judgement> {
   const { system, user } = intake.question(item, hears, open);
-  const { chosen } = completion.pick(await models(), agent?.model ?? "inherit");
-  if (chosen._tag === "None") return { _tag: "CouldNot", why: chosen.why };
-  const replied = await completion.ask(call, {
-    connection: chosen.connection,
-    model: chosen.model,
-    thinking: chosen.thinking,
-    messages: [
-      { role: "system", content: agent === undefined ? system : `${agent.told.trim()}\n\n${system}` },
-      { role: "user", content: user },
-    ],
-    tools: [JUDGE],
+  const replied = await ask({
+    instructions: agent === undefined ? system : `${agent.told.trim()}\n\n${system}`,
+    text: user,
+    model: agent?.model ?? "inherit",
+    tool: JUDGE,
   });
-  if (replied._tag === "Failed")
-    return { _tag: "CouldNot", why: `The judge did not answer${replied.status === 0 ? "" : ` (${replied.status})`}: ${replied.says}` };
-  const called = replied.message.tool_calls?.find((one) => one.function.name === "judge");
-  if (called === undefined) return { _tag: "CouldNot", why: "The judge did not say which kind this is." };
-  const read = threads.read("judge", safe(called.function.arguments));
+  if (replied._tag !== "Said") return { _tag: "CouldNot", why: `The judge did not answer: ${whyOf(replied)}` };
+  if (replied.called === null || replied.called === undefined)
+    return { _tag: "CouldNot", why: "The judge did not say which kind this is." };
+  const read = threads.read("judge", replied.called);
   return read._tag === "Wrong" ? { _tag: "CouldNot", why: read.says } : intake.verdicts(read.args, hears, open);
 }
 
-function safe(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return undefined;
+type NotSaid = Exclude<Awaited<ReturnType<Agent["ask"]>>, { readonly _tag: "Said" }>;
+
+function whyOf(error: NotSaid): string {
+  switch (error._tag) {
+    case "NotBuilt":
+      return `${error.what} is not built yet`;
+    case "OverBudget":
+      return `${error.spent} of ${error.limit} dollars is spent`;
+    case "OutOfTurns":
+      return `it took ${error.turns} turns`;
+    default:
+      return error.why;
   }
 }

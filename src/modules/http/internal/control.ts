@@ -1,7 +1,6 @@
 import type { Auth, SignedIn } from "~/modules/auth/types.ts";
 import type { Region } from "~/modules/workspace/types.ts";
 import type { Workspaces } from "~/modules/workspaces/types.ts";
-import type { ManagerObjects } from "~/modules/manager/types.ts";
 import type { GitHubApi } from "~/modules/github/types.ts";
 import { GITHUB, routeGitHub } from "./github.ts";
 import { openProof, PEOPLE, PROOF_LINK, routePeople } from "./people.ts";
@@ -9,19 +8,14 @@ import { routeSandboxes, SANDBOXES } from "./sandboxes.ts";
 import { BILLING, routeBilling } from "./billing.ts";
 import { INBOX, routeInbox } from "./inbox.ts";
 import { DOORSTEP, JOINING, routeDoorstep, routeJoining } from "./join.ts";
-import { HOME, OVERVIEW, routeHome, routeOverview } from "./dashboards.ts";
-import { MANAGERS, routeManagers } from "./managers.ts";
-import { routeSearch, SEARCH } from "./search.ts";
 import { MODELS, routeModels } from "./models.ts";
 import { isSameOrigin } from "./origin.ts";
 import { routeSettings, SETTINGS } from "./settings.ts";
-import { MANAGER_SETTINGS, routeManagerSettings } from "./settings-manager.ts";
 
 /** The control plane the HTTP layer answers for: sign-in and workspaces. */
 export interface Control {
   readonly auth: Auth;
   readonly workspaces: Workspaces;
-  readonly managers: ManagerObjects;
   readonly github: GitHubApi;
 }
 
@@ -52,8 +46,6 @@ async function workspaceRoutes(control: Control, person: SignedIn, request: Requ
     if (request.method === "POST") return create(control, person, request);
     return problem(405, "Use GET or POST");
   }
-  const managerScreen = MANAGER_SETTINGS.exec(pathname);
-  if (managerScreen !== null) return routeManagerSettings(control.workspaces, control.managers, person, request, managerScreen);
   const settings = SETTINGS.exec(pathname);
   if (settings !== null) {
     const routed = await routeSettings(control.auth, control.workspaces, person, request, settings);
@@ -62,15 +54,6 @@ async function workspaceRoutes(control: Control, person: SignedIn, request: Requ
   if (JOINING.test(pathname)) return routeJoining(control.workspaces, person, request, pathname);
   const inbox = INBOX.exec(pathname);
   if (inbox !== null) return routeInbox(control.workspaces, person, request, inbox);
-  const searched = SEARCH.exec(pathname)?.[1];
-  if (searched !== undefined) return routeSearch(control.auth, control.workspaces, control.managers, person, request, searched);
-  const home = HOME.exec(pathname);
-  if (home !== null) return routeHome(control.workspaces, control.managers, person, request, home[1] ?? "", Date.now());
-  const overview = OVERVIEW.exec(pathname);
-  if (overview !== null)
-    return routeOverview(control.workspaces, control.managers, person, request, overview[1] ?? "", overview[2] ?? "", Date.now());
-  const managers = MANAGERS.exec(pathname);
-  if (managers !== null) return routeManagers(control.workspaces, control.managers, person, request, managers);
   const people = PEOPLE.exec(pathname);
   if (people !== null) return routePeople(control.auth, control.workspaces, person, request, people);
   const billing = BILLING.exec(pathname);
@@ -100,16 +83,11 @@ export async function routeControl(control: () => Control, request: Request, pat
     !WORKSPACE.test(pathname) &&
     !MODELS.test(pathname) &&
     !JOINING.test(pathname) &&
-    !MANAGERS.test(pathname) &&
-    !HOME.test(pathname) &&
-    !OVERVIEW.test(pathname) &&
-    !SEARCH.test(pathname) &&
     !GITHUB.test(pathname) &&
     !PEOPLE.test(pathname) &&
     !SANDBOXES.test(pathname) &&
     !BILLING.test(pathname) &&
     !SETTINGS.test(pathname) &&
-    !MANAGER_SETTINGS.test(pathname) &&
     !INBOX.test(pathname)
   ) {
     return undefined;

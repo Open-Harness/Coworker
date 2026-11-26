@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { FAKE_KEYS } from "~/modules/models/testing.ts";
 import { unzip } from "~/modules/settings/service.ts";
 import type { GeneralView } from "~/modules/settings/types.ts";
-import type { AuditEntry, CreateManagerResult, ManagerEntry } from "~/modules/workspace/types.ts";
+import type { AuditEntry } from "~/modules/workspace/types.ts";
 import type { ModelConnection } from "~/modules/models/types.ts";
 import { json, signUp } from "../../test/flows.ts";
 import { PNG, sendRaw } from "../../test/raw.ts";
@@ -14,7 +14,7 @@ const entries = async ({ owner, workspace }: Team, query = "") =>
   (await json<{ entries: readonly AuditEntry[] }>(await owner.send("GET", `${workspace}/audit${query}`))).entries;
 
 describe("workspace general settings", () => {
-  it("renames the workspace and its address, and every manager's address follows", async () => {
+  it("renames the workspace and its address", async () => {
     const acme = await team("renamed");
     const before = await general(acme);
     expect(before.general).toMatchObject({ name: "renamed", address: "renamed", mailDomain: "co-worker.tech", timeZone: "UTC" });
@@ -33,8 +33,6 @@ describe("workspace general settings", () => {
       await acme.owner.send("GET", "/api/workspaces"),
     );
     expect(workspaces).toEqual([expect.objectContaining({ name: "Acme Inc", address: "acme-inc" })]);
-    const managers = await json<{ managers: readonly ManagerEntry[] }>(await acme.owner.send("GET", `${acme.workspace}/managers`));
-    expect(managers.managers.map(({ address }) => address)).toEqual(["launch.acme-inc@co-worker.tech"]);
 
     // The old address is free again; the new one is taken, and a bad one is refused.
     const stranger = await signUp("renamed-stranger@example.test", "Stranger");
@@ -111,34 +109,18 @@ describe("workspace general settings", () => {
     const launch = await team("exports");
     const { owner, workspace } = launch;
     expect((await owner.send("PUT", `${workspace}/secrets/github`, { value: "ghs_super_secret_installation_token" })).status).toBe(200);
-    await owner.send("POST", `${launch.base}/chat`, { text: "add a task: Write the docs", requestId: "export-1" });
     await owner.send("PUT", `${workspace}/environments`, {
       name: "Node",
       setup: "export TOKEN=vault:github\npnpm install",
       size: "2 vCPU · 4 GB",
     });
-    const made = await json<CreateManagerResult>(
-      await owner.send("POST", `${workspace}/managers`, { name: "Second", template: "support" }),
-    );
-    expect(made._tag).toBe("Created");
-
     const response = await owner.send("GET", `${workspace}/export`);
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("application/zip");
     expect(response.headers.get("content-disposition")).toContain("attachment");
     const files = unzip(new Uint8Array(await response.arrayBuffer()));
     const paths = files.map(({ path }) => path);
-    expect(paths).toEqual(
-      expect.arrayContaining([
-        "workspace.json",
-        "members.json",
-        "secrets.json",
-        "models.json",
-        "managers/launch/board.json",
-        "managers/second/pages.json",
-        "audit.json",
-      ]),
-    );
+    expect(paths).toEqual(expect.arrayContaining(["workspace.json", "members.json", "secrets.json", "models.json", "audit.json"]));
     const text = (path: string) => new TextDecoder().decode(files.find((file) => file.path === path)?.bytes);
     expect(JSON.parse(text("secrets.json"))).toEqual([expect.objectContaining({ name: "github" })]);
     expect(JSON.parse(text("members.json"))).toEqual([{ name: "Ama", email: "exports@example.test", role: "owner" }]);

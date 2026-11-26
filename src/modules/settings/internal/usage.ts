@@ -18,23 +18,16 @@ export function budgetOf(place: SettingsPlace, managerId: string): BudgetView | 
   return row === undefined ? null : { hours: row.hours, whenReached: row.when_reached === "stop" ? "stop" : "tell" };
 }
 
-const previousMonth = (at: number): number => {
-  const date = new Date(at);
-  date.setUTCMonth(date.getUTCMonth() - 1);
-  return date.getTime();
-};
-
 const round = (hours: number): number => Math.round(hours * 100) / 100;
 
 export async function usage(place: SettingsPlace): Promise<UsageView> {
   const billing = place.account.view(place.sandboxes.used);
   const since = billing.periodStart;
   const bySeconds = place.sandboxes.usedByManager(since);
-  const last = previousMonth(since);
   const managers = await Promise.all(
     place.roster.map(async (entry) => {
-      const api = place.manager(entry);
-      const [now, before] = await Promise.all([api.runCount(since), api.runCount(last, since)]);
+      // Runs were counted by the first product's manager objects, which are gone; the new loop does not count them yet.
+      const [now, before] = [0, 0];
       return {
         managerId: entry.managerId,
         name: entry.name,

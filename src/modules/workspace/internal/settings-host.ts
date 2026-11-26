@@ -1,9 +1,8 @@
 import type { By } from "~/modules/actions/types.ts";
 import type { ApprovalRequest, AuditQuery } from "~/modules/actions/types.ts";
-import type { AgentLookup, AgentSummary, Answer, SkillRead } from "~/modules/manager/types.ts";
-import { agentToStart, agentsToStart, createSettings, readSkillFile, runSettings } from "~/modules/settings/service.ts";
+import { createSettings, runSettings } from "~/modules/settings/service.ts";
 import type { SettingsCall, SettingsResult } from "~/modules/settings/types.ts";
-import type { AuditPage, NotProvisioned } from "../types.ts";
+import type { Answer, AuditPage, NotProvisioned } from "../types.ts";
 import { queryAudit } from "./audit.ts";
 import { listManagers } from "./managers.ts";
 import { takeUnoffered } from "./notices.ts";
@@ -22,21 +21,6 @@ const WORKSPACE_BY: By = { kind: "person", id: "workspace", name: "Co-worker" };
 export abstract class SettingsHost<Env> extends VaultHost<Env> {
   async auditQuery(query: AuditQuery): Promise<AuditPage> {
     return this.provisioned() ? queryAudit(this.ctx.storage.sql, query) : { entries: [] };
-  }
-
-  async agent(name: string): Promise<AgentLookup> {
-    const place = this.settingsPlace();
-    return place === undefined ? { _tag: "NotProvisioned" } : agentToStart(place, name);
-  }
-
-  async agents(): Promise<readonly AgentSummary[]> {
-    const place = this.settingsPlace();
-    return place === undefined ? [] : agentsToStart(place);
-  }
-
-  async skillFile(input: { readonly skill: string; readonly version: number; readonly path: string }): Promise<SkillRead> {
-    const place = this.settingsPlace();
-    return place === undefined ? { _tag: "Gone" } : readSkillFile(place, input);
   }
 
   async settings(call: SettingsCall, by: By): Promise<SettingsResult | NotProvisioned> {
@@ -92,15 +76,17 @@ export abstract class SettingsHost<Env> extends VaultHost<Env> {
       recordActions(sql, [{ key: `ask:${request.requestId}:denied`, managerId: request.managerId, record }]);
       return;
     }
-    const own = await createSettings(place).ownOf({ person: request.by.id }, WORKSPACE_BY);
-    await this.dependencies.managers.get(entry.objectId, entry.region).act({
-      actionId: request.actionId,
+    // An approved button was run by the first product's manager object, which is gone. It is recorded as failed, with why.
+    const record = {
+      action: request.actionId,
       input: request.input,
-      by: request.by,
-      preset: request.preset,
-      own,
-      requestId: `ask:${request.requestId}`,
+      by: { kind: "person", ...request.by } as const,
+      at: place.clock.now(),
+      permission: "ask",
       approvedBy: given.byId,
-    });
+      sentence: `${request.sentence} (not run: the manager that would run it was removed with the first product)`,
+      outcome: "failed",
+    } as const;
+    recordActions(sql, [{ key: `ask:${request.requestId}:failed`, managerId: request.managerId, record }]);
   }
 }

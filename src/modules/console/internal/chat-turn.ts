@@ -1,15 +1,13 @@
-import type { Message } from "~/modules/completion/types.ts";
 import { coworker } from "~/modules/coworker/service.ts";
 import { doings } from "~/modules/doings/service.ts";
 import { knowledge } from "~/modules/knowledge/service.ts";
-import { turns } from "~/modules/turns/service.ts";
+import { saysWhy } from "~/modules/agent/service.ts";
 import { COWORKER, type ChatLineRow, type ChatRow } from "~/modules/talks/types.ts";
 import type { ConsoleDeps } from "../types.ts";
 import { whoOf } from "./around.ts";
 import { chatTools, newTrace } from "./chat-tools.ts";
 import { ownChat, saveChat, threadOf } from "./chat-rows.ts";
 import { notesOf, soulOf, talkingOf, usedNotes } from "./coworker-memory.ts";
-import { modelsOf } from "./models-of.ts";
 import { identityOf } from "./shell.ts";
 
 /* One turn of the co-worker in a chat: it is told who it is and what it knows, hears the person, looks and does through its tools, and answers. */
@@ -35,30 +33,21 @@ export async function systemOf(c: ConsoleDeps): Promise<string> {
 /** What the person said, with the page they are on when they said it. */
 export const heardOf = (text: string, place: string): string => (place === "" ? text : `[They are on ${place}.]\n${text}`);
 
-const lastWords = (messages: readonly Message[], from: number): string => {
-  const said = messages
-    .slice(from)
-    .findLast((one) => one.role === "assistant" && typeof one.content === "string" && one.content.trim() !== "");
-  return said?.role === "assistant" && typeof said.content === "string" ? said.content.trim() : "";
-};
-
-/** The line that answers: what it said, what it did, and where it looked. */
-export async function answerChat(c: ConsoleDeps, chat: string, place: string): Promise<void> {
-  const thread = {
-    messages: async () => (await c.store.messages(threadOf(chat))) as readonly Message[],
-    add: (message: Message) => c.store.addMessage(threadOf(chat), message),
-  };
-  const before = (await thread.messages()).length;
+/** The line that answers: what it said, what it did, and where it looked. The conversation is the loop's: kept by it, never here. */
+export async function answerChat(
+  c: ConsoleDeps,
+  chat: string,
+  heard: { readonly key: string; readonly text: string },
+  place: string,
+): Promise<void> {
   const identity = await identityOf(c);
   const trace = newTrace();
-  const turned = await turns.run({
-    thread,
-    models: () => modelsOf(c),
-    call: (path, body) => c.outside.call(path, body),
-    tools: chatTools(c, chat, identity.name, place, trace),
-  });
-  const messages = await thread.messages();
-  const said = turned._tag === "Failed" ? `I could not answer: ${turned.why}` : lastWords(messages, before);
+  const answered = await c.agent.answer(
+    threadOf(chat),
+    { key: heard.key, text: heardOf(heard.text, place), by: c.who.id },
+    { instructions: await systemOf(c), tools: chatTools(c, chat, identity.name, place, trace), model: "inherit" },
+  );
+  const said = answered._tag === "Answered" ? answered.text.trim() : `I could not answer: ${saysWhy(answered)}.`;
   const row = await ownChat(c, chat);
   if (row === undefined) return;
   const line: ChatLineRow = {
@@ -66,7 +55,6 @@ export async function answerChat(c: ConsoleDeps, chat: string, place: string): P
     by: COWORKER,
     at: c.clock.now(),
     text: said === "" ? "I have nothing to say to that." : said,
-    upto: messages.length,
     did: trace.did,
     from: trace.from.filter((one, at) => trace.from.findIndex(({ link }) => link === one.link) === at),
     calls: trace.calls,

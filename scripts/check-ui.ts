@@ -9,7 +9,7 @@ const complain = (file: string, line: number, message: string): void => void pro
 const DOCUMENT = "src/routes/__root.tsx";
 const DOCUMENT_ELEMENTS = new Set(["html", "head", "body"]);
 /** Works around one Astryx sizing bug; the file says which. `states.tsx` dims what was read while the connection is lost. */
-const STYLED = new Set(["src/modules/ui/internal/NavGroup.tsx", "src/modules/page/internal/states.tsx"]);
+const STYLED = new Set(["src/modules/page/internal/states.tsx"]);
 /**
  * A screen adapts an Astryx template (D5): its first line says which, `// astryx-template: <name>`, and the template's own styling
  * and the brand marks it draws (svg) are allowed in that file. Only where screens are: no module may.

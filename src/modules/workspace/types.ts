@@ -1,3 +1,4 @@
+import type { Agent } from "~/modules/agent/types.ts";
 import type { AskAnswer, AskOp } from "~/modules/asking/types.ts";
 import type { StoreAnswer, StoreOp } from "~/modules/console/types.ts";
 import type { Us } from "~/modules/github-events/types.ts";
@@ -7,18 +8,8 @@ import type { Clock, Ids } from "~/modules/clock/types.ts";
 import type { ActionRecord, ApprovalRequest, AuditQuery, By } from "~/modules/actions/types.ts";
 import type { Mailer } from "~/modules/mail/types.ts";
 import type { SettingsCall, SettingsResult } from "~/modules/settings/types.ts";
-import type {
-  AgentLookup,
-  AgentSummary,
-  Answer,
-  AskResult,
-  AuditLine,
-  InboxRequest,
-  ManagerObjects,
-  QuestionDetail,
-  SkillRead,
-  TemplateId,
-} from "~/modules/manager/types.ts";
+export type * from "./waiting.ts";
+import type { Answer, AskResult, AuditLine, InboxRequest, QuestionDetail } from "./waiting.ts";
 import type {
   AddEndpoint,
   AddKey,
@@ -36,6 +27,9 @@ import type { CommandRequest, EnvironmentView, ExecOutcome, SandboxHost, SaveEnv
 
 export type * from "./joining.ts";
 import type { JoinProof, JoinRequester, JoinSettingsResult, RequestJoinResult, SetDomainsResult } from "./joining.ts";
+
+/** What a manager was made from, in the first product. Kept on its row; nothing is made from one now. */
+export type TemplateId = "kanban" | "incident" | "support" | "research";
 
 /** Where a workspace's data lives. Its object is created in that jurisdiction and never moves. */
 export type Region = "eu" | "us";
@@ -65,23 +59,6 @@ export interface ManagerEntry {
   readonly region: Region;
   readonly createdAt: number;
 }
-
-export interface CreateManager {
-  readonly name: string;
-  /** The local part of its address. Made from the name when omitted. */
-  readonly slug?: string;
-  readonly template: TemplateId;
-  /** What it is for, for its mission page. The template's own when omitted. */
-  readonly mission?: string;
-  readonly createdBy: string;
-}
-
-export type CreateManagerResult =
-  | { readonly _tag: "Created"; readonly manager: ManagerEntry }
-  | { readonly _tag: "AddressTaken" }
-  | { readonly _tag: "InvalidAddress"; readonly reason: string }
-  | { readonly _tag: "Failed"; readonly message: string }
-  | NotProvisioned;
 
 /** One line of the workspace's action log: who did what, under which permission. */
 export type AuditEntry = Omit<ActionRecord, "input"> & { readonly managerId: string };
@@ -154,10 +131,6 @@ export interface WorkspaceApi {
   modelReadiness(): Promise<Readiness>;
   /** From managers: which connection their model calls go to, with no key and no provider address. */
   modelRoute(wanted?: ModelPick): Promise<ModelRoute>;
-  /** From managers: the saved agent by name as a run starting now takes it, the agents a manager may start, and a skill's file. */
-  agent(name: string): Promise<AgentLookup>;
-  agents(): Promise<readonly AgentSummary[]>;
-  skillFile(input: { readonly skill: string; readonly version: number; readonly path: string }): Promise<SkillRead>;
   /** From managers: one model call, made here with the workspace's credential. The answer streams back and holds no key. */
   modelCall(call: ModelCall): Promise<Response>;
   joinSettings(): Promise<JoinSettingsResult>;
@@ -168,8 +141,6 @@ export interface WorkspaceApi {
   requestJoin(person: JoinRequester, owners: readonly string[]): Promise<RequestJoinResult>;
   /** Whether the workspace lets this proof join, now. */
   allowsJoin(proof: JoinProof): Promise<boolean>;
-  /** Makes a manager from a template: its object, mission page, board lanes and email address. */
-  createManager(input: CreateManager): Promise<CreateManagerResult>;
   managers(): Promise<readonly ManagerEntry[]>;
   /** From managers: audit lines, each once by its key. */
   recordActions(lines: readonly AuditLine[]): Promise<void>;
@@ -232,9 +203,10 @@ export interface WorkspaceDependencies {
   readonly ids: Ids;
   /** Reaches model providers for test calls. */
   readonly fetch: typeof fetch;
-  readonly managers: ManagerObjects;
   /** Where the new managers' own objects are: what came in is handed to them. */
   readonly stores: ManagerStores;
+  /** The loop, for what the workspace asks a model itself: the judge of what came in, and the weekly look. */
+  readonly agent: Agent;
   /** Where managers' addresses live: `launch.acme@<mailDomain>`. */
   readonly mailDomain: string;
   /** Where sandboxes run. */

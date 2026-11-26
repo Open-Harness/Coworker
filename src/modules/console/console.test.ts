@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { noAgent } from "~/modules/agent/service.ts";
 import type { Did } from "~/modules/api/types.ts";
 import type { ManagerStoreApi } from "~/modules/manager-store/types.ts";
 import type { AuditRow, ConsoleDeps, ItemRow, ManagerRow, Store } from "./types.ts";
@@ -33,8 +34,6 @@ function memoryStore(): Store {
     changed: async () => undefined,
     keep: async () => undefined,
     kept: async () => [],
-    messages: async () => [],
-    addMessage: async () => undefined,
     mail: async () => ({ is: "refused", why: "no mailbox" }),
     mcp: async () => ({ is: "failed", why: "no servers" }),
   };
@@ -75,6 +74,7 @@ function deps(role: "Owner" | "Member" = "Owner"): ConsoleDeps {
     who: me,
     people: [me],
     store: memoryStore(),
+    agent: noAgent,
     asks: async () => ({ op: "inbox", items: [] }),
     outside: {
       connections: async () => [],
@@ -89,7 +89,6 @@ function deps(role: "Owner" | "Member" = "Owner"): ConsoleDeps {
       retire: async () => ({ _tag: "Scheduled" }),
       people: { role: async () => ({ _tag: "Done" }), remove: async () => ({ _tag: "Done" }) },
       read: async () => ({ _tag: "Gone" }),
-      call: async () => new Response("no model", { status: 503 }),
     },
     managers: { mint: () => ({ objectId: "o", store: nobody }), get: () => nobody },
     ours: [],

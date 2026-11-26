@@ -1,5 +1,3 @@
-import { createAgent } from "~/modules/agent/service.ts";
-import type { Agent } from "~/modules/agent/types.ts";
 import { systemClock } from "~/modules/clock/service.ts";
 import { worldClock } from "~/modules/clock/testing.ts";
 import type { Clock } from "~/modules/clock/types.ts";
@@ -10,9 +8,6 @@ import { eml, FAKE_AUTHSERV, fakeFiles } from "~/modules/email/testing.ts";
 import { appApi } from "~/modules/github/service.ts";
 import { FAKE_APP_SLUG, gitHubWorld } from "~/modules/github/testing.ts";
 import type { GitHubApi } from "~/modules/github/types.ts";
-import { workspaceBrain } from "~/modules/brain/service.ts";
-import { scriptedBrain } from "~/modules/manager/testing.ts";
-import type { MakeBrain } from "~/modules/manager/types.ts";
 import { emailServiceMailer } from "~/modules/mail/service.ts";
 import { outbox } from "~/modules/mail/testing.ts";
 import { modelProviders } from "~/modules/models/testing.ts";
@@ -141,30 +136,9 @@ export const billingFrom = (env: Env): Billing => (env.DT_WORLD === "fake" ? bil
 /** The fake world's tenants keep a clock a test can move a month on. */
 export const tenantClockFrom = (env: Env): Clock => (env.DT_WORLD === "fake" ? worldClock : systemClock);
 
-/** What managers think with: their workspace's own model connection. The fake world scripts it, unless a test asks for the real path. */
-export const brainFrom = (env: Env): MakeBrain =>
-  env.DT_WORLD === "fake" && present(env.DT_MANAGER_MODEL) !== "workspace" ? () => scriptedBrain() : workspaceBrain;
-
 /** What a tenant's own calls to the outside go through: the fake world's fake, or the network. */
 export const outsideFetch = (env: Env): typeof fetch =>
   env.DT_WORLD === "fake" && !overHttp(env) ? fakeFetch : (input, init) => fetch(input, init);
-
-function proxyFrom(env: Env) {
-  const [url, key] = [present(env.PI_EXP_PROXY_URL), present(env.PI_EXP_PROXY_KEY)];
-  if (url === undefined) return undefined;
-  const models = (present(env.PI_EXP_PROXY_MODELS) ?? "gpt-6-luna").split(",").map((model) => model.trim());
-  return { url, models, ...(key === undefined ? {} : { key }) };
-}
-
-export const agentFrom = (env: Env): Agent =>
-  createAgent({
-    openaiKey: present(env.OPENAI_API_KEY),
-    anthropicKey: present(env.ANTHROPIC_API_KEY),
-    proxy: proxyFrom(env),
-    defaultModel: present(env.PI_EXP_DEFAULT_MODEL),
-    fakeModel: env.PI_EXP_FAKE_MODEL === "1",
-    fetch: (input, init) => fetch(input, init),
-  });
 
 /**
  * The fake world's time, which a test moves: `{workspace, pass}` moves the clock by `pass` milliseconds and does everything of that

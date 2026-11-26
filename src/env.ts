@@ -1,11 +1,8 @@
-import type { CommandBox, ManagerObject, ManagerStore, WorkspaceObject } from "./main.ts";
+import type { CommandBox, ManagerStore, WorkspaceObject } from "./main.ts";
 
 /** Bindings and settings of the deployment. See README.md for what each setting does. */
 export interface Env {
-  readonly DIRECTORY: DurableObjectNamespace;
-  readonly WORKSPACES: DurableObjectNamespace;
   readonly WORKSPACE: DurableObjectNamespace<WorkspaceObject>;
-  readonly MANAGER: DurableObjectNamespace<ManagerObject>;
   readonly MANAGER_STORE: DurableObjectNamespace<ManagerStore>;
   readonly AUTH: D1Database;
   readonly FILES: R2Bucket;
@@ -21,8 +18,6 @@ export interface Env {
   readonly DT_APP_URL?: string;
   /** The address sign-in links and invites are sent from. */
   readonly DT_SEND_FROM?: string;
-  /** `workspace` makes managers think with their workspace's model connection even in the fake world; the fast tier's script otherwise. */
-  readonly DT_MANAGER_MODEL?: string;
   /** The domain managers' addresses are on. Defaults to `co-worker.tech`. */
   readonly DT_MAIL_DOMAIN?: string;
   /** The receiving MTA whose `Authentication-Results` decide DKIM. Cloudflare Email Routing by default. */
@@ -42,12 +37,4 @@ export interface Env {
   /** The App's own sign-in client, which proves who installed it. */
   readonly GITHUB_APP_CLIENT_ID?: string;
   readonly GITHUB_APP_CLIENT_SECRET?: string;
-  readonly OPENAI_API_KEY?: string;
-  readonly ANTHROPIC_API_KEY?: string;
-  readonly PI_EXP_PROXY_URL?: string;
-  readonly PI_EXP_PROXY_MODELS?: string;
-  readonly PI_EXP_PROXY_KEY?: string;
-  readonly PI_EXP_DEFAULT_MODEL?: string;
-  readonly PI_EXP_FAKE_MODEL?: string;
-  readonly PI_EXP_ADMINS?: string;
 }

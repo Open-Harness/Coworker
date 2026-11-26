@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { noAgent } from "~/modules/agent/service.ts";
 import { createDeciding } from "./service.ts";
 import type { DecidingDeps } from "./types.ts";
 
@@ -11,8 +12,7 @@ describe("deciding", () => {
       manager: () => {
         throw new Error("no manager is asked");
       },
-      models: async () => ({ connections: [], choice: null }),
-      call: async () => new Response("", { status: 500 }),
+      ask: noAgent.ask,
       standing: async () => undefined,
       clock,
     };
@@ -49,8 +49,7 @@ describe("deciding", () => {
       manager: () => {
         throw new Error("no manager is asked");
       },
-      models: async () => ({ connections: [], choice: null }),
-      call: async () => new Response("", { status: 500 }),
+      ask: noAgent.ask,
       standing: async () => "write",
       clock,
     };

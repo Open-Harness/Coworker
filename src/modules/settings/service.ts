@@ -21,7 +21,6 @@ export { LOGO_LIMIT } from "./internal/logo.ts";
 export { agentEnvironments } from "./internal/agents.ts";
 export { unzip } from "./internal/zip.ts";
 export { defaultModelOf } from "./internal/general.ts";
-export { agentToStart, agentsToStart, readSkillFile } from "./internal/launch.ts";
 export { auditCsv };
 
 /** The calls of `SettingsApi` over one Workspace object's place. */

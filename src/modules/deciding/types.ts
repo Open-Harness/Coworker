@@ -1,4 +1,4 @@
-import type { Call, Models } from "~/modules/completion/types.ts";
+import type { Agent } from "~/modules/agent/types.ts";
 import type { Clock } from "~/modules/clock/types.ts";
 import type { ManagerRow } from "~/modules/console/types.ts";
 import type { Actor, Decision, Item } from "~/modules/intake/types.ts";
@@ -46,9 +46,8 @@ export interface DecidingStore {
 export interface DecidingDeps {
   readonly store: DecidingStore;
   readonly manager: (row: ManagerRow) => Pick<ManagerStoreApi, "hearing" | "take" | "heard" | "news">;
-  /** What the workspace's models are, and a call to one of them made with its credential. */
-  readonly models: () => Promise<Models>;
-  readonly call: Call;
+  /** One call to a model, through the loop's pi-ai seam: the judge. */
+  readonly ask: Agent["ask"];
   /** Who this is where it came from: can they write to the repo, are they inside the mail domain. */
   readonly standing: (item: Item) => Promise<Actor["standing"]>;
   readonly clock: Clock;

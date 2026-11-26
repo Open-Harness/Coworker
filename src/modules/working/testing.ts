@@ -1,16 +1,15 @@
 import type { Work } from "~/modules/work/types.ts";
 import type { Ask } from "~/modules/asks/types.ts";
-import type { ActivityLine, Hold, Job, Message, Spend, Store, StoredJob, ThreadRow } from "./types.ts";
+import type { ActivityLine, Hold, Job, Spend, Store, StoredJob, ThreadRow } from "./types.ts";
 
 /** What a manager keeps, in memory: for tests of what it does, beside the real one in its Durable Object. */
 export function memoryStore(): Store {
   const rows = new Map<string, unknown>();
-  const [works, seen, jobs, threads, messages, spends, holds, once, lines, asks] = [
+  const [works, seen, jobs, threads, spends, holds, once, lines, asks] = [
     new Map<string, Work>(),
     new Set<string>(),
     [] as { key: string; work: string; job: Job; done: boolean }[],
     new Map<string, ThreadRow>(),
-    new Map<string, Message[]>(),
     [] as Spend[],
     new Map<string, Hold>(),
     new Map<string, string>(),
@@ -37,8 +36,6 @@ export function memoryStore(): Store {
     thread: (id) => threads.get(id),
     threadsOf: (work) => [...threads.values()].filter((one) => one.work === work),
     putThread: (row) => void threads.set(row.id, row),
-    messages: (thread) => messages.get(thread) ?? [],
-    addMessage: (thread, message) => void messages.set(thread, [...(messages.get(thread) ?? []), message]),
     addSpend: (spend) => void (spends.some((one) => one.call === spend.call) || spends.push(spend)),
     spendOf: (work) => {
       const mine = spends.filter((one) => one.work === work);

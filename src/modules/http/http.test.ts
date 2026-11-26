@@ -2,14 +2,11 @@ import { noApp } from "~/modules/github/service.ts";
 import { describe, expect, it } from "vitest";
 import { createHttp } from "./service.ts";
 import type { Auth } from "~/modules/auth/types.ts";
-import { PERSON_HEADER, decodePerson } from "~/modules/protocol/service.ts";
 import type { Workspaces } from "~/modules/workspaces/types.ts";
 
 const id = "0f8fad5b-d9cb-469f-a165-70867728950e";
 
 function app() {
-  const seen: Request[] = [];
-  const target = { fetch: async (request: Request) => (seen.push(request), new Response("opened")) };
   const unused = (): never => {
     throw new Error("Not used in this test");
   };
@@ -62,12 +59,9 @@ function app() {
     scheduleRemoval: unused,
     removeDue: unused,
   };
-  const managers = { mint: unused, get: unused };
-  const control = () => ({ auth, workspaces, managers, github: noApp });
-  const http = createHttp({ directory: () => target, workspace: () => target, pages: async () => new Response("page"), control });
-  const socket = (path: string, headers: Record<string, string> = {}) =>
-    http(new Request(`https://app.test${path}`, { headers: { Upgrade: "websocket", ...headers } }));
-  return { http, socket, seen };
+  const control = () => ({ auth, workspaces, github: noApp });
+  const http = createHttp({ pages: async () => new Response("page"), control });
+  return { http };
 }
 
 describe("http", () => {
@@ -78,33 +72,12 @@ describe("http", () => {
     expect((await http(new Request("https://app.test/api/nope"))).status).toBe(404);
   });
 
-  it("never forwards the objects' internal requests", async () => {
-    const { http, socket, seen } = app();
-    expect((await http(new Request("https://app.test/internal/publish", { method: "POST" }))).status).toBe(200); // a page
-    expect((await socket(`/api/workspaces/${id}/internal/destroy`)).status).toBe(404);
-    expect((await socket("/api/workspaces/directory/socket")).status).toBe(404);
-    expect(seen).toHaveLength(0);
-  });
-
-  it("needs an upgrade and a session", async () => {
-    const { http, socket } = app();
-    expect((await http(new Request("https://app.test/api/directory/socket"))).status).toBe(426);
-    expect((await socket("/api/directory/socket")).status).toBe(401);
-  });
-
-  it("sets the person itself from the session, replacing what a client claims", async () => {
-    const { socket, seen } = app();
-    await socket(`/api/workspaces/${id}/socket?name=Boss`, { cookie: "session=bo", [PERSON_HEADER]: "%7B%22id%22%3A%22ts%3Aboss%22%7D" });
-    expect(decodePerson(seen[0]!.headers.get(PERSON_HEADER))).toEqual({ id: "email:bo@example.com", name: "Bo" });
-  });
-
-  it("refuses sockets opened by another site", async () => {
-    const { socket } = app();
-    const path = "/api/directory/socket";
-    const bo = { cookie: "session=bo", Host: "app.test" };
-    expect((await socket(path, { ...bo, Origin: "https://evil.test" })).status).toBe(403);
-    expect((await socket(path, { ...bo, Origin: "null" })).status).toBe(403);
-    expect((await socket(path, { ...bo, Origin: "https://app.test" })).status).toBe(200);
+  it("answers no socket: the first product's chat objects are gone", async () => {
+    const { http } = app();
+    expect((await http(new Request("https://app.test/api/directory/socket", { headers: { Upgrade: "websocket" } }))).status).toBe(404);
+    expect((await http(new Request(`https://app.test/api/workspaces/${id}/socket`, { headers: { Upgrade: "websocket" } }))).status).toBe(
+      404,
+    );
   });
 
   it("says who the session says you are, and nobody without one", async () => {

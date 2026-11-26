@@ -1,10 +1,10 @@
 # working
 
-What a manager does with its work: it moves it (`work`), does what moving it asked, runs the conversations of its agents (`threads`), and
-keeps their box (`boxes`). It is the manager's behaviour; `manager-store` is where it is kept and run (the manager's own Durable Object).
+What a manager does with its work: it moves it (`work`), does what moving it asked, has its agents' threads run (`agent`, the loop on pi-durable), and keeps their box (`boxes`). `manager-store` is where it is kept and run (the manager's own Durable Object).
 
-Given: a `Store` (what it keeps), `Outside` (its workspace's models and GitHub, and where a branch is pushed), `Boxes`, a clock, the playbook
-as it was at a version, and `alarm` and `later`. Nothing is read from anywhere.
+**Not built.** The hand-written loop that was here (`internal/thread.ts`, raw model calls through `completion`) is gone (`docs/audit-2026-11-26.md`). `types.ts` is the contract the manager's object holds the core to; `service.ts` rejects every call with "Not built". What follows is what the new core must keep doing. It is _how_ it did it before; on pi-durable, a thread is a fork, a job a durable task, a hold a sleeping task, and a parked call a tool parked on a signal.
+
+Given: a `Store` (what it keeps, never a thread's messages), `agent` (the loop), `Outside` (GitHub, where a branch is pushed, the workspace's asks, mail and MCP), `Boxes`, a clock, the playbook as it was at a version, and `alarm` and `later`. Nothing is read from anywhere.
 
 ## How work goes
 

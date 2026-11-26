@@ -8,8 +8,6 @@ import { FAKE_GITHUB_SECRET, gitHubWorld } from "~/modules/github/testing.ts";
 import type { GitHubApi } from "~/modules/github/types.ts";
 import { outbox } from "~/modules/mail/testing.ts";
 import type { Mailer } from "~/modules/mail/types.ts";
-import { scriptedBrain } from "~/modules/manager/testing.ts";
-import type { Brain } from "~/modules/manager/types.ts";
 import { modelProviders } from "~/modules/models/testing.ts";
 import { sandboxWorld } from "~/modules/sandboxes/testing.ts";
 import type { SandboxHost } from "~/modules/sandboxes/types.ts";
@@ -19,7 +17,6 @@ import type { MasterKey } from "~/modules/vault/types.ts";
 
 /** Book section 2, row by row: the fake each outside thing has in the fast tier. Each comes from a `testing.ts`. */
 const FAKES = {
-  models: scriptedBrain() satisfies Brain,
   modelProviders: modelProviders satisfies (request: Request) => Promise<Response | undefined>,
   emailIn: eml satisfies (...input: never[]) => unknown,
   emailOut: outbox satisfies Mailer,
@@ -44,9 +41,18 @@ const REAL: readonly (readonly [string, string])[] = [
   ["randomIds", "clock"],
   ["noContainers", "sandboxes"],
   ["unbilled", "billing"],
-  ["createAgent", "agent"],
+  // `createAgent` ("agent") joins this list once the loop is built and a root builds it.
 ];
-const ROOTS = new Set(["./main.ts", "./world.ts"]);
+// The composition root: `main.ts`, the world it is built in, and the `*-root.ts` files it is split into.
+const ROOTS = new Set([
+  "./main.ts",
+  "./world.ts",
+  "./console-root.ts",
+  "./github-root.ts",
+  "./mail-root.ts",
+  "./templates-root.ts",
+  "./working-root.ts",
+]);
 
 const sources = import.meta.glob<string>(["./**/*.{ts,tsx}", "!./**/*.test.{ts,tsx}", "!./routeTree.gen.ts"], {
   query: "?raw",

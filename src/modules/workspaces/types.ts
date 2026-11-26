@@ -1,4 +1,4 @@
-import type { Answer } from "~/modules/manager/types.ts";
+import type { Answer } from "~/modules/workspace/types.ts";
 import type { ApprovalRequest } from "~/modules/actions/types.ts";
 import type { AddHandleResult, AnswerResult, JoinRequester } from "~/modules/workspace/types.ts";
 import type { Handle } from "~/modules/triggers/types.ts";

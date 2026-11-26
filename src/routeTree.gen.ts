@@ -11,24 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
-import { Route as AppRouteImport } from './routes/_app'
-import { Route as TeamRouteImport } from './routes/_team'
-import { Route as AppChatRouteImport } from './routes/_app/_chat'
-import { Route as AppAdminRouteImport } from './routes/_app/admin'
-import { Route as AppChatLibraryRouteImport } from './routes/_app/_chat/library'
-import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
-import { Route as AppAdminCreateRouteImport } from './routes/_app/admin/create'
-import { Route as AppAdminDeploymentsRouteImport } from './routes/_app/admin/deployments'
-import { Route as AppAdminSessionsRouteImport } from './routes/_app/admin/sessions'
-import { Route as TeamJoinEmailRouteImport } from './routes/_team/join/email'
-import { Route as AppAdminAgentsIndexRouteImport } from './routes/_app/admin/agents/index'
-import { Route as AppAdminAgentsAgentIdRouteImport } from './routes/_app/admin/agents/$agentId'
-import { Route as AppAdminAgentsNewRouteImport } from './routes/_app/admin/agents/new'
-import { Route as TeamJoinInviteInvitationIdRouteImport } from './routes/_team/join/invite.$invitationId'
-import { Route as AppChatWWorkspaceIdIndexRouteImport } from './routes/_app/_chat/w/$workspaceId/index'
-import { Route as AppChatWWorkspaceIdSettingsRouteImport } from './routes/_app/_chat/w/$workspaceId/settings'
-import { Route as TeamJoinLinkWorkspaceIdSecretRouteImport } from './routes/_team/join/link.$workspaceId.$secret'
-import { Route as AppChatWWorkspaceIdCChatIdRouteImport } from './routes/_app/_chat/w/$workspaceId/c.$chatId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,226 +22,31 @@ const SplatRoute = SplatRouteImport.update({
   path: '/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TeamRoute = TeamRouteImport.update({
-  id: '/_team',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppChatRoute = AppChatRouteImport.update({
-  id: '/_chat',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminRoute = AppAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppChatLibraryRoute = AppChatLibraryRouteImport.update({
-  id: '/library',
-  path: '/library',
-  getParentRoute: () => AppChatRoute,
-} as any)
-const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminCreateRoute = AppAdminCreateRouteImport.update({
-  id: '/create',
-  path: '/create',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminDeploymentsRoute = AppAdminDeploymentsRouteImport.update({
-  id: '/deployments',
-  path: '/deployments',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminSessionsRoute = AppAdminSessionsRouteImport.update({
-  id: '/sessions',
-  path: '/sessions',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const TeamJoinEmailRoute = TeamJoinEmailRouteImport.update({
-  id: '/join/email',
-  path: '/join/email',
-  getParentRoute: () => TeamRoute,
-} as any)
-const AppAdminAgentsIndexRoute = AppAdminAgentsIndexRouteImport.update({
-  id: '/agents/',
-  path: '/agents/',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminAgentsAgentIdRoute = AppAdminAgentsAgentIdRouteImport.update({
-  id: '/agents/$agentId',
-  path: '/agents/$agentId',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminAgentsNewRoute = AppAdminAgentsNewRouteImport.update({
-  id: '/agents/new',
-  path: '/agents/new',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const TeamJoinInviteInvitationIdRoute =
-  TeamJoinInviteInvitationIdRouteImport.update({
-    id: '/join/invite/$invitationId',
-    path: '/join/invite/$invitationId',
-    getParentRoute: () => TeamRoute,
-  } as any)
-const AppChatWWorkspaceIdIndexRoute =
-  AppChatWWorkspaceIdIndexRouteImport.update({
-    id: '/w/$workspaceId/',
-    path: '/w/$workspaceId/',
-    getParentRoute: () => AppChatRoute,
-  } as any)
-const AppChatWWorkspaceIdSettingsRoute =
-  AppChatWWorkspaceIdSettingsRouteImport.update({
-    id: '/w/$workspaceId/settings',
-    path: '/w/$workspaceId/settings',
-    getParentRoute: () => AppChatRoute,
-  } as any)
-const TeamJoinLinkWorkspaceIdSecretRoute =
-  TeamJoinLinkWorkspaceIdSecretRouteImport.update({
-    id: '/join/link/$workspaceId/$secret',
-    path: '/join/link/$workspaceId/$secret',
-    getParentRoute: () => TeamRoute,
-  } as any)
-const AppChatWWorkspaceIdCChatIdRoute =
-  AppChatWWorkspaceIdCChatIdRouteImport.update({
-    id: '/w/$workspaceId/c/$chatId',
-    path: '/w/$workspaceId/c/$chatId',
-    getParentRoute: () => AppChatRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
-  '/admin': typeof AppAdminRouteWithChildren
-  '/library': typeof AppChatLibraryRoute
-  '/admin/create': typeof AppAdminCreateRoute
-  '/admin/deployments': typeof AppAdminDeploymentsRoute
-  '/admin/sessions': typeof AppAdminSessionsRoute
-  '/join/email': typeof TeamJoinEmailRoute
-  '/admin/': typeof AppAdminIndexRoute
-  '/admin/agents/$agentId': typeof AppAdminAgentsAgentIdRoute
-  '/admin/agents/new': typeof AppAdminAgentsNewRoute
-  '/join/invite/$invitationId': typeof TeamJoinInviteInvitationIdRoute
-  '/admin/agents/': typeof AppAdminAgentsIndexRoute
-  '/w/$workspaceId/settings': typeof AppChatWWorkspaceIdSettingsRoute
-  '/join/link/$workspaceId/$secret': typeof TeamJoinLinkWorkspaceIdSecretRoute
-  '/w/$workspaceId/': typeof AppChatWWorkspaceIdIndexRoute
-  '/w/$workspaceId/c/$chatId': typeof AppChatWWorkspaceIdCChatIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
-  '/library': typeof AppChatLibraryRoute
-  '/admin/create': typeof AppAdminCreateRoute
-  '/admin/deployments': typeof AppAdminDeploymentsRoute
-  '/admin/sessions': typeof AppAdminSessionsRoute
-  '/join/email': typeof TeamJoinEmailRoute
-  '/admin': typeof AppAdminIndexRoute
-  '/admin/agents/$agentId': typeof AppAdminAgentsAgentIdRoute
-  '/admin/agents/new': typeof AppAdminAgentsNewRoute
-  '/join/invite/$invitationId': typeof TeamJoinInviteInvitationIdRoute
-  '/admin/agents': typeof AppAdminAgentsIndexRoute
-  '/w/$workspaceId/settings': typeof AppChatWWorkspaceIdSettingsRoute
-  '/join/link/$workspaceId/$secret': typeof TeamJoinLinkWorkspaceIdSecretRoute
-  '/w/$workspaceId': typeof AppChatWWorkspaceIdIndexRoute
-  '/w/$workspaceId/c/$chatId': typeof AppChatWWorkspaceIdCChatIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
-  '/_app': typeof AppRouteWithChildren
-  '/_team': typeof TeamRouteWithChildren
-  '/_app/_chat': typeof AppChatRouteWithChildren
-  '/_app/admin': typeof AppAdminRouteWithChildren
-  '/_app/_chat/library': typeof AppChatLibraryRoute
-  '/_app/admin/create': typeof AppAdminCreateRoute
-  '/_app/admin/deployments': typeof AppAdminDeploymentsRoute
-  '/_app/admin/sessions': typeof AppAdminSessionsRoute
-  '/_team/join/email': typeof TeamJoinEmailRoute
-  '/_app/admin/': typeof AppAdminIndexRoute
-  '/_app/admin/agents/$agentId': typeof AppAdminAgentsAgentIdRoute
-  '/_app/admin/agents/new': typeof AppAdminAgentsNewRoute
-  '/_team/join/invite/$invitationId': typeof TeamJoinInviteInvitationIdRoute
-  '/_app/admin/agents/': typeof AppAdminAgentsIndexRoute
-  '/_app/_chat/w/$workspaceId/settings': typeof AppChatWWorkspaceIdSettingsRoute
-  '/_team/join/link/$workspaceId/$secret': typeof TeamJoinLinkWorkspaceIdSecretRoute
-  '/_app/_chat/w/$workspaceId/': typeof AppChatWWorkspaceIdIndexRoute
-  '/_app/_chat/w/$workspaceId/c/$chatId': typeof AppChatWWorkspaceIdCChatIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/$'
-    | '/admin'
-    | '/library'
-    | '/admin/create'
-    | '/admin/deployments'
-    | '/admin/sessions'
-    | '/join/email'
-    | '/admin/'
-    | '/admin/agents/$agentId'
-    | '/admin/agents/new'
-    | '/join/invite/$invitationId'
-    | '/admin/agents/'
-    | '/w/$workspaceId/settings'
-    | '/join/link/$workspaceId/$secret'
-    | '/w/$workspaceId/'
-    | '/w/$workspaceId/c/$chatId'
+  fullPaths: '/' | '/$'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/$'
-    | '/library'
-    | '/admin/create'
-    | '/admin/deployments'
-    | '/admin/sessions'
-    | '/join/email'
-    | '/admin'
-    | '/admin/agents/$agentId'
-    | '/admin/agents/new'
-    | '/join/invite/$invitationId'
-    | '/admin/agents'
-    | '/w/$workspaceId/settings'
-    | '/join/link/$workspaceId/$secret'
-    | '/w/$workspaceId'
-    | '/w/$workspaceId/c/$chatId'
-  id:
-    | '__root__'
-    | '/'
-    | '/$'
-    | '/_app'
-    | '/_team'
-    | '/_app/_chat'
-    | '/_app/admin'
-    | '/_app/_chat/library'
-    | '/_app/admin/create'
-    | '/_app/admin/deployments'
-    | '/_app/admin/sessions'
-    | '/_team/join/email'
-    | '/_app/admin/'
-    | '/_app/admin/agents/$agentId'
-    | '/_app/admin/agents/new'
-    | '/_team/join/invite/$invitationId'
-    | '/_app/admin/agents/'
-    | '/_app/_chat/w/$workspaceId/settings'
-    | '/_team/join/link/$workspaceId/$secret'
-    | '/_app/_chat/w/$workspaceId/'
-    | '/_app/_chat/w/$workspaceId/c/$chatId'
+  to: '/' | '/$'
+  id: '__root__' | '/' | '/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
-  AppRoute: typeof AppRouteWithChildren
-  TeamRoute: typeof TeamRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -278,207 +65,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_team': {
-      id: '/_team'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof TeamRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app/_chat': {
-      id: '/_app/_chat'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppChatRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin': {
-      id: '/_app/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AppAdminRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/_chat/library': {
-      id: '/_app/_chat/library'
-      path: '/library'
-      fullPath: '/library'
-      preLoaderRoute: typeof AppChatLibraryRouteImport
-      parentRoute: typeof AppChatRoute
-    }
-    '/_app/admin/': {
-      id: '/_app/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AppAdminIndexRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/admin/create': {
-      id: '/_app/admin/create'
-      path: '/create'
-      fullPath: '/admin/create'
-      preLoaderRoute: typeof AppAdminCreateRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/admin/deployments': {
-      id: '/_app/admin/deployments'
-      path: '/deployments'
-      fullPath: '/admin/deployments'
-      preLoaderRoute: typeof AppAdminDeploymentsRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/admin/sessions': {
-      id: '/_app/admin/sessions'
-      path: '/sessions'
-      fullPath: '/admin/sessions'
-      preLoaderRoute: typeof AppAdminSessionsRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_team/join/email': {
-      id: '/_team/join/email'
-      path: '/join/email'
-      fullPath: '/join/email'
-      preLoaderRoute: typeof TeamJoinEmailRouteImport
-      parentRoute: typeof TeamRoute
-    }
-    '/_app/admin/agents/': {
-      id: '/_app/admin/agents/'
-      path: '/agents'
-      fullPath: '/admin/agents/'
-      preLoaderRoute: typeof AppAdminAgentsIndexRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/admin/agents/$agentId': {
-      id: '/_app/admin/agents/$agentId'
-      path: '/agents/$agentId'
-      fullPath: '/admin/agents/$agentId'
-      preLoaderRoute: typeof AppAdminAgentsAgentIdRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/admin/agents/new': {
-      id: '/_app/admin/agents/new'
-      path: '/agents/new'
-      fullPath: '/admin/agents/new'
-      preLoaderRoute: typeof AppAdminAgentsNewRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_team/join/invite/$invitationId': {
-      id: '/_team/join/invite/$invitationId'
-      path: '/join/invite/$invitationId'
-      fullPath: '/join/invite/$invitationId'
-      preLoaderRoute: typeof TeamJoinInviteInvitationIdRouteImport
-      parentRoute: typeof TeamRoute
-    }
-    '/_app/_chat/w/$workspaceId/': {
-      id: '/_app/_chat/w/$workspaceId/'
-      path: '/w/$workspaceId'
-      fullPath: '/w/$workspaceId/'
-      preLoaderRoute: typeof AppChatWWorkspaceIdIndexRouteImport
-      parentRoute: typeof AppChatRoute
-    }
-    '/_app/_chat/w/$workspaceId/settings': {
-      id: '/_app/_chat/w/$workspaceId/settings'
-      path: '/w/$workspaceId/settings'
-      fullPath: '/w/$workspaceId/settings'
-      preLoaderRoute: typeof AppChatWWorkspaceIdSettingsRouteImport
-      parentRoute: typeof AppChatRoute
-    }
-    '/_team/join/link/$workspaceId/$secret': {
-      id: '/_team/join/link/$workspaceId/$secret'
-      path: '/join/link/$workspaceId/$secret'
-      fullPath: '/join/link/$workspaceId/$secret'
-      preLoaderRoute: typeof TeamJoinLinkWorkspaceIdSecretRouteImport
-      parentRoute: typeof TeamRoute
-    }
-    '/_app/_chat/w/$workspaceId/c/$chatId': {
-      id: '/_app/_chat/w/$workspaceId/c/$chatId'
-      path: '/w/$workspaceId/c/$chatId'
-      fullPath: '/w/$workspaceId/c/$chatId'
-      preLoaderRoute: typeof AppChatWWorkspaceIdCChatIdRouteImport
-      parentRoute: typeof AppChatRoute
-    }
   }
 }
-
-interface AppChatRouteChildren {
-  AppChatLibraryRoute: typeof AppChatLibraryRoute
-  AppChatWWorkspaceIdSettingsRoute: typeof AppChatWWorkspaceIdSettingsRoute
-  AppChatWWorkspaceIdIndexRoute: typeof AppChatWWorkspaceIdIndexRoute
-  AppChatWWorkspaceIdCChatIdRoute: typeof AppChatWWorkspaceIdCChatIdRoute
-}
-
-const AppChatRouteChildren: AppChatRouteChildren = {
-  AppChatLibraryRoute: AppChatLibraryRoute,
-  AppChatWWorkspaceIdSettingsRoute: AppChatWWorkspaceIdSettingsRoute,
-  AppChatWWorkspaceIdIndexRoute: AppChatWWorkspaceIdIndexRoute,
-  AppChatWWorkspaceIdCChatIdRoute: AppChatWWorkspaceIdCChatIdRoute,
-}
-
-const AppChatRouteWithChildren =
-  AppChatRoute._addFileChildren(AppChatRouteChildren)
-
-interface AppAdminRouteChildren {
-  AppAdminCreateRoute: typeof AppAdminCreateRoute
-  AppAdminDeploymentsRoute: typeof AppAdminDeploymentsRoute
-  AppAdminSessionsRoute: typeof AppAdminSessionsRoute
-  AppAdminIndexRoute: typeof AppAdminIndexRoute
-  AppAdminAgentsAgentIdRoute: typeof AppAdminAgentsAgentIdRoute
-  AppAdminAgentsNewRoute: typeof AppAdminAgentsNewRoute
-  AppAdminAgentsIndexRoute: typeof AppAdminAgentsIndexRoute
-}
-
-const AppAdminRouteChildren: AppAdminRouteChildren = {
-  AppAdminCreateRoute: AppAdminCreateRoute,
-  AppAdminDeploymentsRoute: AppAdminDeploymentsRoute,
-  AppAdminSessionsRoute: AppAdminSessionsRoute,
-  AppAdminIndexRoute: AppAdminIndexRoute,
-  AppAdminAgentsAgentIdRoute: AppAdminAgentsAgentIdRoute,
-  AppAdminAgentsNewRoute: AppAdminAgentsNewRoute,
-  AppAdminAgentsIndexRoute: AppAdminAgentsIndexRoute,
-}
-
-const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
-  AppAdminRouteChildren,
-)
-
-interface AppRouteChildren {
-  AppChatRoute: typeof AppChatRouteWithChildren
-  AppAdminRoute: typeof AppAdminRouteWithChildren
-}
-
-const AppRouteChildren: AppRouteChildren = {
-  AppChatRoute: AppChatRouteWithChildren,
-  AppAdminRoute: AppAdminRouteWithChildren,
-}
-
-const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
-
-interface TeamRouteChildren {
-  TeamJoinEmailRoute: typeof TeamJoinEmailRoute
-  TeamJoinInviteInvitationIdRoute: typeof TeamJoinInviteInvitationIdRoute
-  TeamJoinLinkWorkspaceIdSecretRoute: typeof TeamJoinLinkWorkspaceIdSecretRoute
-}
-
-const TeamRouteChildren: TeamRouteChildren = {
-  TeamJoinEmailRoute: TeamJoinEmailRoute,
-  TeamJoinInviteInvitationIdRoute: TeamJoinInviteInvitationIdRoute,
-  TeamJoinLinkWorkspaceIdSecretRoute: TeamJoinLinkWorkspaceIdSecretRoute,
-}
-
-const TeamRouteWithChildren = TeamRoute._addFileChildren(TeamRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
-  AppRoute: AppRouteWithChildren,
-  TeamRoute: TeamRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

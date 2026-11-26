@@ -9,7 +9,7 @@ const worker = (exports as unknown as { default: Record<string, unknown> }).defa
 it("gate:bindings", async () => {
   expect(typeof bindings.AUTH.prepare).toBe("function");
   expect(typeof bindings.WORKSPACE.idFromName).toBe("function");
-  expect(typeof bindings.MANAGER.idFromName).toBe("function");
+  expect(typeof bindings.MANAGER_STORE.idFromName).toBe("function");
   expect(typeof bindings.FILES.put).toBe("function");
   expect(typeof bindings.EMAIL.send).toBe("function");
   expect(typeof bindings.VAULT_MASTER_KEY.get).toBe("function");

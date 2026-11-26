@@ -78,15 +78,5 @@ export async function installed(launch: Team, id: number, repos: readonly string
   });
 }
 
-export const hears = (launch: Team, repos: readonly { repo: string; events?: readonly string[] }[]): Promise<Response> =>
-  launch.owner.send("PUT", `${launch.base}/github`, { repos });
-
 export const connection = async (launch: Team): Promise<GitHubConnection> =>
   (await json<{ github: GitHubConnection }>(await launch.owner.send("GET", `${launch.workspace}/github`))).github;
-
-/** Lets these GitHub users ask the team's manager. */
-export const allowGitHub = (launch: Team, ...ids: number[]): Promise<Response> =>
-  launch.owner.send("PUT", `${launch.base}/policy`, {
-    acceptMode: "observe",
-    allowed: ids.map((id) => ({ kind: "handle", handle: { kind: "github", id: String(id) } })),
-  });

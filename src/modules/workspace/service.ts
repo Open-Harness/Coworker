@@ -1,9 +1,8 @@
-import type { Answer, AskResult, AuditLine, InboxRequest } from "~/modules/manager/types.ts";
 import { budgets } from "~/modules/settings/service.ts";
 import { ask, auditLog, inboxOf, recordActions } from "./internal/inbox.ts";
-import { answerAndWake, hearFor } from "./internal/answers.ts";
+import { answerAndSettle, hearFor } from "./internal/answers.ts";
 import { requestJoin } from "./internal/requests.ts";
-import { createManager, destroyManagers, listManagers } from "./internal/managers.ts";
+import { listManagers } from "./internal/managers.ts";
 import { migrate, readProfile, writeProfile } from "./internal/store.ts";
 import { followingOf } from "./internal/following-host.ts";
 import { LookingHost } from "./internal/looking-host.ts";
@@ -24,8 +23,10 @@ import type {
   AddHandleResult,
   AnswerResult,
   AuditEntry,
-  CreateManager,
-  CreateManagerResult,
+  Answer,
+  AskResult,
+  AuditLine,
+  InboxRequest,
   InboxItem,
   ManagerEntry,
   DescribeResult,
@@ -77,15 +78,6 @@ export class WorkspaceHost<Env = unknown> extends LookingHost<Env> implements Wo
     return this.provisioned() && allowsJoin(this.ctx.storage.sql, proof);
   }
 
-  async createManager(input: CreateManager): Promise<CreateManagerResult> {
-    const workspace = readProfile(this.ctx.storage.sql);
-    if (workspace === undefined) return { _tag: "NotProvisioned" };
-    const { managers: objects, mailDomain, ids, clock } = this.dependencies;
-    const objectId = this.ctx.id.toString();
-    const place = { sql: this.ctx.storage.sql, workspace, objectId, objects, mailDomain, managerId: ids.next("mgr"), now: clock.now() };
-    return createManager(place, input);
-  }
-
   async managers(): Promise<readonly ManagerEntry[]> {
     const workspace = readProfile(this.ctx.storage.sql);
     return workspace === undefined ? [] : listManagers(this.ctx.storage.sql, workspace);
@@ -112,14 +104,14 @@ export class WorkspaceHost<Env = unknown> extends LookingHost<Env> implements Wo
   async answer(itemId: string, given: Answer): Promise<AnswerResult> {
     const workspace = readProfile(this.ctx.storage.sql);
     if (workspace === undefined) return { _tag: "NoSuchItem" };
-    const answered = await answerAndWake(this.ctx.storage.sql, workspace, this.dependencies.managers, itemId, given);
+    const answered = await answerAndSettle(this.ctx.storage.sql, itemId, given);
     if (answered._tag === "Answered") await this.carryOut(itemId, given);
     return answered;
   }
 
   async receive(trigger: Trigger): Promise<Routed> {
     const { sql } = this.ctx.storage;
-    return hearFor(sql, readProfile(sql), this.dependencies.managers, trigger, this.dependencies.clock.now());
+    return hearFor(sql, readProfile(sql), trigger);
   }
 
   async requestJoin(person: JoinRequester, owners: readonly string[]): Promise<RequestJoinResult> {
@@ -223,8 +215,6 @@ export class WorkspaceHost<Env = unknown> extends LookingHost<Env> implements Wo
   }
 
   async destroy(): Promise<{ readonly _tag: "Destroyed" }> {
-    const workspace = readProfile(this.ctx.storage.sql);
-    if (workspace !== undefined) await destroyManagers(this.ctx.storage.sql, workspace, this.dependencies.managers);
     // The new managers' own objects hold their playbooks and their work: they go with the workspace.
     for (const { row } of this.ctx.storage.sql
       .exec("SELECT row FROM console_manager")

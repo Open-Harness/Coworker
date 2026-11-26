@@ -1,3 +1,4 @@
+import type { Agent } from "~/modules/agent/types.ts";
 import type { Answer, Did } from "~/modules/api/types.ts";
 import type { Ask } from "~/modules/asks/types.ts";
 import type { AskAnswer, AskOp } from "~/modules/asking/types.ts";
@@ -94,10 +95,7 @@ export type StoreOp =
   | MoreOp
   /** What people read and answer later (set-ups, asks, corrections): put by id, oldest first. */
   | { readonly op: "kept.put"; readonly kind: string; readonly id: string; readonly value: unknown }
-  | { readonly op: "kept.list"; readonly kind: string }
-  /** The co-worker's own conversations: messages as a model is sent them. */
-  | { readonly op: "message.list"; readonly thread: string }
-  | { readonly op: "message.add"; readonly thread: string; readonly message: unknown };
+  | { readonly op: "kept.list"; readonly kind: string };
 
 /** One thing said of a piece of work by a person: what it is, who did it, and when. */
 export interface ActivityRow {
@@ -130,7 +128,7 @@ export type MoreAnswer =
 
 export type StoreAnswer =
   | { readonly op: "claim"; readonly is: "yours" | "busy" | "done"; readonly did?: Did }
-  | { readonly op: "settle" | "audit.add" | "audit.failed" | "setting.set" | "manager.add" | "github.hear" | "kept.put" | "message.add" }
+  | { readonly op: "settle" | "audit.add" | "audit.failed" | "setting.set" | "manager.add" | "github.hear" | "kept.put" }
   | { readonly op: "mail"; readonly answer: MailAnswer }
   | { readonly op: "audit.list"; readonly lines: readonly AuditRow[]; readonly next: string | null }
   | { readonly op: "setting.get"; readonly value: unknown }
@@ -139,7 +137,6 @@ export type StoreAnswer =
   | { readonly op: "ask.list"; readonly asks: readonly Ask[] }
   | { readonly op: "item.list"; readonly rows: readonly ItemRow[]; readonly next: string | null }
   | { readonly op: "kept.list"; readonly values: readonly unknown[] }
-  | { readonly op: "message.list"; readonly messages: readonly unknown[] }
   | MoreAnswer;
 
 /** The same, with each call named. */
@@ -172,8 +169,6 @@ export interface Store {
   readonly changed: (reads: readonly string[]) => Promise<void>;
   readonly keep: (kind: string, id: string, value: unknown) => Promise<void>;
   readonly kept: (kind: string) => Promise<readonly unknown[]>;
-  readonly messages: (thread: string) => Promise<readonly unknown[]>;
-  readonly addMessage: (thread: string, message: unknown) => Promise<void>;
   readonly mail: (call: MailCall) => Promise<MailAnswer>;
   readonly mcp: (call: McpCall) => Promise<McpAnswer>;
 }
@@ -205,8 +200,6 @@ export interface Outside {
     | { readonly _tag: "Folder"; readonly names: readonly string[] }
     | { readonly _tag: "Gone" }
   >;
-  /** One call to a model, made for the workspace with its credential: the co-worker thinks with it. */
-  readonly call: (path: string, body: string) => Promise<Response>;
 }
 
 export interface ConsoleDeps {
@@ -214,6 +207,8 @@ export interface ConsoleDeps {
   readonly who: Member;
   readonly people: readonly Member[];
   readonly store: Store;
+  /** The loop: the co-worker's conversations and every model call, over pi-durable and pi-ai. Not built yet. */
+  readonly agent: Agent;
   readonly outside: Outside;
   readonly asks: (op: AskOp) => Promise<AskAnswer>;
   readonly managers: ManagerStores;

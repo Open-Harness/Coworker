@@ -90,8 +90,6 @@ export abstract class DecidingHost<Env> extends SettingsHost<Env> {
       asking: () => this.asking(),
       sql: this.ctx.storage.sql,
       dependencies: this.dependencies,
-      connections: () => this.modelConnections(),
-      modelCall: (call) => this.modelCall(call),
     });
     const soon = (): { readonly again: number } => ({ again: this.dependencies.clock.now() + 30_000 });
     const decided = await deciding.run().catch(soon);

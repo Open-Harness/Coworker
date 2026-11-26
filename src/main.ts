@@ -1,18 +1,12 @@
 import handler from "@tanstack/react-start/server-entry";
+import { noAgent } from "~/modules/agent/service.ts";
 import { createAuth } from "~/modules/auth/service.ts";
 import type { AuthSettings, OAuthClient } from "~/modules/auth/types.ts";
 import { randomIds, systemClock } from "~/modules/clock/service.ts";
-import { createAdminCheck, createDirectoryPort, DIRECTORY_NAME, DirectoryHost } from "~/modules/directory/service.ts";
 import { BoxHost } from "~/modules/sandboxes/service.ts";
 import { createHttp } from "~/modules/http/service.ts";
-import { createWorkspacePort, WorkspaceHost } from "~/modules/chat-host/service.ts";
-import type { Report } from "~/modules/chat-host/types.ts";
 import { durableManagerStores, ManagerStoreHost } from "~/modules/manager-store/service.ts";
 import type { ManagerStoreApi } from "~/modules/manager-store/types.ts";
-import { durableManagerObjects, ManagerHost } from "~/modules/manager/service.ts";
-import type { ManagerApi, ManagerObjects } from "~/modules/manager/types.ts";
-import { email } from "~/modules/email/service.ts";
-import { triggers } from "~/modules/triggers/service.ts";
 import { WorkspaceHost as TenantHost } from "~/modules/workspace/service.ts";
 import {
   createWorkspaces,
@@ -22,23 +16,19 @@ import {
   workspaceAt,
   workspaceById,
 } from "~/modules/workspaces/service.ts";
-import { github } from "~/modules/github/service.ts";
 import {
   FAKE_AUTHSERV,
   fakeInbound,
   fakeMail,
   lapseInvite,
-  filesFrom,
   gitHubApiFrom,
   mailerFrom,
   masterKeysFrom,
   present,
   sandboxHostFrom,
   billingFrom,
-  brainFrom,
   tenantClockFrom,
   outsideFetch,
-  agentFrom,
   boxHostFrom,
   gitPortFrom,
   appSlugFrom,
@@ -58,7 +48,7 @@ export type { Env };
 const mailDomainOf = (env: Env): string => present(env.DT_MAIL_DOMAIN) ?? "co-worker.tech";
 const sendFromOf = (env: Env): string => present(env.DT_SEND_FROM) ?? `hello@${mailDomainOf(env)}`;
 
-const report: Report = (message, error, details = {}) =>
+const report = (message: string, error: unknown, details: Readonly<Record<string, unknown>> = {}): void =>
   console.error(JSON.stringify({ message, ...details, error: error instanceof Error ? (error.stack ?? error.message) : String(error) }));
 
 const clientOf = (clientId = "", clientSecret = ""): OAuthClient | undefined =>
@@ -92,26 +82,8 @@ function controlFrom(env: Env, request: Request) {
     now: systemClock.now,
   });
   const workspaces = createWorkspaces({ database: env.AUTH, auth, objects: tenantsFrom(env), clock: systemClock });
-  return { auth, workspaces, managers: managerObjectsFrom(env), github: gitHubApiFrom(env) };
+  return { auth, workspaces, github: gitHubApiFrom(env) };
 }
-
-export class Directory extends DirectoryHost<Env> {
-  constructor(ctx: DurableObjectState, env: Env) {
-    const { models, draft } = agentFrom(env);
-    const isAdmin = createAdminCheck((present(env.PI_EXP_ADMINS) ?? "").split(",").filter((email) => email.trim() !== ""));
-    super(ctx, env, { workspaces: createWorkspacePort(env.WORKSPACES), models, draft, isAdmin, report });
-  }
-}
-
-export class Workspace extends WorkspaceHost<Env> {
-  constructor(ctx: DurableObjectState, env: Env) {
-    super(ctx, env, { agent: agentFrom(env), directory: createDirectoryPort(env.DIRECTORY), report });
-  }
-}
-
-/** Where managers are made. The fake world keeps jurisdictions in memory, as for workspaces. */
-const managerObjectsFrom = (env: Env): ManagerObjects =>
-  durableManagerObjects(env.DT_WORLD === "fake" ? localJurisdictions<ManagerApi>(env.MANAGER) : env.MANAGER);
 
 /** One tenant. */
 export class WorkspaceObject extends TenantHost<Env> {
@@ -121,8 +93,9 @@ export class WorkspaceObject extends TenantHost<Env> {
       masterKeys: masterKeysFrom(env),
       ids: randomIds,
       fetch: outsideFetch(env),
-      managers: managerObjectsFrom(env),
       stores: managerStoresFrom(env),
+      // The loop is not built: what the workspace asks a model itself (the judge, the weekly look) answers NotBuilt.
+      agent: noAgent,
       mailDomain: mailDomainOf(env),
       sandboxes: sandboxHostFrom(env),
       billing: billingFrom(env),
@@ -132,9 +105,6 @@ export class WorkspaceObject extends TenantHost<Env> {
     });
   }
 }
-
-/** Where replies go out, per Source kind. */
-const channelFrom = (env: Env) => triggers.channels({ email: email.channel(mailerFrom(env)), github: github.channel(gitHubApiFrom(env)) });
 
 /** GitHub's webhooks, to the workspace that claimed the installation: what its managers hear is kept for them. */
 const gitHubInFrom = (request: Request, env: Env): Promise<Response> =>
@@ -164,20 +134,6 @@ export class CommandBox extends BoxHost<Env> {}
 /** Staging's first container class. Nothing binds it; Cloudflare keeps a class until a migration deletes it. */
 export class SandboxBox extends BoxHost<Env> {}
 
-/** One manager: the pi-durable harness, its mission pages, board and runs. */
-export class ManagerObject extends ManagerHost<Env> {
-  constructor(ctx: DurableObjectState, env: Env) {
-    super(ctx, env, {
-      clock: systemClock,
-      brain: brainFrom(env),
-      workspace: (objectId, region) => tenantObjectsFrom(env).get(objectId, region),
-      channel: channelFrom(env),
-      files: filesFrom(env),
-      report,
-    });
-  }
-}
-
 /** The new managers' objects: one each, made in the workspace's jurisdiction. */
 const managerStoresFrom = (env: Env) =>
   durableManagerStores(env.DT_WORLD === "fake" ? localJurisdictions<ManagerStoreApi>(env.MANAGER_STORE) : env.MANAGER_STORE);
@@ -194,6 +150,8 @@ export class ManagerStore extends ManagerStoreHost<Env> {
         git: gitPortFrom(env),
         fetch: outsideFetch(env),
       }),
+      // The loop is not built: a manager's work is taken and kept, and no thread runs.
+      agent: noAgent,
       report: (message, error) => report(message, error),
     });
   }
@@ -224,8 +182,6 @@ export default {
         sweep: (now) => controlFrom(env, request).workspaces.removeDue(now),
       });
     return createHttp({
-      directory: () => env.DIRECTORY.getByName(DIRECTORY_NAME),
-      workspace: (workspaceId) => env.WORKSPACES.getByName(workspaceId),
       pages: async (page) => handler.fetch(page),
       console: consoleFrom({
         managers: managerStoresFrom(env),

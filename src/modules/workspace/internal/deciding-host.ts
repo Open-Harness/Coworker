@@ -2,9 +2,6 @@ import { createDeciding } from "~/modules/deciding/service.ts";
 import type { Deciding, DecidingStore } from "~/modules/deciding/types.ts";
 import type { Decision, Item } from "~/modules/intake/types.ts";
 import type { ManagerRow } from "~/modules/console/types.ts";
-import type { Models } from "~/modules/completion/types.ts";
-import type { Thinking } from "~/modules/playbook/types.ts";
-import type { ModelCall, ModelConnection } from "~/modules/models/types.ts";
 import type { WorkspaceDependencies } from "../types.ts";
 import type { Asking } from "~/modules/asking/types.ts";
 import { askWhichOf, chosenOf, waitingOf } from "./choosing.ts";
@@ -14,7 +11,6 @@ import { connection } from "./github.ts";
 export const DECIDING_MIGRATIONS: readonly string[] = ["ALTER TABLE console_item ADD COLUMN retry INTEGER"];
 
 const parsed = <T>(value: SqlStorageValue | undefined): T => JSON.parse(String(value)) as T;
-const THINKING: readonly Thinking[] = ["off", "low", "medium", "high"];
 
 function storeOver(sql: SqlStorage): DecidingStore {
   return {
@@ -43,31 +39,16 @@ function standingOf(permission: string): "admin" | "write" | "read" | "outside" 
 export interface Host {
   readonly sql: SqlStorage;
   readonly dependencies: WorkspaceDependencies;
-  readonly connections: () => Promise<readonly ModelConnection[]>;
-  readonly modelCall: (call: ModelCall) => Promise<Response>;
   readonly asking: () => Asking;
   readonly answered: (item: Item) => Promise<{ readonly ask: string; readonly work: string | null } | undefined>;
 }
 
-export function decidingOf({ sql, dependencies, connections, modelCall, answered, asking }: Host): Deciding {
+export function decidingOf({ sql, dependencies, answered, asking }: Host): Deciding {
   const { stores, clock, github, fetch } = dependencies;
-  const models = async (): Promise<Models> => {
-    const row = sql.exec("SELECT value FROM console_setting WHERE name = 'choice'").toArray()[0];
-    const choice = row === undefined ? null : parsed<Record<string, unknown>>(row["value"]);
-    const [id, model, thinking] = [choice?.["connection"], choice?.["model"], choice?.["thinking"]];
-    return {
-      connections: await connections(),
-      choice:
-        typeof id === "string" && typeof model === "string"
-          ? { connection: id, model, thinking: THINKING.find((one) => one === thinking) ?? "low" }
-          : null,
-    };
-  };
   return createDeciding({
     store: storeOver(sql),
     manager: ({ objectId, region }) => stores.get(objectId, region),
-    models,
-    call: (path, body) => modelCall({ path, body, headers: { accept: "text/event-stream" } }),
+    ask: dependencies.agent.ask,
     clock,
     answered,
     askWhich: (input) => askWhichOf(asking(), clock)(input),

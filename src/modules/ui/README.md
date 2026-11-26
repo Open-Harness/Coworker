@@ -1,6 +1,6 @@
 # ui
 
-Owns the reusable pieces of the page: the navigation, the transcript, the composer, documents, settings, dialogs.
+Owns the pieces of the page that no screen owns: the charts, and the root's `Failed` and `Gone`. The first product's chat pieces (navigation, transcript, composer, documents) were removed with its core on 26 November.
 
 Read `types.ts` for what each piece takes. Everything drawn is an Astryx component; `pnpm check:ui` fails on a raw
 element, a class, a style, or another component library. A piece lives here only when Astryx has no component that does
@@ -17,6 +17,5 @@ Invariants
   Astryx's `--color-data-categorical-*` tokens, passed through recharts' own stroke and fill props; text follows the theme in
   dark mode. Every chart has an accessible name (`label`), a legend, and the same numbers as a visually hidden table; a
   chart with nothing to show (every number zero, or one lonely point for a line) is a sentence instead.
-- `NavGroup` is the one styled file: it works around a sizing bug in Astryx's collapsible navigation items.
 
 Test: `pnpm vitest --run --project page src/modules/ui`
