@@ -38,6 +38,8 @@ const nobody: ManagerStoreApi = {
   },
   heard: async () => undefined,
   board: async () => [],
+  work: async () => undefined,
+  asks: async () => [],
   usage: async () => [],
   tick: async () => undefined,
   save: async () => {

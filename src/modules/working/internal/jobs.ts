@@ -1,4 +1,5 @@
 import type { Job, WorkingDeps } from "../types.ts";
+import { asking } from "./asking.ts";
 import { confirm, runChecks } from "./checks.ts";
 import { rearm } from "./events.ts";
 import { commentOnce } from "./github.ts";
@@ -37,9 +38,7 @@ async function doJob(c: WorkingDeps, workId: string, job: Job): Promise<Outcome>
       await c.boxes.end(workId);
       return done;
     case "ask":
-      // A person is asked by the inbox; this slice does not reach it. The question is kept, so it is not lost.
-      c.store.keepOnce(job.key, job.question);
-      return done;
+      return asking(c, workId, job);
     case "wake":
       return done;
   }

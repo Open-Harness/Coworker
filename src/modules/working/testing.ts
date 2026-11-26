@@ -1,9 +1,10 @@
 import type { Work } from "~/modules/work/types.ts";
-import type { Hold, Job, Message, Spend, Store, StoredJob, ThreadRow } from "./types.ts";
+import type { Ask } from "~/modules/asks/types.ts";
+import type { ActivityLine, Hold, Job, Message, Spend, Store, StoredJob, ThreadRow } from "./types.ts";
 
 /** What a manager keeps, in memory: for tests of what it does, beside the real one in its Durable Object. */
 export function memoryStore(): Store {
-  const [works, seen, jobs, threads, messages, spends, holds, once] = [
+  const [works, seen, jobs, threads, messages, spends, holds, once, lines, asks] = [
     new Map<string, Work>(),
     new Set<string>(),
     [] as { key: string; work: string; job: Job; done: boolean }[],
@@ -12,6 +13,8 @@ export function memoryStore(): Store {
     [] as Spend[],
     new Map<string, Hold>(),
     new Map<string, string>(),
+    new Map<string, ActivityLine[]>(),
+    new Map<string, Ask>(),
   ];
   return {
     transaction: (run) => run(),
@@ -48,5 +51,9 @@ export function memoryStore(): Store {
     setHold: (work, hold) => void (hold === null ? holds.delete(work) : holds.set(work, hold)),
     once: (key) => once.get(key),
     keepOnce: (key, value) => void (once.has(key) || once.set(key, value)),
+    addActivity: (work, line) => void lines.set(work, [...(lines.get(work) ?? []), line]),
+    activityOf: (work) => lines.get(work) ?? [],
+    putAsk: (ask) => void asks.set(ask.id, ask),
+    asks: () => [...asks.values()],
   };
 }

@@ -1,7 +1,8 @@
 import type { OpenWork } from "~/modules/intake/types.ts";
 import type { Files, Version } from "~/modules/playbook/types.ts";
 import type { Work } from "~/modules/work/types.ts";
-import type { Hold, TakeInput, ThreadRow } from "~/modules/working/types.ts";
+import type { ActivityLine, Hold, TakeInput, ThreadRow } from "~/modules/working/types.ts";
+import type { Ask } from "~/modules/asks/types.ts";
 import type { Region } from "~/modules/workspace/types.ts";
 
 /*
@@ -45,6 +46,11 @@ export interface BoardRow {
   readonly threads: readonly ThreadRow[];
 }
 
+/** One piece of work as its page shows it: the card's row, and what happened to it. */
+export interface WorkRow extends BoardRow {
+  readonly activity: readonly ActivityLine[];
+}
+
 /** What a model call cost, summed for a day and a model. A model with no price known is counted, and the sum says so. */
 export interface UsageRow {
   readonly day: number;
@@ -74,6 +80,10 @@ export interface ManagerStoreApi {
   /** What came in on a conversation that work follows. */
   heard(input: { readonly work: string; readonly item: TakeInput["item"] }): Promise<void>;
   board(): Promise<readonly BoardRow[]>;
+  /** One piece of work, with what happened to it. Undefined when this manager has none by that id. */
+  work(id: string): Promise<WorkRow | undefined>;
+  /** What waits for a person, made by this manager's work: open and answered. */
+  asks(): Promise<readonly Ask[]>;
   usage(): Promise<readonly UsageRow[]>;
   /** Does what is due now, and goes on with what was waiting. Answers when nothing can go further. */
   tick(): Promise<void>;

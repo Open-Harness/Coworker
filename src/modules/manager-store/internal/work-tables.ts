@@ -1,4 +1,5 @@
-import type { Hold, Job, Message, Spend, Store, StoredJob, ThreadRow } from "~/modules/working/types.ts";
+import type { Ask } from "~/modules/asks/types.ts";
+import type { ActivityLine, Hold, Job, Message, Spend, Store, StoredJob, ThreadRow } from "~/modules/working/types.ts";
 import type { Work } from "~/modules/work/types.ts";
 
 /** What a manager keeps of its work. Every statement runs once, in order, after the manager's own tables. */
@@ -13,6 +14,12 @@ export const WORK_MIGRATIONS: readonly string[] = [
      input INTEGER NOT NULL, cached INTEGER NOT NULL, output INTEGER NOT NULL, dollars REAL, at INTEGER NOT NULL)`,
   `CREATE TABLE hold (work TEXT PRIMARY KEY, why TEXT NOT NULL, retry INTEGER NOT NULL)`,
   `CREATE TABLE once (key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
+];
+
+/** What the work's page shows of what happened, and what waits for a person. Appended after the others. */
+export const STAYS_MIGRATIONS: readonly string[] = [
+  `CREATE TABLE activity (work TEXT NOT NULL, n INTEGER NOT NULL, at INTEGER NOT NULL, who TEXT NOT NULL, text TEXT NOT NULL, PRIMARY KEY (work, n))`,
+  `CREATE TABLE ask (id TEXT PRIMARY KEY, seq INTEGER NOT NULL, json TEXT NOT NULL)`,
 ];
 
 const parsed = <T>(value: SqlStorageValue | undefined): T => JSON.parse(String(value)) as T;
@@ -166,5 +173,30 @@ export function workStore(storage: DurableObjectStorage): Store {
       return row === undefined ? undefined : String(row["value"]);
     },
     keepOnce: (key, value) => void sql.exec("INSERT OR IGNORE INTO once (key, value) VALUES (?, ?)", key, value),
+    addActivity: (work, line) =>
+      void sql.exec(
+        "INSERT INTO activity (work, n, at, who, text) VALUES (?, (SELECT COALESCE(MAX(n), -1) + 1 FROM activity WHERE work = ?), ?, ?, ?)",
+        work,
+        work,
+        line.at,
+        line.who,
+        line.text,
+      ),
+    activityOf: (work) =>
+      sql
+        .exec("SELECT at, who, text FROM activity WHERE work = ? ORDER BY n", work)
+        .toArray()
+        .map((row): ActivityLine => ({ who: String(row["who"]), at: Number(row["at"]), text: String(row["text"]) })),
+    putAsk: (ask: Ask) =>
+      void sql.exec(
+        `INSERT INTO ask (id, seq, json) VALUES (?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM ask), ?) ON CONFLICT (id) DO UPDATE SET json = excluded.json`,
+        ask.id,
+        JSON.stringify(ask),
+      ),
+    asks: () =>
+      sql
+        .exec("SELECT json FROM ask ORDER BY seq")
+        .toArray()
+        .map((row) => parsed<Ask>(row["json"])),
   };
 }

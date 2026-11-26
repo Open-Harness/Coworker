@@ -48,6 +48,7 @@ export async function take(
     c.store.see(`take:${id}`);
     c.store.putWork(made.work);
     c.store.addJobs(id, made.todo);
+    c.store.addActivity(id, { who: item.actor.name, at, text: `Asked it, on ${from.place} #${from.id}.` });
   });
   rearm(c);
   return { work: id };
