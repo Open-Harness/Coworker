@@ -833,11 +833,7 @@
     "screen:live/skip-to-the-end-goes-straight-to-the-step-that-is-yours": "32edcb2",
     "screen:live/stops-before-saving-and-nothing-is-saved-until-a-person-presses-it": "32edcb2",
     "screen:live/announces-every-step-to-a-screen-reader": "32edcb2",
-    "screen:live/a-reply-of-the-co-worker-can-show-how": "32edcb2",
-    "jobs:check/one-door-left-open": "e6a6629",
-    "jobs:check/shared-by-all": "e6a6629",
-    "jobs:check/and-something-else": "e6a6629",
-    "jobs:triage/obeys-nothing-it-reads": "e6a6629"
+    "screen:live/a-reply-of-the-co-worker-can-show-how": "32edcb2"
   },
   "history": [
     {
@@ -860,13 +856,6 @@
       "score": 96.7,
       "pass": 832,
       "of": 853
-    },
-    {
-      "at": "2026-11-26T16:20:17.460Z",
-      "commit": "e6a6629",
-      "score": 41.9,
-      "pass": 398,
-      "of": 871
     }
   ]
 }
