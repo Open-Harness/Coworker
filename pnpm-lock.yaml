@@ -151,6 +151,21 @@ importers:
         specifier: 4.166.0
         version: 4.166.0(@cloudflare/workers-types@5.20261123.1)(@types/node@24.10.1)(vitest@5.1.1(@types/node@24.10.1)(happy-dom@21.0.4)(vite@8.3.8(@types/node@24.10.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))
 
+  packages/blueprint:
+    dependencies:
+      effect:
+        specifier: 4.1.1
+        version: 4.1.1
+      orthograph:
+        specifier: workspace:*
+        version: link:../orthograph
+
+  packages/orthograph:
+    dependencies:
+      effect:
+        specifier: 4.1.1
+        version: 4.1.1
+
 packages:
 
   '@anthropic-ai/sdk@0.129.0':
@@ -2780,6 +2795,9 @@ packages:
 
   ecdsa-sig-formatter@1.0.11:
     resolution: {integrity: sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ==}
+
+  effect@4.1.1:
+    resolution: {integrity: sha512-XYu65BrcmNqu5i7PPvP4dqL+R5ma37zIsfuSPjcn78mog+6e5PkilNg7Xo+pBpjXJYlWEIpH4j91tMrfW05CMw==}
 
   electron-to-chromium@1.5.492:
     resolution: {integrity: sha512-4uMs7omhajKiud0GqALLTazS/zyvHLTLmDWVTR+e6BnyJo5bSNrph/JoRWEFJJmY75ct9hCiSGsbFF9fLe5gDw==}
@@ -6424,6 +6442,8 @@ snapshots:
   ecdsa-sig-formatter@1.0.11:
     dependencies:
       safe-buffer: 5.2.1
+
+  effect@4.1.1: {}
 
   electron-to-chromium@1.5.492: {}
 
