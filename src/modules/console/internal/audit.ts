@@ -12,7 +12,7 @@ const lineOf = (row: AuditRow): AuditView["lines"][number] => ({
   says: row.says,
   permission: row.permission,
   under: { is: "role", says: `${row.by} is ${row.role === "Owner" ? "an" : "a"} ${row.role}` },
-  approvedBy: null,
+  approvedBy: row.approvedBy ?? null,
   outcome: row.outcome,
   why: row.why,
   group: row.group,

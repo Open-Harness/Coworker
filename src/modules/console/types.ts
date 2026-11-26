@@ -41,6 +41,7 @@ export interface AuditRow {
   readonly why: string | null;
   readonly permission: "on" | "ask" | "off";
   readonly role: Role;
+  readonly approvedBy?: string | null; // who said yes, when it waited for one
 }
 
 /** A manager of this workspace: its place in the tree, and where its own object is. */

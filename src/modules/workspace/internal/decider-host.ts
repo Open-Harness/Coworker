@@ -25,6 +25,8 @@ export abstract class DecidingHost<Env> extends SettingsHost<Env> {
     if (!this.provisioned()) return { _tag: "NotProvisioned" };
     const answer = await this.asking().handle(op);
     if (op.op === "open" || op.op === "answer") await this.askTick();
+    // What a person chose for an item that was asked about is decided at once.
+    if (op.op === "answer") await this.decide();
     return answer;
   }
 
@@ -72,6 +74,7 @@ export abstract class DecidingHost<Env> extends SettingsHost<Env> {
   async #decideOnce(): Promise<number | null> {
     const deciding = decidingOf({
       answered: async (item) => this.#answered(item),
+      asking: () => this.asking(),
       sql: this.ctx.storage.sql,
       dependencies: this.dependencies,
       connections: () => this.modelConnections(),
