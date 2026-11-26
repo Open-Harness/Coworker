@@ -2,7 +2,7 @@
 
 The console's whole HTTP surface under `/api/ws/<workspace>`, as one map of types, and the page's client of it.
 
-Not built. Pages load their data in the browser through it, and through nothing else. Every change is a doing (`/do`).
+Built. Pages load their data in the browser through it, and through nothing else. Every change is a doing (`/do`).
 
 ## Settled by the evals
 

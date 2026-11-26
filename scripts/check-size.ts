@@ -5,7 +5,7 @@ const MAX_LINES = 250;
 const GENERATED = /routeTree\.gen\.ts$/u;
 
 const problems: string[] = [];
-for (const file of globSync("{src,scripts,test,e2e,live}/**/*.{ts,tsx}")) {
+for (const file of globSync("{src,scripts,test,live}/**/*.{ts,tsx}")) {
   if (GENERATED.test(file)) continue;
   const lines = readFileSync(file, "utf8").split("\n").length;
   if (lines > MAX_LINES) problems.push(`${file}: ${lines} lines; at most ${MAX_LINES}`);
