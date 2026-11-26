@@ -233,7 +233,14 @@ export class WorkspaceHost<Env = unknown> extends DecidingHost<Env> implements W
     }
     const answer = runStore({ sql, now: this.dependencies.clock.now(), id: this.dependencies.ids.next }, op);
     // What came in is decided from the object's alarm, so that a lost object still decides it when it is back.
-    if (answer.op === "item.keep" && answer.isNew) await this.wakeFor(0);
+    if (op.op === "item.keep" && answer.op === "item.keep" && answer.isNew) {
+      await this.wakeFor(0);
+      // Nothing is asked of a judge when every manager that hears it is paused: it is left, and said so, at once.
+      if (this.pausedAll(op.hears)) await this.decide();
+      this.tell(["/shell", "/tree", ...op.hears.map((manager) => `/m/${manager}`)]);
+    }
+    if (answer.op === "item.reopen") await this.wakeFor(0);
+    if (op.op === "changed") this.tell(op.reads);
     return answer;
   }
 

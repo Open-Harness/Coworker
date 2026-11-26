@@ -2,6 +2,11 @@ import type { Answer } from "~/modules/api/types.ts";
 import { doings } from "~/modules/doings/service.ts";
 import type { Call, ConsoleDeps } from "../types.ts";
 import { auditView } from "./audit.ts";
+import { chatsList, startChat } from "./chats.ts";
+import { managerOverview } from "./manager-overview.ts";
+import { searchView } from "./search.ts";
+import { tryTemplate } from "./try.ts";
+import { workView } from "./work-view.ts";
 import { run } from "./do.ts";
 import { boardView } from "./board.ts";
 import { intakeView, playbookView } from "./manager-views.ts";
@@ -20,10 +25,8 @@ import {
   usageView,
 } from "./settings.ts";
 import { answerAsk, inboxView } from "./inbox.ts";
-import { managerOverview } from "./manager-overview.ts";
 import { threadsView } from "./threads-view.ts";
-import { workView } from "./work-view.ts";
-import { chatsView, coworkerView, homeView, shellView } from "./shell.ts";
+import { coworkerView, homeView, shellView } from "./shell.ts";
 import { fillView, templatesView } from "./templates.ts";
 
 /* The paths of `api/types.ts`, each to the view it answers. A path that is not here is 404 in words. */
@@ -34,7 +37,8 @@ const READS: readonly (readonly [RegExp, Part])[] = [
   [/^\/shell$/u, async (c) => ok(await shellView(c))],
   [/^\/home$/u, () => ok(homeView())],
   [/^\/inbox$/u, async (c) => ok(await inboxView(c))],
-  [/^\/chats$/u, () => ok(chatsView())],
+  [/^\/chats$/u, async (c) => ok(await chatsList(c))],
+  [/^\/search$/u, (c, _, q) => searchView(c, q)],
   [/^\/overview$/u, async (c, _, q) => ok(await overviewView(c, q))],
   [/^\/tree$/u, async (c) => ok(await treeView(c))],
   [/^\/coworker$/u, async (c) => ok(await coworkerView(c))],
@@ -51,6 +55,8 @@ const READS: readonly (readonly [RegExp, Part])[] = [
   [/^\/settings\/mcp-servers$/u, () => ok(mcpView())],
   [/^\/settings\/shared$/u, () => ok(sharedView())],
   [/^\/settings\/me$/u, async (c) => ok(await meView(c))],
+  [/^\/m\/([^/]+)$/u, (c, [id]) => managerOverview(c, id ?? "")],
+  [/^\/m\/([^/]+)\/work\/([^/]+)$/u, (c, [id, work]) => workView(c, id ?? "", work ?? "")],
   [/^\/m\/([^/]+)\/board$/u, (c, [id]) => boardView(c, id ?? "")],
   [/^\/m\/([^/]+)$/u, (c, [id]) => managerOverview(c, id ?? "")],
   [/^\/m\/([^/]+)\/work\/([^/]+)$/u, (c, [id, work]) => workView(c, id ?? "", work ?? "")],
@@ -81,6 +87,9 @@ export async function read({ path, query }: Call, c: ConsoleDeps): Promise<Answe
 export async function write({ path, body }: Call, c: ConsoleDeps): Promise<Answer<unknown>> {
   if (path === "/do") return run(c, body);
   if (path === "/walk") return walk(body);
+  if (path === "/chats") return startChat(c, body);
+  const tried = /^\/templates\/([^/]+)\/try$/u.exec(path);
+  if (tried !== null) return tryTemplate(c, decodeURIComponent(tried[1] ?? ""), body);
   const asked = /^\/inbox\/([^/]+)$/u.exec(path);
   if (asked !== null) return answerAsk(c, decodeURIComponent(asked[1] ?? ""), body);
   return problem(404, `There is nothing to send to ${path}.`);

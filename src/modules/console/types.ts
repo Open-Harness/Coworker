@@ -88,7 +88,44 @@ export type StoreOp =
       readonly from: string | null;
       readonly before: string | null;
       readonly limit: number;
-    };
+    }
+  | MoreOp;
+
+/** One thing said of a piece of work by a person: what it is, who did it, and when. */
+export interface ActivityRow {
+  readonly manager: string;
+  readonly work: string;
+  readonly who: string;
+  readonly at: number;
+  readonly text: string;
+}
+
+/** A chat of one person with the co-worker, and what it was started with. */
+export interface ChatRow {
+  readonly id: string;
+  readonly by: string;
+  readonly title: string;
+  readonly at: number;
+  readonly lines: readonly { readonly id: string; readonly by: string; readonly at: number; readonly text: string }[];
+}
+
+/** What else the workspace's object keeps for the console, beside `StoreOp`. */
+export type MoreOp =
+  /** A manager's row as it is now: its state, its reach, its version. */
+  | { readonly op: "manager.set"; readonly row: ManagerRow }
+  /** What was left because every manager that hears it was paused is decided again, as if it had just come in. */
+  | { readonly op: "item.reopen"; readonly manager: string }
+  | { readonly op: "activity.add"; readonly row: ActivityRow }
+  | { readonly op: "activity.list"; readonly work: string }
+  | { readonly op: "chat.add"; readonly chat: ChatRow }
+  | { readonly op: "chat.list"; readonly by: string }
+  /** These reads changed: every page that has a live socket open is told. */
+  | { readonly op: "changed"; readonly reads: readonly string[] };
+
+export type MoreAnswer =
+  | { readonly op: "manager.set" | "item.reopen" | "activity.add" | "chat.add" | "changed" }
+  | { readonly op: "activity.list"; readonly rows: readonly ActivityRow[] }
+  | { readonly op: "chat.list"; readonly rows: readonly ChatRow[] };
 
 export type StoreAnswer =
   | { readonly op: "claim"; readonly is: "yours" | "busy" | "done"; readonly did?: Did }
@@ -99,7 +136,8 @@ export type StoreAnswer =
   | { readonly op: "item.keep"; readonly row: ItemRow; readonly isNew: boolean }
   | { readonly op: "github.hear" }
   | { readonly op: "ask.list"; readonly asks: readonly Ask[] }
-  | { readonly op: "item.list"; readonly rows: readonly ItemRow[]; readonly next: string | null };
+  | { readonly op: "item.list"; readonly rows: readonly ItemRow[]; readonly next: string | null }
+  | MoreAnswer;
 
 /** The same, with each call named. */
 export interface Store {
@@ -122,6 +160,16 @@ export interface Store {
     manager: string,
     query: { readonly from: string | null; readonly before: string | null; readonly limit: number },
   ) => Promise<{ readonly rows: readonly ItemRow[]; readonly next: string | null }>;
+  /** A manager as it is now. */
+  readonly setManager: (row: ManagerRow) => Promise<void>;
+  /** What was left because its managers were paused is decided again. */
+  readonly reopen: (manager: string) => Promise<void>;
+  readonly note: (row: ActivityRow) => Promise<void>;
+  readonly activity: (work: string) => Promise<readonly ActivityRow[]>;
+  readonly addChat: (chat: ChatRow) => Promise<void>;
+  readonly chats: (by: string) => Promise<readonly ChatRow[]>;
+  /** Tells every open page that these reads changed. */
+  readonly changed: (reads: readonly string[]) => Promise<void>;
 }
 
 /** What is outside the workspace's object that the console needs of it. */
@@ -135,6 +183,20 @@ export interface Outside {
   readonly billing: () => Promise<BillingView | null>;
   /** Owners: the workspace's name changes in the directory, the object and the organization together. */
   readonly rename: (name: string) => Promise<{ readonly _tag: "Renamed" } | { readonly _tag: "Refused"; readonly why: string }>;
+  /** Owners: a person's role, or their seat. What they lent ends with it. */
+  readonly people: {
+    readonly role: (person: string, role: Role) => Promise<{ readonly _tag: "Done" } | { readonly _tag: "Refused"; readonly why: string }>;
+    readonly remove: (person: string) => Promise<{ readonly _tag: "Done" } | { readonly _tag: "Refused"; readonly why: string }>;
+  };
+  /** What is at a place, read only: its files by path (a folder is its names). Nothing is written. */
+  readonly read: (
+    place: string,
+    path: string,
+  ) => Promise<
+    | { readonly _tag: "File"; readonly text: string }
+    | { readonly _tag: "Folder"; readonly names: readonly string[] }
+    | { readonly _tag: "Gone" }
+  >;
 }
 
 export interface ConsoleDeps {

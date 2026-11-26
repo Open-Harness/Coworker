@@ -1,7 +1,7 @@
 import type { OpenWork } from "~/modules/intake/types.ts";
 import type { Files, Version } from "~/modules/playbook/types.ts";
 import type { Work, WorkEvent } from "~/modules/work/types.ts";
-import type { ActivityLine, Answer, Hold, TakeInput, ThreadRow } from "~/modules/working/types.ts";
+import type { ActivityLine, Answer, AdoptInput, Changed, Hold, TakeInput, ThreadRow } from "~/modules/working/types.ts";
 import type { Ask } from "~/modules/asks/types.ts";
 import type { Region } from "~/modules/workspace/types.ts";
 
@@ -83,6 +83,12 @@ export interface ManagerStoreApi {
   news(input: { readonly work: string; readonly event: WorkEvent; readonly says?: string }): Promise<void>;
   /** What was asked of a person for this work was answered, anywhere: the work goes on. Once per ask. */
   answered(input: Answer): Promise<void>;
+  /** A person's change of one piece of work: an event applied once by its key. */
+  event(work: string, event: WorkEvent): Promise<Changed>;
+  /** Work another manager handed over goes on here, on the step it was at. */
+  adopt(
+    input: AdoptInput,
+  ): Promise<{ readonly work: string } | { readonly _tag: "NeverOpened" } | { readonly _tag: "NoSuchKind"; readonly why: string }>;
   board(): Promise<readonly BoardRow[]>;
   /** One piece of work, with what happened to it. Undefined when this manager has none by that id. */
   work(id: string): Promise<WorkRow | undefined>;

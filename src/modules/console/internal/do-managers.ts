@@ -2,10 +2,13 @@ import type { Did } from "~/modules/api/types.ts";
 import { doings } from "~/modules/doings/service.ts";
 import { playbooks } from "~/modules/playbook/service.ts";
 import { templates } from "~/modules/templates/service.ts";
-import type { Answers } from "~/modules/templates/types.ts";
+import type { Answers, Template } from "~/modules/templates/types.ts";
+import type { ConsoleDeps } from "../types.ts";
 import { tree } from "~/modules/tree/service.ts";
 import type { ManagerNode } from "~/modules/tree/types.ts";
 import { accountsOf, surroundings, wholeOf } from "./around.ts";
+import { foundAt } from "./place-found.ts";
+import { fromRepo } from "./try.ts";
 import type { Handler } from "./handlers.ts";
 import { chosenFrom, isChosen, managerModel } from "./model-choice.ts";
 import { savedTemplates, templatesOf } from "./templates.ts";
@@ -22,6 +25,19 @@ function answersOf(value: unknown): Answers {
   );
 }
 
+/** With only a place, what the place says answers the blanks the repo answers (how it is installed and tested), and what was said stays. */
+async function readFrom(c: ConsoleDeps, template: Template, given: Answers): Promise<Answers> {
+  const place = template.blanks.find((blank) => blank.is.a === "place" && given[blank.id] !== undefined);
+  const wanted = template.blanks.filter((blank) => fromRepo(blank) && given[blank.id] === undefined);
+  if (place === undefined || wanted.length === 0) return given;
+  const found = await foundAt(c, given[place.id] ?? "");
+  const read: Readonly<Record<string, string>> = { install: found.install, test: found.test };
+  return {
+    ...Object.fromEntries(wanted.flatMap(({ id }) => (read[id] === undefined || read[id] === "" ? [] : [[id, read[id]]]))),
+    ...given,
+  };
+}
+
 /** A manager made from a template: the blanks filled and checked, its own copy as version 1 in its own object, and its place in the tree. */
 const make: Handler = async (c, values) => {
   const template = (await templatesOf(c)).find(({ id }) => id === text(values["template"]));
@@ -32,7 +48,7 @@ const make: Handler = async (c, values) => {
   if (above === undefined) return refuse(`There is no manager "${aboveId}" to make it under.`);
   const whole = wholeOf(await accountsOf(c));
   const around = await surroundings(c, above === null ? whole : above.node.reach);
-  const given = answersOf(values["answers"]);
+  const given = await readFrom(c, template, answersOf(values["answers"]));
   const asked = template.blanks.some(({ id }) => id === "owner") ? { owner: c.who.id, ...given } : given;
   const filled = templates.fill(template, asked, around);
   if (filled._tag === "Problems") return { _tag: "Problems", problems: filled.problems };

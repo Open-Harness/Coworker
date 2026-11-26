@@ -167,6 +167,17 @@ export interface TakeInput {
   readonly answers: string;
 }
 
+/** What became of an event applied to a piece of work by someone outside it. */
+export type Changed = { readonly _tag: "Moved" | "Same" } | { readonly _tag: "Refused"; readonly why: string } | { readonly _tag: "Gone" };
+
+/** Work of another manager that was handed over: it goes on here, under a new id, with what it had. */
+export interface AdoptInput {
+  readonly from: Work;
+  /** The version of this manager's playbook it goes on under. */
+  readonly version: number;
+  readonly at: number;
+}
+
 export interface Working {
   /** Takes what intake decided on as a piece of work, once per item. */
   readonly take: (input: TakeInput) => Promise<{ readonly work: string } | { readonly _tag: "NoSuchKind"; readonly why: string }>;
@@ -176,6 +187,10 @@ export interface Working {
   readonly heard: (input: { readonly work: string; readonly item: Item }) => Promise<void>;
   /** Something happened that the work follows or a person said: it moves the work by that event, once by its key. `says`: how its page puts it. */
   readonly news: (input: { readonly work: string; readonly event: WorkEvent; readonly says?: string }) => Promise<void>;
+  /** One change of one piece of work by a person (the console): an event applied once by its key. */
+  readonly event: (work: string, event: WorkEvent) => Promise<Changed>;
+  /** Work handed over by another manager goes on here, on the step it was at, following what it followed. */
+  readonly adopt: (input: AdoptInput) => Promise<{ readonly work: string } | { readonly _tag: "NoSuchKind"; readonly why: string }>;
   /** Open work, as intake counts it. */
   readonly open: () => readonly OpenWork[];
   /** Does what is to be done now, for every piece of work, and says when to wake next. */

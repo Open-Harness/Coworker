@@ -37,5 +37,12 @@ export function remoteStore(send: Send, clock: Clock): Store {
       const { rows, next } = await ask({ op: "item.list", manager, ...query }, "item.list");
       return { rows, next };
     },
+    setManager: async (row) => void (await ask({ op: "manager.set", row }, "manager.set")),
+    reopen: async (manager) => void (await ask({ op: "item.reopen", manager }, "item.reopen")),
+    note: async (row) => void (await ask({ op: "activity.add", row }, "activity.add")),
+    activity: async (work) => (await ask({ op: "activity.list", work }, "activity.list")).rows,
+    addChat: async (chat) => void (await ask({ op: "chat.add", chat }, "chat.add")),
+    chats: async (by) => (await ask({ op: "chat.list", by }, "chat.list")).rows,
+    changed: async (reads) => void (await ask({ op: "changed", reads }, "changed")),
   };
 }

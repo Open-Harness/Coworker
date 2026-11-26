@@ -13,6 +13,7 @@ import { DECIDING_MIGRATIONS } from "./deciding-host.ts";
 import { FOLLOWING_MIGRATIONS } from "./following-host.ts";
 import { WORKSPACE_ASK_MIGRATIONS } from "./github-asks.ts";
 import { ASKS_MIGRATIONS } from "./asks-store.ts";
+import { MORE_MIGRATIONS } from "./console-more.ts";
 
 /** The object's own tables. Each migration runs once, in order, inside the object's storage. */
 const MIGRATIONS: readonly string[] = [
@@ -53,6 +54,7 @@ const MIGRATIONS: readonly string[] = [
   ...FOLLOWING_MIGRATIONS,
   ...WORKSPACE_ASK_MIGRATIONS,
   ...ASKS_MIGRATIONS,
+  ...MORE_MIGRATIONS,
 ];
 
 export function migrate(sql: SqlStorage): void {

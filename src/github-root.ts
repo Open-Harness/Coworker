@@ -47,11 +47,13 @@ export async function gitHubIn(request: Request, dependencies: GitHubIn): Promis
     return Response.json({ _tag: heard._tag }, { status: 202 });
   try {
     const rows = await object.consoleStore({ op: "manager.list" });
-    const hears =
-      "op" in rows && rows.op === "manager.list" ? rows.rows.filter((row) => row.hears.includes(place)).map(({ node }) => node.id) : [];
+    const listening = "op" in rows && rows.op === "manager.list" ? rows.rows.filter((row) => row.hears.includes(place)) : [];
+    const hears = listening.map(({ node }) => node.id);
+    // While every manager that hears the place is paused, what was asked of them is kept, and what was only overheard is not.
+    const paused = !listening.some(({ node }) => node.state === "runs");
     if (hears.length > 0 && heard.heard !== undefined) await object.consoleStore({ op: "github.hear", heard: heard.heard });
     // What only changes the state of a conversation is read from its records; what a person says is judged.
-    if (hears.length > 0 && heard._tag === "Item" && SPEECH.has(heard.item.event))
+    if (hears.length > 0 && heard._tag === "Item" && SPEECH.has(heard.item.event) && (!paused || heard.item.addressed))
       await object.consoleStore({ op: "item.keep", item: heard.item, trigger: "event", hears });
     return Response.json({ _tag: heard._tag === "Item" ? "Heard" : "Noise", hears }, { status: 202 });
   } catch (error) {

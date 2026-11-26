@@ -22,6 +22,14 @@ async function membersOf(control: Control, workspace: string): Promise<readonly 
   return members.map((one) => ({ id: personOf(one).id, email: one.email, name: personOf(one).name, role: ROLES[one.role] ?? "Member" }));
 }
 
+/** The live socket: the workspace's object holds it, and tells it which reads changed. Only for someone who has reached the workspace. */
+async function live(object: unknown, request: Request): Promise<Response> {
+  if (request.method !== "GET" || request.headers.get("Upgrade")?.toLowerCase() !== "websocket")
+    return says(426, "A WebSocket is required");
+  if (!isSameOrigin(request)) return says(403, "The socket was opened by another site");
+  return (object as { fetch(request: Request): Promise<Response> }).fetch(request);
+}
+
 export async function routeWs(control: Control, consoleFor: ConsoleFor, request: Request, found: RegExpExecArray): Promise<Response> {
   const [, named = "", path = ""] = found;
   const asked = decodeURIComponent(named);
@@ -38,6 +46,7 @@ export async function routeWs(control: Control, consoleFor: ConsoleFor, request:
   if (reached._tag !== "Reached") return says(404, "There is no such workspace.");
   const described = await reached.object.describe();
   if (described._tag !== "Found") return says(404, "There is no such workspace.");
+  if (path === "/live") return live(reached.object, request);
   const people = await membersOf(control, entry.workspaceId);
   const me = people.find(({ id }) => id === personOf(person).id) ?? {
     id: personOf(person).id,
@@ -53,6 +62,8 @@ export async function routeWs(control: Control, consoleFor: ConsoleFor, request:
     me,
     people,
     workspaces: control.workspaces,
+    auth: control.auth,
+    github: control.github,
   });
   const url = new URL(request.url);
   const call = { path: path === "" ? "/" : path, query: url.searchParams };

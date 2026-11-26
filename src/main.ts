@@ -223,6 +223,7 @@ export default {
         clock: tenantClockFrom(env),
         app: appSlugFrom(env) ?? null,
         mailDomain: mailDomainOf(env),
+        fetch: outsideFetch(env),
       }),
       control: () => controlFrom(env, request),
     })(request);

@@ -1,4 +1,5 @@
 import { answered } from "./internal/answered.ts";
+import { adopt } from "./internal/adopt.ts";
 import { apply, rearm } from "./internal/events.ts";
 import { drain } from "./internal/jobs.ts";
 import { heard, openOf, take } from "./internal/take.ts";
@@ -31,6 +32,17 @@ export function createWorking(c: WorkingDeps): Working {
     },
     answered: async (input) => {
       if (answered(c, input)) c.later(run());
+    },
+    event: async (work, event) => {
+      const moved = apply(c, work, event);
+      if (moved._tag === "Moved") c.later(run());
+      return moved._tag === "Refused" ? { _tag: "Refused", why: moved.why } : { _tag: moved._tag };
+    },
+    adopt: async (input) => {
+      const taken = await adopt(c, input);
+      if ("_tag" in taken) return taken;
+      c.later(run());
+      return taken;
     },
     heard: async ({ work, item }) => {
       await heard(c, work, item);

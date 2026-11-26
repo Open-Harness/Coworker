@@ -2,6 +2,7 @@ import type { AskAnswer, AskOp, Asking } from "~/modules/asking/types.ts";
 import type { Item } from "~/modules/intake/types.ts";
 import type { NotProvisioned } from "../types.ts";
 import { askingOf } from "./asks-host.ts";
+import { runStore } from "./console-store.ts";
 import { decidingOf } from "./deciding-host.ts";
 import { followingOf } from "./following-host.ts";
 import { SettingsHost } from "./settings-host.ts";
@@ -106,5 +107,41 @@ export abstract class DecidingHost<Env> extends SettingsHost<Env> {
     await super.alarm();
     await this.decide();
     await this.askTick();
+  }
+
+  /** Whether every one of these managers is paused (or gone), so that nothing of what they hear needs a judge. */
+  protected pausedAll(managers: readonly string[]): boolean {
+    const rows = runStore(
+      { sql: this.ctx.storage.sql, now: this.dependencies.clock.now(), id: this.dependencies.ids.next },
+      { op: "manager.list" },
+    );
+    return (
+      rows.op === "manager.list" && rows.rows.filter(({ node }) => managers.includes(node.id)).every(({ node }) => node.state !== "runs")
+    );
+  }
+
+  /** The live socket: a page that was let in by the Worker hears which reads changed, and asks them again. */
+  override async fetch(request: Request): Promise<Response> {
+    if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") return new Response(null, { status: 426 });
+    const pair = new WebSocketPair();
+    const [client, server] = [pair[0], pair[1]];
+    this.ctx.acceptWebSocket(server);
+    return new Response(null, { status: 101, webSocket: client });
+  }
+
+  override webSocketMessage(): void {
+    // The page says nothing: it only listens.
+  }
+
+  /** Every page that is listening is told which reads changed. */
+  protected tell(reads: readonly string[]): void {
+    const said = JSON.stringify({ reads: [...new Set(reads)] });
+    for (const socket of this.ctx.getWebSockets()) {
+      try {
+        socket.send(said);
+      } catch {
+        // A page that went away is not told.
+      }
+    }
   }
 }

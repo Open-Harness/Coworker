@@ -24,6 +24,13 @@ function memoryStore(): Store {
     addManager: async (row) => void managers.push(row),
     asks: async () => [],
     items: async () => ({ rows: items, next: null }),
+    setManager: async () => undefined,
+    reopen: async () => undefined,
+    note: async () => undefined,
+    activity: async () => [],
+    addChat: async () => undefined,
+    chats: async () => [],
+    changed: async () => undefined,
   };
 }
 
@@ -39,6 +46,8 @@ const nobody: ManagerStoreApi = {
   },
   heard: async () => undefined,
   answered: async () => undefined,
+  event: async () => ({ _tag: "Gone" }),
+  adopt: async () => ({ _tag: "NeverOpened" }),
   board: async () => [],
   news: async () => undefined,
   work: async () => undefined,
@@ -68,6 +77,8 @@ function deps(role: "Owner" | "Member" = "Owner"): ConsoleDeps {
       lost: async () => undefined,
       billing: async () => null,
       rename: async () => ({ _tag: "Renamed" }),
+      people: { role: async () => ({ _tag: "Done" }), remove: async () => ({ _tag: "Done" }) },
+      read: async () => ({ _tag: "Gone" }),
     },
     managers: { mint: () => ({ objectId: "o", store: nobody }), get: () => nobody },
     ours: [],

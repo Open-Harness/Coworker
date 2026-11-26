@@ -16,6 +16,8 @@ export interface ConsoleInput {
   readonly me: Member;
   readonly people: readonly Member[];
   readonly workspaces: Workspaces;
+  readonly auth: Auth;
+  readonly github: GitHubApi;
 }
 export type ConsoleFor = (input: ConsoleInput) => Console;
 
