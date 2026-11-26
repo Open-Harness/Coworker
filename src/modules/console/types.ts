@@ -9,6 +9,7 @@ import type { BillingView } from "~/modules/billing/types.ts";
 import type { Clock, Ids } from "~/modules/clock/types.ts";
 import type { ModelConnection } from "~/modules/models/types.ts";
 import type { ManagerStores } from "~/modules/manager-store/types.ts";
+import type { ChatRow } from "~/modules/talks/types.ts";
 import type { Template } from "~/modules/templates/types.ts";
 import type { ManagerNode } from "~/modules/tree/types.ts";
 import type { SecretInfo } from "~/modules/vault/types.ts";
@@ -41,6 +42,8 @@ export interface AuditRow {
   readonly why: string | null;
   readonly permission: "on" | "ask" | "off";
   readonly role: Role;
+  /** Who said yes to what the co-worker asked before doing it. */
+  readonly approvedBy?: string | null;
 }
 
 /** A manager of this workspace: its place in the tree, and where its own object is. */
@@ -104,15 +107,6 @@ export interface ActivityRow {
   readonly who: string;
   readonly at: number;
   readonly text: string;
-}
-
-/** A chat of one person with the co-worker, and what it was started with. */
-export interface ChatRow {
-  readonly id: string;
-  readonly by: string;
-  readonly title: string;
-  readonly at: number;
-  readonly lines: readonly { readonly id: string; readonly by: string; readonly at: number; readonly text: string }[];
 }
 
 /** What else the workspace's object keeps for the console, beside `StoreOp`. */
@@ -233,6 +227,8 @@ export interface ConsoleDeps {
   readonly mailbox: string;
   readonly clock: Clock;
   readonly ids: Ids;
+  /** Where a change comes from when it is not a page: the chat the co-worker is in. */
+  readonly via?: string;
 }
 
 /** The path after `/api/ws/<workspace>`, and what a request carries. */

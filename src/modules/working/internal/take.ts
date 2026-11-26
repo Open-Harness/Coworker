@@ -27,7 +27,8 @@ export async function take(
 ): Promise<{ readonly work: string } | { readonly _tag: "NoSuchKind"; readonly why: string }> {
   const id = `work_${item.id}`;
   if (c.store.work(id) !== undefined) return { work: id };
-  const from = refOf(item.thread) ?? { connector: item.account, account: item.account, place: item.place, id: item.thread };
+  const github = refOf(item.thread);
+  const from = github ?? { connector: item.trigger, account: item.account, place: item.place, id: item.thread };
   const kind = c.playbook(took.version)?.kinds.find((one) => one.id === took.kind);
   if (kind === undefined) return { _tag: "NoSuchKind", why: `There is no kind ${took.kind} in version ${took.version}.` };
   const at = c.clock.now();
@@ -37,7 +38,7 @@ export async function take(
     kind,
     version: took.version,
     title: item.title,
-    about: "",
+    about: github === undefined ? item.text : "",
     from,
     asked: item.actor.person ?? item.actor.name,
     answers,

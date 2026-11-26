@@ -6,6 +6,7 @@ import { accountsOf, personOf, rolled, whoOf } from "./around.ts";
 import { inboxItems } from "./inbox.ts";
 import { spendingParts } from "./spending.ts";
 import { settingOr } from "./settings-kept.ts";
+import { historyOf, notesOf, soulOf, talkingOf } from "./coworker-memory.ts";
 
 /* The shell and the pages that are about the person and the co-worker, before any manager has anything to say. */
 
@@ -93,17 +94,24 @@ export const chatsView = (): ChatsView => ({ chats: [] });
 const NEVER = ["Spend more than a manager's own limit", "Do what only a person may decide", "Say a secret"];
 
 export async function coworkerView(c: ConsoleDeps): Promise<CoworkerView> {
-  const [identity, perDay, parts] = await Promise.all([identityOf(c), settingOr(c.store, "perDay", 100), spendingParts(c)]);
+  const [identity, perDay, parts, notes, history, talking] = await Promise.all([
+    identityOf(c),
+    settingOr(c.store, "perDay", 100),
+    spendingParts(c),
+    notesOf(c),
+    historyOf(c),
+    talkingOf(c),
+  ]);
   const self = { id: "coworker", name: identity.name, is: "coworker", role: "Member", own: {} } as const;
   return {
     identity,
     offline: [],
     voice: "calm",
     aloud: false,
-    soul: `I am ${identity.name}, the co-worker of ${c.workspace.name}. I answer from what is on record, I do what you may do, and I stop before what is yours to decide.`,
+    soul: await soulOf(c, identity.name),
     never: NEVER,
     mayPropose: true,
-    talking: [],
+    talking,
     triggers: [],
     skills: [],
     setUp: {
@@ -116,7 +124,7 @@ export async function coworkerView(c: ConsoleDeps): Promise<CoworkerView> {
       drafts: 0,
       files: [],
     },
-    memory: [],
+    memory: notes,
     corrections: [],
     may: doings.all.map((one) => ({
       doing: one.id,
@@ -126,6 +134,6 @@ export async function coworkerView(c: ConsoleDeps): Promise<CoworkerView> {
       from: doings.may(one.id, self).why,
     })),
     spending: { whole: perDay, tellAt: 0.8, parts },
-    history: [],
+    history,
   };
 }
