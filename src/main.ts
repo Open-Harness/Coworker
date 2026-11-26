@@ -48,6 +48,7 @@ import { FAKE_GITHUB_SECRET } from "~/modules/github/testing.ts";
 import { faultyObjects, localJurisdictions } from "~/modules/workspaces/testing.ts";
 import { consoleFrom } from "./console-root.ts";
 import { gitHubIn } from "./github-root.ts";
+import { mailIn } from "./mail-root.ts";
 import { readOurs } from "./templates-root.ts";
 import { outsideFor } from "./working-root.ts";
 import type { Env } from "./env.ts";
@@ -144,17 +145,18 @@ const gitHubInFrom = (request: Request, env: Env): Promise<Response> =>
     removed: (installation, how) => gitHubInstallations(env.AUTH, tenantsFrom(env)).removed(installation, how),
   });
 
-/** Mail to `<manager>.<workspace>@<mail domain>`, from Email Routing, up to 25 MiB. */
-const emailSourceFrom = (env: Env) =>
-  email.source({
-    mailDomain: mailDomainOf(env),
-    sendFrom: sendFromOf(env),
-    maxBytes: 25 * 1_048_576,
-    authServId: present(env.DT_AUTHSERV_ID) ?? FAKE_AUTHSERV,
-    mailbox: workspaceAt(env.AUTH, tenantsFrom(env)),
-    files: filesFrom(env),
-    now: systemClock.now,
-  });
+/** Mail to `<workspace>@<mail domain>`, from Email Routing, up to 25 MiB: kept in that workspace's mailbox. */
+const mailInFrom = (env: Env) => (incoming: Parameters<typeof mailIn>[1]) =>
+  mailIn(
+    {
+      mailDomain: mailDomainOf(env),
+      maxBytes: 25 * 1_048_576,
+      authServId: present(env.DT_AUTHSERV_ID) ?? FAKE_AUTHSERV,
+      workspace: workspaceAt(env.AUTH, tenantsFrom(env)),
+      now: systemClock.now,
+    },
+    incoming,
+  );
 
 /** One container's object: its container starts for one command and is destroyed after it. */
 export class CommandBox extends BoxHost<Env> {}
@@ -199,9 +201,13 @@ export class ManagerStore extends ManagerStoreHost<Env> {
 const ours = readOurs((message) => console.error(message));
 
 export default {
-  /** Mail to a manager's address becomes a Trigger; Email Routing bounces what is rejected, with the reason. */
+  /** Every hour: a workspace that an Owner deleted thirty days ago is destroyed, its objects and its rows. */
+  scheduled: async (_event: ScheduledController, env: Env): Promise<void> => {
+    await controlFrom(env, new Request(present(env.DT_APP_URL) ?? "https://app.invalid/")).workspaces.removeDue(systemClock.now());
+  },
+  /** Mail to the workspace's address is kept in its mailbox; Email Routing bounces what is rejected, with the reason. */
   email: async (message: ForwardableEmailMessage, env: Env): Promise<void> => {
-    const received = await emailSourceFrom(env).receive({ from: message.from, to: message.to, raw: message.raw, rawSize: message.rawSize });
+    const received = await mailInFrom(env)({ from: message.from, to: message.to, raw: message.raw, rawSize: message.rawSize });
     // Awaited so a caller across RPC (a test) sees it land before the handler returns; a void result costs nothing.
     if (received._tag === "Rejected") await Promise.resolve(message.setReject(received.reason));
   },
@@ -209,10 +215,14 @@ export default {
     const { pathname } = new URL(request.url);
     if (pathname === "/in/github") return gitHubInFrom(request, env);
     if (env.DT_WORLD === "fake" && pathname === "/api/test/mail") return fakeMail(request);
-    if (env.DT_WORLD === "fake" && pathname === "/api/test/inbound-mail") return fakeInbound(request, emailSourceFrom(env));
+    if (env.DT_WORLD === "fake" && pathname === "/api/test/inbound-mail") return fakeInbound(request, mailInFrom(env));
     if (env.DT_WORLD === "fake" && pathname === "/api/test/lapse-invite") return lapseInvite(request, env.AUTH);
     if (env.DT_WORLD === "fake" && pathname === "/api/test/time")
-      return passTime(request, { workspace: workspaceById(env.AUTH, tenantsFrom(env)), stores: managerStoresFrom(env) });
+      return passTime(request, {
+        workspace: workspaceById(env.AUTH, tenantsFrom(env)),
+        stores: managerStoresFrom(env),
+        sweep: (now) => controlFrom(env, request).workspaces.removeDue(now),
+      });
     return createHttp({
       directory: () => env.DIRECTORY.getByName(DIRECTORY_NAME),
       workspace: (workspaceId) => env.WORKSPACES.getByName(workspaceId),

@@ -26,6 +26,19 @@ function given(mandate: Mandate | null, at: At, action: string): Permission {
   return found;
 }
 
+/**
+ * The tools of the MCP servers the mandate has on or ask. A server is an account of its own with its place `*`, and its tools were added without
+ * code: no agent lists them, so what the mandate gives is what is offered, wherever the work is.
+ */
+function servers(mandate: Mandate | null): { readonly tools: readonly string[]; readonly asks: readonly string[] } {
+  const [tools, asks]: [string[], string[]] = [[], []];
+  if (mandate === null || mandate.state !== "holds") return { tools, asks };
+  for (const grant of mandate.grants.filter(({ place }) => place === "*"))
+    for (const [action, may] of Object.entries(grant.may).filter(([name]) => name.startsWith("mcp_")))
+      (may === "on" ? tools : may === "ask" ? asks : []).push(action);
+  return { tools, asks };
+}
+
 function doing(agent: Own, mandate: Mandate | null, at: At): Offer {
   const tools: string[] = [];
   const asks: string[] = [];
@@ -37,7 +50,8 @@ function doing(agent: Own, mandate: Mandate | null, at: At): Offer {
       if (may === "ask") asks.push(tool);
     }
   }
-  return { tools, asks };
+  const more = servers(mandate);
+  return { tools: unique([...tools, ...more.tools]), asks: unique([...asks, ...more.asks]) };
 }
 
 /** Exactly what this agent may use: never more than its own list, and for connectors never more than the mandate has on or ask. */

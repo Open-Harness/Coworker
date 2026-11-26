@@ -1,5 +1,6 @@
 import type { Answer } from "~/modules/api/types.ts";
 import { connectors } from "~/modules/connectors/service.ts";
+import { mcp } from "~/modules/mcp/service.ts";
 import type { Who } from "~/modules/doings/types.ts";
 import type { Grant, Reach } from "~/modules/reach/types.ts";
 import type { Surroundings } from "~/modules/playbook/types.ts";
@@ -46,6 +47,8 @@ export interface Account {
   readonly since: number;
   /** Why it does not work, when it does not. */
   readonly says?: string;
+  /** An MCP server is an account that is not a connector: these are its tools, as a model names them. */
+  readonly tools?: readonly string[];
 }
 
 export async function accountsOf(c: ConsoleDeps): Promise<readonly Account[]> {
@@ -68,6 +71,20 @@ export async function accountsOf(c: ConsoleDeps): Promise<readonly Account[]> {
       places: [...new Set(lost.sources.map(({ repo }) => repo))],
       since: lost.at,
     });
+  const listed = await c.store.mcp({ is: "list" });
+  if (listed.is === "listed")
+    for (const {
+      server: { id, name, state, tools },
+    } of listed.held)
+      found.push({
+        id,
+        as: name,
+        works: state._tag === "Works",
+        ...(state._tag === "Failed" ? { says: state.why } : {}),
+        places: ["*"],
+        since: state.at,
+        tools: tools.map((one) => mcp.toolName(id, one.name)),
+      });
   return found;
 }
 
@@ -78,7 +95,9 @@ export const wholeOf = (accounts: readonly Account[]): Reach => ({
   grants: accounts.map((account): Grant => ({
     account: account.id,
     place: "*",
-    may: Object.fromEntries((connector(account.id)?.actions ?? []).map((action) => [action.id, "on" as const])),
+    may: Object.fromEntries(
+      (account.tools ?? (connector(account.id)?.actions ?? []).map(({ id }) => id)).map((action) => [action, "on" as const]),
+    ),
   })),
   limits: {},
 });
@@ -87,9 +106,9 @@ export async function surroundings(c: ConsoleDeps, above: Reach): Promise<Surrou
   const [accounts, connections] = await Promise.all([accountsOf(c), c.outside.connections()]);
   return {
     people: c.people.map(({ id }) => id),
-    accounts: accounts.map(({ id }) => ({
+    accounts: accounts.map(({ id, tools }) => ({
       id,
-      actions: (connector(id)?.actions ?? []).map((action) => action.id),
+      actions: tools ?? (connector(id)?.actions ?? []).map((action) => action.id),
       events: (connector(id)?.events ?? []).map((event) => event.id),
     })),
     skills: LIBRARY_SKILLS,

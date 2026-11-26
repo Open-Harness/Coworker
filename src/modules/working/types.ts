@@ -7,6 +7,8 @@ import type { Decision, Item, OpenWork } from "~/modules/intake/types.ts";
 import type { GitHubApi } from "~/modules/github/types.ts";
 import type { Playbook } from "~/modules/playbook/types.ts";
 import type { Ask } from "~/modules/asks/types.ts";
+import type { MailAnswer, MailCall } from "~/modules/mailing/types.ts";
+import type { McpAnswer, McpCall } from "~/modules/mcp-servers/types.ts";
 import type { ToDo, Work, WorkEvent } from "~/modules/work/types.ts";
 
 /*
@@ -126,6 +128,10 @@ export interface Outside {
   readonly fetch: typeof fetch;
   /** What waits for a person: kept, shown and answered by the workspace. It is asked again with the same id, never twice. */
   readonly asks: (op: AskOp) => Promise<AskAnswer>;
+  /** The workspace's mailbox: what a manager reads of it and sends from it, once by its key. */
+  readonly mail: (call: MailCall) => Promise<MailAnswer>;
+  /** The workspace's MCP servers: their tools, as a model is offered them, and one called by its name. */
+  readonly mcp: (call: McpCall) => Promise<McpAnswer>;
   /** A line in the workspace's audit log: what the manager did that a person had to say yes to. */
   readonly audit?: (line: AuditLine) => Promise<void>;
   /** The line written before the action said it was done turns out not to be: the action failed. Said of the same line, by its `at` and `action`. */

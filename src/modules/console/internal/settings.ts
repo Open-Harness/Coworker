@@ -7,7 +7,6 @@ import type {
   ConnectorsView,
   GeneralView,
   KeysView,
-  McpView,
   MeView,
   MembersView,
   SharedView,
@@ -70,7 +69,7 @@ export async function keysView(c: ConsoleDeps): Promise<KeysView> {
     choice: isChoice(choice) ? choice : null,
     // A model connection's key is in the vault as `model:<id>`: it is the connection's, and shown there.
     secrets: secrets
-      .filter(({ name }) => !name.startsWith("model:"))
+      .filter(({ name }) => !name.startsWith("model:") && !name.startsWith("mcp:"))
       .map(({ name, updatedAt }) => ({ name, of: "A secret of this workspace", usedBy: [], set: updatedAt, usedAt: 0 })),
   };
 }
@@ -151,20 +150,22 @@ const WHAT: Readonly<Record<string, string>> = {
 
 export async function connectorsView(c: ConsoleDeps): Promise<ConnectorsView> {
   const [accounts, rows] = await Promise.all([accountsOf(c), c.store.managers()]);
-  const states: AccountState[] = accounts.map((account) => {
-    const steps = connectors.all.find(({ id }) => id === account.id)?.setUp ?? [];
-    return {
-      account: account.id,
-      connector: account.id === "github" ? "github" : "email",
-      as: account.as,
-      holder: { workspace: true },
-      works: account.works,
-      says: account.says ?? "Works",
-      since: account.since,
-      steps: steps.map((step) => ({ step, state: { _tag: "Works", says: "Done" } })),
-      places: account.places,
-    };
-  });
+  const states: AccountState[] = accounts
+    .filter(({ tools }) => tools === undefined)
+    .map((account) => {
+      const steps = connectors.all.find(({ id }) => id === account.id)?.setUp ?? [];
+      return {
+        account: account.id,
+        connector: account.id === "github" ? "github" : "email",
+        as: account.as,
+        holder: { workspace: true },
+        works: account.works,
+        says: account.says ?? "Works",
+        since: account.since,
+        steps: steps.map((step) => ({ step, state: { _tag: "Works", says: "Done" } })),
+        places: account.places,
+      };
+    });
   return {
     connectors: connectors.all.map(({ id, name }) => ({ id, name, what: WHAT[id] ?? "" })),
     accounts: states.map((state) => ({
@@ -194,7 +195,6 @@ export async function githubView(c: ConsoleDeps): Promise<ConnectGithubView> {
   };
 }
 
-export const mcpView = (): McpView => ({ servers: [] });
 export const sharedView = (): SharedView => ({ agents: [], skills: [], environments: [] });
 
 export async function meView(c: ConsoleDeps): Promise<MeView> {

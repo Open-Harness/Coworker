@@ -23,7 +23,7 @@ function reopen(sql: SqlStorage, manager: string): void {
 }
 
 /** The console's other calls. `changed` is told to the pages by the object, which holds their sockets. */
-export function runMore(sql: SqlStorage, now: number, op: MoreOp): MoreAnswer {
+export function runMore(sql: SqlStorage, now: number, op: Exclude<MoreOp, { readonly op: "mcp" }>): MoreAnswer {
   switch (op.op) {
     case "manager.set":
       sql.exec("UPDATE console_manager SET row = ? WHERE id = ?", JSON.stringify(op.row satisfies ManagerRow), op.row.node.id);

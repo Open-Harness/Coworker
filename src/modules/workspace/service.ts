@@ -10,6 +10,7 @@ import { LookingHost } from "./internal/looking-host.ts";
 import { allowsJoin, readJoinSettings, setApprovedDomains, setInviteLinks } from "./internal/joining.ts";
 import { eventsOf, follow, logEvent, readPolicy, writePolicy } from "./internal/hearing.ts";
 import type { Handle, Policy, Routed, Trigger } from "~/modules/triggers/types.ts";
+import type { ManagerRow } from "~/modules/console/types.ts";
 import type { Us } from "~/modules/github-events/types.ts";
 import { addHandle, people } from "./internal/people.ts";
 import type { GitHubConnection, Installation, LostConnection, RepoSource } from "~/modules/github/types.ts";
@@ -224,6 +225,12 @@ export class WorkspaceHost<Env = unknown> extends LookingHost<Env> implements Wo
   async destroy(): Promise<{ readonly _tag: "Destroyed" }> {
     const workspace = readProfile(this.ctx.storage.sql);
     if (workspace !== undefined) await destroyManagers(this.ctx.storage.sql, workspace, this.dependencies.managers);
+    // The new managers' own objects hold their playbooks and their work: they go with the workspace.
+    for (const { row } of this.ctx.storage.sql
+      .exec("SELECT row FROM console_manager")
+      .toArray()
+      .map((one) => ({ row: JSON.parse(String(one["row"])) as ManagerRow })))
+      await this.dependencies.stores.get(row.objectId, row.region).destroy();
     await this.ctx.storage.deleteAlarm();
     await this.ctx.storage.deleteAll();
     migrate(this.ctx.storage.sql);

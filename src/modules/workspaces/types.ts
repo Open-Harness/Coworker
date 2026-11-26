@@ -125,7 +125,16 @@ export interface Workspaces {
   readonly exportData: (userId: string, workspaceId: string) => Promise<ExportResult>;
   /** Owners only. Destroys the object (and with it the data key), then the D1 rows. */
   readonly remove: (userId: string, workspaceId: string) => Promise<RemoveWorkspaceResult>;
+  /** Owners only: the workspace is destroyed at `at` (a sweep does it); until then it is as it was. */
+  readonly scheduleRemoval: (userId: string, workspaceId: string, at: number) => Promise<ScheduleResult>;
+  /** Destroys every workspace whose day has come, as `remove` does. Answers how many. */
+  readonly removeDue: (now: number) => Promise<number>;
 }
+
+export type ScheduleResult =
+  | { readonly _tag: "Scheduled"; readonly at: number }
+  | { readonly _tag: "NotMember" }
+  | { readonly _tag: "NotOwner" };
 
 /** What an Owner changes on the General screen. A field left out stays as it is; `defaultModel: null` clears it. */
 export interface UpdateGeneral {

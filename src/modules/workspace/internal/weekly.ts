@@ -27,7 +27,14 @@ export async function look(h: Looking): Promise<void> {
     who: { id: "coworker", email: "", name: "Juno", role: "Owner" },
     people: [],
     store: remoteStore(
-      async (op) => (op.op === "github.hear" ? { op: "github.hear" } : runStore({ sql: h.sql, now: clock.now(), id: ids.next }, op)),
+      async (op) =>
+        op.op === "github.hear"
+          ? { op: "github.hear" }
+          : op.op === "mail"
+            ? { op: "mail", answer: { is: "refused", why: "The co-worker does not write mail in its weekly look." } }
+            : op.op === "mcp"
+              ? { op: "mcp", answer: { is: "failed", why: "The co-worker does not use servers in its weekly look." } }
+              : runStore({ sql: h.sql, now: clock.now(), id: ids.next }, op),
       clock,
     ),
     outside: {
@@ -41,6 +48,7 @@ export async function look(h: Looking): Promise<void> {
       },
       read: async () => ({ _tag: "Gone" }),
       billing: async (): Promise<BillingView | null> => null,
+      retire: async () => ({ _tag: "Refused", why: "The co-worker does not delete the workspace." }),
       rename: async () => ({ _tag: "Refused", why: "The co-worker does not rename the workspace by itself." }),
       call: (path, body) => h.modelCall({ path, body, headers: { accept: "text/event-stream" } }),
     },

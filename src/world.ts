@@ -7,7 +7,6 @@ import { unbilled } from "~/modules/billing/service.ts";
 import { billingWorld } from "~/modules/billing/testing.ts";
 import type { Billing } from "~/modules/billing/types.ts";
 import { eml, FAKE_AUTHSERV, fakeFiles } from "~/modules/email/testing.ts";
-import type { EmailSource } from "~/modules/email/types.ts";
 import { appApi } from "~/modules/github/service.ts";
 import { FAKE_APP_SLUG, gitHubWorld } from "~/modules/github/testing.ts";
 import type { GitHubApi } from "~/modules/github/types.ts";
@@ -63,23 +62,32 @@ export const fakeMail = (request: Request): Response =>
 
 /**
  * Mail arriving as Email Routing would hand it to the Worker, so a browser test can send a manager mail. The body is
- * `{from, to, subject, text, messageId?, dkim?}`; it answers what the Source made of it.
+ * `{from, to, subject, text, messageId?, inReplyTo?, dkim?}`, or `{from, to, raw}`: a whole message, taken as it is, `from` and `to`
+ * being the envelope. It answers what the mailbox made of it.
  */
-export async function fakeInbound(request: Request, source: EmailSource): Promise<Response> {
+export async function fakeInbound(
+  request: Request,
+  receive: (mail: { readonly from: string; readonly to: string; readonly raw: string; readonly rawSize: number }) => Promise<unknown>,
+): Promise<Response> {
   const body: unknown = await request.json().catch(() => undefined);
   const field = (key: string): string => {
     const value = typeof body === "object" && body !== null ? (body as Record<string, unknown>)[key] : undefined;
     return typeof value === "string" ? value : "";
   };
-  const raw = eml({
-    from: field("from"),
-    to: field("to"),
-    subject: field("subject"),
-    text: field("text"),
-    messageId: field("messageId") || `<${crypto.randomUUID()}@fake.test>`,
-    dkim: !(typeof body === "object" && body !== null && (body as Record<string, unknown>)["dkim"] === false),
-  });
-  return Response.json(await source.receive({ from: field("from"), to: field("to"), raw, rawSize: raw.length }));
+  const whole = field("raw");
+  const raw =
+    whole !== ""
+      ? whole
+      : eml({
+          from: field("from"),
+          to: field("to"),
+          subject: field("subject"),
+          text: field("text"),
+          messageId: field("messageId") || `<${crypto.randomUUID()}@fake.test>`,
+          dkim: !(typeof body === "object" && body !== null && (body as Record<string, unknown>)["dkim"] === false),
+          ...(field("inReplyTo") === "" ? {} : { headers: { "In-Reply-To": field("inReplyTo") } }),
+        });
+  return Response.json(await receive({ from: field("from"), to: field("to"), raw, rawSize: raw.length }));
 }
 
 /** Makes an invite seven days old, so a browser test can open one that expired. */
@@ -164,7 +172,12 @@ export const agentFrom = (env: Env): Agent =>
  */
 export async function passTime(
   request: Request,
-  deps: { readonly workspace: (id: string) => Promise<WorkspaceApi | undefined>; readonly stores: ManagerStores },
+  deps: {
+    readonly workspace: (id: string) => Promise<WorkspaceApi | undefined>;
+    readonly stores: ManagerStores;
+    /** What came due in the control plane at this time: a workspace that was deleted, thirty days on. */
+    readonly sweep: (now: number) => Promise<unknown>;
+  },
 ): Promise<Response> {
   const body: unknown = await request.json().catch(() => undefined);
   const asked = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
@@ -177,5 +190,6 @@ export async function passTime(
   const rows = await object.consoleStore({ op: "manager.list" });
   if ("op" in rows && rows.op === "manager.list")
     await Promise.all(rows.rows.map(({ objectId, region }) => deps.stores.get(objectId, region).tick()));
+  await deps.sweep(worldClock.now());
   return Response.json({ now: worldClock.now() });
 }

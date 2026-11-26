@@ -19,7 +19,6 @@ import {
   generalView,
   githubView,
   keysView,
-  mcpView,
   meView,
   membersView,
   sharedView,
@@ -31,6 +30,8 @@ import { threadsView } from "./threads-view.ts";
 import { coworkerView, homeView, shellView } from "./shell.ts";
 import { fillView, templatesView } from "./templates.ts";
 import { readSetUp, sayInSetUp, startSetUp } from "./set-up.ts";
+import { conversationView, mailView, writeIn } from "./mail.ts";
+import { addServer, mcpView } from "./mcp.ts";
 
 /* The paths of `api/types.ts`, each to the view it answers. A path that is not here is 404 in words. */
 
@@ -56,7 +57,7 @@ const READS: readonly (readonly [RegExp, Part])[] = [
   [/^\/settings\/billing$/u, async (c) => ok(await billingView(c))],
   [/^\/settings\/connectors$/u, async (c) => ok(await connectorsView(c))],
   [/^\/settings\/connectors\/github$/u, async (c) => ok(await githubView(c))],
-  [/^\/settings\/mcp-servers$/u, () => ok(mcpView())],
+  [/^\/settings\/mcp-servers$/u, async (c) => ok(await mcpView(c))],
   [/^\/settings\/shared$/u, () => ok(sharedView())],
   [/^\/settings\/me$/u, async (c) => ok(await meView(c))],
   [/^\/m\/([^/]+)$/u, (c, [id]) => managerOverview(c, id ?? "")],
@@ -69,6 +70,8 @@ const READS: readonly (readonly [RegExp, Part])[] = [
   [/^\/m\/([^/]+)\/playbook$/u, (c, [id], q) => playbookView(c, id ?? "", Number(q.get("version")) || undefined)],
   [/^\/m\/([^/]+)\/intake$/u, (c, [id], q) => intakeView(c, id ?? "", q)],
   [/^\/m\/([^/]+)\/versions$/u, (c, [id]) => versionsView(c, id ?? "")],
+  [/^\/m\/([^/]+)\/connectors\/email$/u, (c, [id]) => mailView(c, id ?? "")],
+  [/^\/m\/([^/]+)\/connectors\/email\/(.+)$/u, (c, [id, conversation]) => conversationView(c, id ?? "", conversation ?? "")],
 ];
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
@@ -102,6 +105,9 @@ export async function write({ path, body }: Call, c: ConsoleDeps): Promise<Answe
   if (tried !== null) return tryTemplate(c, decodeURIComponent(tried[1] ?? ""), body);
   const asked = /^\/inbox\/([^/]+)$/u.exec(path);
   if (asked !== null) return answering(c, decodeURIComponent(asked[1] ?? ""), body);
+  const inMail = /^\/m\/([^/]+)\/connectors\/([^/]+)\/(.+)$/u.exec(path);
+  if (inMail !== null) return writeIn(c, decodeURIComponent(inMail[1] ?? ""), inMail[2] ?? "", decodeURIComponent(inMail[3] ?? ""), body);
+  if (path === "/settings/mcp-servers") return addServer(c, body);
   if (path === "/set-up") return startSetUp(c, body);
   const inSetUp = /^\/set-up\/([^/]+)$/u.exec(path);
   if (inSetUp !== null) return sayInSetUp(c, decodeURIComponent(inSetUp[1] ?? ""), body);

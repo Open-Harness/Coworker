@@ -203,6 +203,11 @@ export class ManagerStoreHost<Env = unknown> extends DurableObject<Env> implemen
     return workStore(this.ctx.storage).kept(kind);
   }
 
+  async destroy(): Promise<void> {
+    await this.ctx.storage.deleteAlarm();
+    await this.ctx.storage.deleteAll();
+  }
+
   override async alarm(): Promise<void> {
     try {
       await this.#works()?.due();

@@ -14,6 +14,8 @@ import { FOLLOWING_MIGRATIONS } from "./following-host.ts";
 import { WORKSPACE_ASK_MIGRATIONS } from "./github-asks.ts";
 import { ASKS_MIGRATIONS } from "./asks-store.ts";
 import { MORE_MIGRATIONS } from "./console-more.ts";
+import { MAILING_MIGRATIONS } from "./mailing-host.ts";
+import { MCP_MIGRATIONS } from "./mcp-host.ts";
 
 /** The object's own tables. Each migration runs once, in order, inside the object's storage. */
 const MIGRATIONS: readonly string[] = [
@@ -57,6 +59,8 @@ const MIGRATIONS: readonly string[] = [
   ...MORE_MIGRATIONS,
   ...KEPT_MIGRATIONS,
   ...AUDIT_MIGRATIONS,
+  ...MAILING_MIGRATIONS,
+  ...MCP_MIGRATIONS,
 ];
 
 export function migrate(sql: SqlStorage): void {

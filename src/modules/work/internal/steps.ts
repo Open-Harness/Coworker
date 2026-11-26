@@ -10,9 +10,13 @@ export function indexOfStep(kind: Kind, id: string): number {
   return kind.steps.findIndex((step) => step.id === id);
 }
 
-/** A step by an agent whose leaves are not empty and all shown by agents: someone fresh looks, and nothing is done in it. */
+/**
+ * A step by an agent whose leaves are not empty and all shown by agents: someone fresh looks, and nothing is done in it. Not when
+ * another agent is named to check it (`checkedBy`): then the step's own agent does, and that one looks.
+ */
 export function isChecking(step: Step): boolean {
-  return "agent" in step.by && step.leaves.length > 0 && step.leaves.every((leave) => leave.by === "agent");
+  const another = "agent" in step.checkedBy && "agent" in step.by && step.checkedBy.agent !== step.by.agent;
+  return "agent" in step.by && !another && step.leaves.length > 0 && step.leaves.every((leave) => leave.by === "agent");
 }
 
 /** The agent that does the work before a step: the last doing step before it. The manager's own hands. */

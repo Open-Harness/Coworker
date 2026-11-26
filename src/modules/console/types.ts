@@ -3,6 +3,8 @@ import type { Ask } from "~/modules/asks/types.ts";
 import type { AskAnswer, AskOp } from "~/modules/asking/types.ts";
 import type { Role } from "~/modules/doings/types.ts";
 import type { Heard } from "~/modules/following/types.ts";
+import type { MailAnswer, MailCall } from "~/modules/mailing/types.ts";
+import type { McpAnswer, McpCall } from "~/modules/mcp-servers/types.ts";
 import type { Decision, Item } from "~/modules/intake/types.ts";
 import type { GitHubConnection, LostConnection } from "~/modules/github/types.ts";
 import type { BillingView } from "~/modules/billing/types.ts";
@@ -80,6 +82,7 @@ export type StoreOp =
   | { readonly op: "item.keep"; readonly item: Omit<Item, "id" | "trigger">; readonly trigger: string; readonly hears: readonly string[] }
   /** A delivery of GitHub was heard: what follows a conversation keeps its records, and what became true is made news. */
   | { readonly op: "github.hear"; readonly heard: Heard }
+  | { readonly op: "mail"; readonly call: MailCall }
   | { readonly op: "ask.list" }
   | {
       readonly op: "item.list";
@@ -116,24 +119,25 @@ export type MoreOp =
   | { readonly op: "chat.add"; readonly chat: ChatRow }
   | { readonly op: "chat.list"; readonly by: string }
   /** These reads changed: every page that has a live socket open is told. */
-  | { readonly op: "changed"; readonly reads: readonly string[] };
+  | { readonly op: "changed"; readonly reads: readonly string[] }
+  | { readonly op: "mcp"; readonly call: McpCall };
 
 export type MoreAnswer =
   | { readonly op: "manager.set" | "item.reopen" | "activity.add" | "chat.add" | "changed" }
   | { readonly op: "activity.list"; readonly rows: readonly ActivityRow[] }
-  | { readonly op: "chat.list"; readonly rows: readonly ChatRow[] };
+  | { readonly op: "chat.list"; readonly rows: readonly ChatRow[] }
+  | { readonly op: "mcp"; readonly answer: McpAnswer };
 
 export type StoreAnswer =
   | { readonly op: "claim"; readonly is: "yours" | "busy" | "done"; readonly did?: Did }
-  | { readonly op: "settle" | "audit.add" | "audit.failed" | "setting.set" | "manager.add" }
+  | { readonly op: "settle" | "audit.add" | "audit.failed" | "setting.set" | "manager.add" | "github.hear" | "kept.put" | "message.add" }
+  | { readonly op: "mail"; readonly answer: MailAnswer }
   | { readonly op: "audit.list"; readonly lines: readonly AuditRow[]; readonly next: string | null }
   | { readonly op: "setting.get"; readonly value: unknown }
   | { readonly op: "manager.list"; readonly rows: readonly ManagerRow[] }
   | { readonly op: "item.keep"; readonly row: ItemRow; readonly isNew: boolean }
-  | { readonly op: "github.hear" }
   | { readonly op: "ask.list"; readonly asks: readonly Ask[] }
   | { readonly op: "item.list"; readonly rows: readonly ItemRow[]; readonly next: string | null }
-  | { readonly op: "kept.put" | "message.add" }
   | { readonly op: "kept.list"; readonly values: readonly unknown[] }
   | { readonly op: "message.list"; readonly messages: readonly unknown[] }
   | MoreAnswer;
@@ -143,12 +147,9 @@ export interface Store {
   readonly claim: (key: string, doing: string) => Promise<{ readonly is: "yours" | "busy" } | { readonly is: "done"; readonly did: Did }>;
   readonly settle: (key: string, did: Did) => Promise<void>;
   readonly audit: (row: Omit<AuditRow, "id">) => Promise<void>;
-  readonly auditLines: (query: {
-    readonly by: string | null;
-    readonly outcome: string | null;
-    readonly before: string | null;
-    readonly limit: number;
-  }) => Promise<{ readonly lines: readonly AuditRow[]; readonly next: string | null }>;
+  readonly auditLines: (
+    query: Omit<Extract<StoreOp, { readonly op: "audit.list" }>, "op">,
+  ) => Promise<{ readonly lines: readonly AuditRow[]; readonly next: string | null }>;
   readonly setting: (name: string) => Promise<unknown>;
   readonly set: (name: string, value: unknown) => Promise<void>;
   readonly managers: () => Promise<readonly ManagerRow[]>;
@@ -173,6 +174,8 @@ export interface Store {
   readonly kept: (kind: string) => Promise<readonly unknown[]>;
   readonly messages: (thread: string) => Promise<readonly unknown[]>;
   readonly addMessage: (thread: string, message: unknown) => Promise<void>;
+  readonly mail: (call: MailCall) => Promise<MailAnswer>;
+  readonly mcp: (call: McpCall) => Promise<McpAnswer>;
 }
 
 /** What is outside the workspace's object that the console needs of it. */
@@ -186,6 +189,8 @@ export interface Outside {
   readonly billing: () => Promise<BillingView | null>;
   /** Owners: the workspace's name changes in the directory, the object and the organization together. */
   readonly rename: (name: string) => Promise<{ readonly _tag: "Renamed" } | { readonly _tag: "Refused"; readonly why: string }>;
+  /** Owners: the workspace is removed for good at this moment, and until then it is as it was. */
+  readonly retire: (at: number) => Promise<{ readonly _tag: "Scheduled" } | { readonly _tag: "Refused"; readonly why: string }>;
   /** Owners: a person's role, or their seat. What they lent ends with it. */
   readonly people: {
     readonly role: (person: string, role: Role) => Promise<{ readonly _tag: "Done" } | { readonly _tag: "Refused"; readonly why: string }>;
@@ -205,13 +210,7 @@ export interface Outside {
 }
 
 export interface ConsoleDeps {
-  readonly workspace: {
-    readonly id: string;
-    readonly name: string;
-    readonly address: string;
-    readonly region: Region;
-    readonly since: number;
-  };
+  readonly workspace: Readonly<{ id: string; name: string; address: string; region: Region; since: number }>;
   readonly who: Member;
   readonly people: readonly Member[];
   readonly store: Store;

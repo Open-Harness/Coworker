@@ -135,6 +135,11 @@ export abstract class VaultHost<Env> extends DurableObject<Env> {
     return openModels({ sql, vault: this.#vault(), clock, ids, fetch, defaultPick: () => defaultModelOf(sql) });
   }
 
+  /** The same, for what is built on this object. */
+  protected vault(): Vault {
+    return this.#vault();
+  }
+
   /** Opened per call: the vault keeps no key and no value between calls. */
   #vault(): Vault {
     const { sql } = this.ctx.storage;

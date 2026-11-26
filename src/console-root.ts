@@ -41,6 +41,10 @@ export const consoleFrom =
           return "_tag" in billed ? null : billed;
         },
         call: (path, body) => object.modelCall({ path, body, headers: { accept: "text/event-stream" } }),
+        retire: async (at) => {
+          const scheduled = await workspaces.scheduleRemoval(person.userId, entry.workspaceId, at);
+          return scheduled._tag === "Scheduled" ? { _tag: "Scheduled" } : { _tag: "Refused", why: "Only an Owner deletes a workspace." };
+        },
         rename: async (name) => {
           const renamed = await workspaces.updateGeneral(person.userId, entry.workspaceId, { name });
           return renamed._tag === "Updated"

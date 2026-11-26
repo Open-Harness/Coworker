@@ -35,6 +35,8 @@ function memoryStore(): Store {
     kept: async () => [],
     messages: async () => [],
     addMessage: async () => undefined,
+    mail: async () => ({ is: "refused", why: "no mailbox" }),
+    mcp: async () => ({ is: "failed", why: "no servers" }),
   };
 }
 
@@ -58,6 +60,7 @@ const nobody: ManagerStoreApi = {
   asks: async () => [],
   usage: async () => [],
   tick: async () => undefined,
+  destroy: async () => undefined,
   keep: async () => undefined,
   kept: async () => [],
   save: async () => {
@@ -83,6 +86,7 @@ function deps(role: "Owner" | "Member" = "Owner"): ConsoleDeps {
       lost: async () => undefined,
       billing: async () => null,
       rename: async () => ({ _tag: "Renamed" }),
+      retire: async () => ({ _tag: "Scheduled" }),
       people: { role: async () => ({ _tag: "Done" }), remove: async () => ({ _tag: "Done" }) },
       read: async () => ({ _tag: "Gone" }),
       call: async () => new Response("no model", { status: 503 }),
