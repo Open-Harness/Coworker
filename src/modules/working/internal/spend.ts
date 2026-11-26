@@ -1,6 +1,7 @@
 import { choosing } from "~/modules/choosing/service.ts";
 import type { Limit, ModelOn, Usage } from "~/modules/choosing/types.ts";
 import type { ThreadRow, WorkingDeps } from "../types.ts";
+import { raisedOf } from "./answered.ts";
 import { apply } from "./events.ts";
 
 const TELL_AT = 0.8;
@@ -30,8 +31,10 @@ export function spend(
   });
   const { dollars } = c.store.spendOf(row.work);
   const work = c.store.work(row.work);
+  const perWork = work?.mandate.limits.perWork;
+  // Each time a person let it go on, it may spend its limit once more.
   const limits: readonly Limit[] =
-    work?.mandate.limits.perWork === undefined ? [] : [{ is: "work", most: work.mandate.limits.perWork, spent: dollars, tellAt: TELL_AT }];
+    perWork === undefined ? [] : [{ is: "work", most: perWork * (1 + raisedOf(c, row.work)), spent: dollars, tellAt: TELL_AT }];
   const room = choosing.room(limits);
   const over = room._tag === "Over" ? room.is : null;
   apply(c, row.work, { key: `spent:${call}`, at: c.clock.now(), is: "spent", cost: dollars, over });

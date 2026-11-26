@@ -31,12 +31,20 @@ export async function headOf(c: ConsoleDeps, open: Open): Promise<ManagerHead> {
   const nodes = (await c.store.managers()).map(({ node }) => node);
   const now = rolled(nodes).find(({ id }) => id === open.row.node.id) ?? idle(open.row.node);
   const latest = (await open.store.version())?.number ?? open.version.number;
+  const perDay = open.playbook?.reach.limits.perDay;
+  const spent = perDay === undefined || perDay <= 0 ? 0 : ((await open.store.hearing())?.spent ?? 0);
+  const over = perDay !== undefined && perDay > 0 && spent >= perDay;
   return {
     id: open.row.node.id,
     name: open.row.node.name,
     above: open.row.node.above,
     is: now.is,
-    now: open.row.node.state === "paused" ? "Paused" : "Waiting for something to come in",
+    now:
+      open.row.node.state === "paused"
+        ? "Paused"
+        : over
+          ? `Reached its limit for today (${perDay} dollars): it takes nothing on, and keeps what comes in, until tomorrow`
+          : "Waiting for something to come in",
     version: latest,
   };
 }

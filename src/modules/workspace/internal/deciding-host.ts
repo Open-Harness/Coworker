@@ -43,9 +43,10 @@ export interface Host {
   readonly dependencies: WorkspaceDependencies;
   readonly connections: () => Promise<readonly ModelConnection[]>;
   readonly modelCall: (call: ModelCall) => Promise<Response>;
+  readonly answered: (item: Item) => Promise<{ readonly ask: string; readonly work: string | null } | undefined>;
 }
 
-export function decidingOf({ sql, dependencies, connections, modelCall }: Host): Deciding {
+export function decidingOf({ sql, dependencies, connections, modelCall, answered }: Host): Deciding {
   const { stores, clock, github, fetch } = dependencies;
   const models = async (): Promise<Models> => {
     const row = sql.exec("SELECT value FROM console_setting WHERE name = 'choice'").toArray()[0];
@@ -65,6 +66,7 @@ export function decidingOf({ sql, dependencies, connections, modelCall }: Host):
     models,
     call: (path, body) => modelCall({ path, body, headers: { accept: "text/event-stream" } }),
     clock,
+    answered,
     standing: async (item) => {
       const installation = connection(sql).installation?.id;
       if (item.account !== "github" || item.actor.bot || installation === undefined) return undefined;

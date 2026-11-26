@@ -46,7 +46,11 @@ export const issues: Handler = (payload, at) => {
     why: `an issue was ${at.action}`,
     numbers: [item.number],
     who: at.sender,
-    addressed: (at.action === "labeled" && isOurLabel(label, at.us)) || (body && speaksTo(item.body, at.us)),
+    // An issue opened with our label on it speaks to us as the label does, and is not heard a second time when the label event follows.
+    addressed:
+      (at.action === "labeled" && isOurLabel(label, at.us)) ||
+      (at.action === "opened" && item.labels.some((name) => isOurLabel(name, at.us))) ||
+      (body && speaksTo(item.body, at.us)),
     title: item.title,
     text: item.body,
     same: `issue:${item.number}:${at.action}:${item.at}:${label ?? ""}`,

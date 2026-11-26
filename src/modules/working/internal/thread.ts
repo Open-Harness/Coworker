@@ -1,4 +1,4 @@
-import type { WorkingDeps } from "../types.ts";
+import type { Message, WorkingDeps } from "../types.ts";
 import { agentOf } from "./brief.ts";
 import { completion } from "~/modules/completion/service.ts";
 import { spend } from "./spend.ts";
@@ -7,7 +7,13 @@ import type { Call } from "./tool.ts";
 
 /* One agent's conversation, as far as it can go: ask the model, do what it called, ask again; until it ends its part, has nothing more to say, or must wait. */
 
-export type Turned = { readonly _tag: "Ended" } | { readonly _tag: "Idle" } | { readonly _tag: "Waits"; readonly why: string };
+export type Turned =
+  | { readonly _tag: "Ended" }
+  | { readonly _tag: "Idle" }
+  /** `model`: it waits because this model did not answer. */
+  | { readonly _tag: "Waits"; readonly why: string; readonly model?: string }
+  /** It asked a person at a call, and goes on from there when it is answered. */
+  | { readonly _tag: "Parked" };
 
 const MOST_CALLS = 80;
 const branchOf = (work: string): string => `co-worker/${work}`;
@@ -20,6 +26,16 @@ const parsed = (text: string): unknown => {
     return Symbol.for("not json");
   }
 };
+
+/** The calls of the last thing the model said that have no result yet. */
+export function pendingOf(
+  messages: readonly Message[],
+): readonly { readonly id: string; readonly function: { readonly name: string; readonly arguments: string } }[] {
+  const last = messages.findLast((message) => message.role === "assistant");
+  return last?.role === "assistant"
+    ? (last.tool_calls ?? []).filter((one) => !messages.some((message) => message.role === "tool" && message.tool_call_id === one.id))
+    : [];
+}
 
 export async function turn(c: WorkingDeps, id: string): Promise<Turned> {
   for (let calls = 0; calls < MOST_CALLS; calls += 1) {
@@ -49,6 +65,7 @@ export async function turn(c: WorkingDeps, id: string): Promise<Turned> {
               ? ({ _tag: "Said", text: `The arguments of ${one.function.name} were not JSON.`, ok: false } as const)
               : await tool.run(call, args);
         if (result._tag === "Waits") return { _tag: "Waits", why: result.why };
+        if (result._tag === "Parks") return { _tag: "Parked" };
         c.store.addMessage(id, { role: "tool", tool_call_id: one.id, content: result.text });
         if (result._tag === "Ends") return { _tag: "Ended" };
       }
@@ -65,7 +82,11 @@ export async function turn(c: WorkingDeps, id: string): Promise<Turned> {
       tools: specs,
     });
     if (replied._tag === "Failed")
-      return { _tag: "Waits", why: `The model did not answer${replied.status === 0 ? "" : ` (${replied.status})`}: ${replied.says}` };
+      return {
+        _tag: "Waits",
+        why: `The model ${chosen.model} did not answer${replied.status === 0 ? "" : ` (${replied.status})`}: ${replied.says}`,
+        model: chosen.model,
+      };
     const callId = `${id}:${messages.length}`;
     c.store.transaction(() => {
       c.store.addMessage(id, replied.message);

@@ -1,3 +1,4 @@
+import type { AskAnswer, AskOp } from "~/modules/asking/types.ts";
 import type { StoreAnswer, StoreOp } from "~/modules/console/types.ts";
 import type { GitHubApi, GitHubConnection, Installation, LostConnection, RepoSource } from "~/modules/github/types.ts";
 import type { Billing, BillingView, SpendLimit } from "~/modules/billing/types.ts";
@@ -218,6 +219,8 @@ export interface WorkspaceApi {
   membersChanged(members: number): Promise<void>;
   /** The console's own rows: what each doing did, the audit log, settings, the tree, what came in. See `console`. */
   consoleStore(op: StoreOp): Promise<StoreAnswer | NotProvisioned>;
+  /** What waits for a person: asked by a manager, shown and answered by the console. See `asking`. */
+  asked(op: AskOp): Promise<AskAnswer | NotProvisioned>;
   /** Does what is due now: what came in is decided, and what a judge did not answer is asked again. */
   tick(): Promise<void>;
   /** Erases everything the object holds, its data key and its managers included. */

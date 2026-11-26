@@ -2,8 +2,8 @@ import { templates } from "~/modules/templates/service.ts";
 import type { IntakeView, PlaybookView } from "~/modules/views-manager/types.ts";
 import type { ConsoleDeps } from "../types.ts";
 import { problem, ok } from "./around.ts";
+import { managerModel } from "./model-choice.ts";
 import { headOf, openManager, type Open } from "./managers.ts";
-import type { Decision } from "~/modules/intake/types.ts";
 
 /* What one manager's pages are given. */
 
@@ -11,15 +11,20 @@ const gone = (id: string) => problem(404, `There is no manager "${id}" here.`);
 
 const owner = (open: Open): string => open.playbook?.objective.owner ?? open.version.by;
 
+/** Each agent's model: its own, else its manager's, else the workspace's; and which of them it is. */
 async function agentsOf(c: ConsoleDeps, open: Open): Promise<PlaybookView["agents"]> {
-  const choice = (await c.store.setting("choice")) as { connection?: string; model?: string } | null | undefined;
-  const inherited = choice?.connection === undefined ? "No model chosen yet" : `${choice.connection} ${choice.model}`;
-  return (open.playbook?.agents ?? []).map((agent) => ({
-    agent,
-    model: agent.model === "inherit" ? inherited : `${agent.model.connection} ${agent.model.model}`,
-    from: agent.model === "inherit" ? "workspace" : "agent",
-    shared: null,
-  }));
+  const [mine, whole] = await Promise.all([c.store.setting(managerModel(open.row.node.id)), c.store.setting("choice")]);
+  const named = (value: unknown): string => {
+    const { model } = (value ?? {}) as { model?: string };
+    return typeof model === "string" ? model : "";
+  };
+  const [manager, workspace] = [named(mine), named(whole)];
+  return (open.playbook?.agents ?? []).map((agent) => {
+    const own = agent.model === "inherit" ? undefined : agent.model.model;
+    const [model, from] =
+      own !== undefined ? [own, "agent" as const] : manager !== "" ? [manager, "manager" as const] : [workspace, "workspace" as const];
+    return { agent, model, from, shared: null };
+  });
 }
 
 export async function playbookView(c: ConsoleDeps, id: string, wanted: number | undefined) {
@@ -78,9 +83,6 @@ export async function playbookView(c: ConsoleDeps, id: string, wanted: number | 
 
 const LIMIT = 50;
 
-/** Until a judge has been asked, what is said of an item is that: it is kept, and nothing has been decided. */
-const waiting = (item: string): Decision => ({ item, gated: [], verdicts: [], why: "Not decided yet", _tag: "CouldNot" });
-
 export async function intakeView(c: ConsoleDeps, id: string, query: URLSearchParams) {
   const open = await openManager(c, id);
   if (open === undefined) return gone(id);
@@ -88,21 +90,28 @@ export async function intakeView(c: ConsoleDeps, id: string, query: URLSearchPar
   const head = await headOf(c, open);
   const view: IntakeView = {
     head,
-    rows: found.rows.map(({ item, decision }) => ({
-      item,
-      decision: decision ?? waiting(item.id),
-      work:
-        decision?._tag === "Took"
-          ? { id: `work_${item.id}`, title: item.title }
-          : decision?._tag === "Joined"
-            ? { id: decision.work, title: item.title }
-            : null,
-      from: item.actor.name,
-      line: [{ did: "Found", says: `${item.actor.name} on ${item.place}`, at: item.at }],
-      said: null,
-      versions: { [id]: head.version },
-      mandate: null,
-    })),
+    // What is not decided yet is kept, and not shown: a row says what became of the item, and nothing has yet.
+    rows: found.rows.flatMap(({ item, decision }) =>
+      decision === null
+        ? []
+        : [
+            {
+              item,
+              decision,
+              work:
+                decision._tag === "Took"
+                  ? { id: `work_${item.id}`, title: item.title }
+                  : decision._tag === "Joined"
+                    ? { id: decision.work, title: item.title }
+                    : null,
+              from: item.actor.name,
+              line: [{ did: "Found", says: `${item.actor.name} on ${item.place}`, at: item.at }],
+              said: null,
+              versions: { [id]: head.version },
+              mandate: null,
+            },
+          ],
+    ),
     triggers: (open.playbook?.triggers ?? []).map((trigger) => ({ trigger, came: 0, took: 0, cost: 0, next: null, from: trigger.by })),
     kinds: open.playbook?.kinds ?? [],
     next: found.next,

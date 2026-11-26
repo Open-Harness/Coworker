@@ -1,26 +1,20 @@
 import type { ToDo } from "~/modules/work/types.ts";
-import type { ThreadRow, WorkingDeps } from "../types.ts";
+import type { Job, ThreadRow, WorkingDeps } from "../types.ts";
 import { agentOf, opening } from "./brief.ts";
+import { idOf } from "./ids.ts";
 import { apply, kindOf } from "./events.ts";
 import { defaultBranch } from "./github.ts";
-import { branchFor, turn, type Turned } from "./thread.ts";
+import { branchFor, pendingOf, turn, type Turned } from "./thread.ts";
 
 type Start = Extract<ToDo, { readonly do: "start" }>;
 
 /** A thread's id, made from the job that began it, so that beginning it again finds it. */
-function threadIdOf(key: string): string {
-  let [one, two] = [0x811c9dc5, 0x1b873593];
-  for (const char of key) {
-    one = Math.imul(one ^ char.charCodeAt(0), 0x01000193) >>> 0;
-    two = Math.imul(two + char.charCodeAt(0), 0x85ebca6b) >>> 0;
-  }
-  return `th_${one.toString(16).padStart(8, "0")}${two.toString(16).padStart(8, "0")}`;
-}
+const threadIdOf = (key: string): string => idOf("th", key);
 
 /** How a job went: it is done, or it waits for something that is not here, and says what. */
-export type Outcome = { readonly _tag: "Done" } | { readonly _tag: "Held"; readonly why: string };
+export type Outcome = { readonly _tag: "Done" } | { readonly _tag: "Held"; readonly why: string; readonly model?: string };
 export const done: Outcome = { _tag: "Done" };
-export const held = (why: string): Outcome => ({ _tag: "Held", why });
+export const held = (why: string, model?: string): Outcome => ({ _tag: "Held", why, ...(model === undefined ? {} : { model }) });
 
 /** A checker is shown the work as it stands: the diff of its branch against where it began. */
 async function diffOf(c: WorkingDeps, work: string, repo: string, id: string): Promise<string | Outcome> {
@@ -32,9 +26,11 @@ async function diffOf(c: WorkingDeps, work: string, repo: string, id: string): P
 
 /** What comes of a turn that has gone as far as it can. */
 function after(c: WorkingDeps, id: string, turned: Turned): Outcome {
-  if (turned._tag === "Waits") return held(turned.why);
+  if (turned._tag === "Waits") return held(turned.why, turned.model);
   const row = c.store.thread(id);
   const work = row === undefined ? undefined : c.store.work(row.work);
+  // At a call it waits for an answer, or the work waits for one (its limit): it is not quiet, it is waiting, and it goes on when answered.
+  if (turned._tag === "Parked" || (work !== undefined && work.waits !== null)) return done;
   if (turned._tag === "Ended" || row === undefined || work === undefined || row.state === "ended" || work.ended !== null) return done;
   const kind = kindOf(c, work);
   const step = kind?.steps.find((one) => one.id === work.step);
@@ -93,6 +89,11 @@ export async function startThread(c: WorkingDeps, workId: string, job: Start): P
   return after(c, id, await turn(c, id));
 }
 
+/** A thread that waited for an answer goes on from where it was. */
+export async function resumeThread(c: WorkingDeps, job: Extract<Job, { readonly do: "resume" }>): Promise<Outcome> {
+  return after(c, job.thread, await turn(c, job.thread));
+}
+
 /** What someone says to a thread that is working is said to it, once, and it goes on. To one that ended, a new one of the same agent. */
 export async function tellThread(c: WorkingDeps, workId: string, job: Extract<ToDo, { readonly do: "tell thread" }>): Promise<Outcome> {
   const row = c.store.thread(job.thread);
@@ -108,6 +109,8 @@ export async function tellThread(c: WorkingDeps, workId: string, job: Extract<To
       fresh: false,
       brief: job.what,
     });
+  // A thread at a call that waits for its answer is not told anything in between: it would stand between the call and its result.
+  if (pendingOf(c.store.messages(row.id)).length > 0) return done;
   c.store.transaction(() => {
     if (c.store.once(`told:${job.key}`) !== undefined) return;
     c.store.addMessage(row.id, { role: "user", content: job.what });

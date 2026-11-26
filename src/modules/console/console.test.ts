@@ -37,6 +37,7 @@ const nobody: ManagerStoreApi = {
     throw new Error("not used");
   },
   heard: async () => undefined,
+  answered: async () => undefined,
   board: async () => [],
   usage: async () => [],
   tick: async () => undefined,
@@ -52,6 +53,7 @@ function deps(role: "Owner" | "Member" = "Owner"): ConsoleDeps {
     who: me,
     people: [me],
     store: memoryStore(),
+    asks: async () => ({ op: "inbox", items: [] }),
     outside: {
       connections: async () => [],
       secrets: async () => [

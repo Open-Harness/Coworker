@@ -1,3 +1,4 @@
+import { answered } from "./internal/answered.ts";
 import { apply, rearm } from "./internal/events.ts";
 import { drain } from "./internal/jobs.ts";
 import { heard, openOf, take } from "./internal/take.ts";
@@ -27,6 +28,9 @@ export function createWorking(c: WorkingDeps): Working {
       if ("_tag" in taken) return taken;
       c.later(run());
       return taken;
+    },
+    answered: async (input) => {
+      if (answered(c, input)) c.later(run());
     },
     heard: async ({ work, item }) => {
       await heard(c, work, item);

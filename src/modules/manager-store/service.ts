@@ -5,7 +5,7 @@ import type { Clock } from "~/modules/clock/types.ts";
 import { playbooks } from "~/modules/playbook/service.ts";
 import type { Files, Playbook, Version } from "~/modules/playbook/types.ts";
 import { clonePlace, createWorking } from "~/modules/working/service.ts";
-import type { Outside, TakeInput, Working } from "~/modules/working/types.ts";
+import type { Answer, Outside, TakeInput, Working } from "~/modules/working/types.ts";
 import type { Region } from "~/modules/workspace/types.ts";
 import { migrate, pushVersion, readRecord, versionAt, versionsOf, writeRecord } from "./internal/tables.ts";
 import { workStore } from "./internal/work-tables.ts";
@@ -144,6 +144,10 @@ export class ManagerStoreHost<Env = unknown> extends DurableObject<Env> implemen
 
   async heard(input: { readonly work: string; readonly item: TakeInput["item"] }): Promise<void> {
     await this.#works()?.heard(input);
+  }
+
+  async answered(input: Answer): Promise<void> {
+    await this.#works()?.answered(input);
   }
 
   async board(): Promise<readonly BoardRow[]> {

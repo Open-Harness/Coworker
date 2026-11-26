@@ -1,7 +1,7 @@
 import type { OpenWork } from "~/modules/intake/types.ts";
 import type { Files, Version } from "~/modules/playbook/types.ts";
 import type { Work } from "~/modules/work/types.ts";
-import type { Hold, TakeInput, ThreadRow } from "~/modules/working/types.ts";
+import type { Answer, Hold, TakeInput, ThreadRow } from "~/modules/working/types.ts";
 import type { Region } from "~/modules/workspace/types.ts";
 
 /*
@@ -73,6 +73,8 @@ export interface ManagerStoreApi {
   ): Promise<{ readonly work: string } | { readonly _tag: "NeverOpened" } | { readonly _tag: "NoSuchKind"; readonly why: string }>;
   /** What came in on a conversation that work follows. */
   heard(input: { readonly work: string; readonly item: TakeInput["item"] }): Promise<void>;
+  /** What was asked of a person for this work was answered, anywhere: the work goes on. Once per ask. */
+  answered(input: Answer): Promise<void>;
   board(): Promise<readonly BoardRow[]>;
   usage(): Promise<readonly UsageRow[]>;
   /** Does what is due now, and goes on with what was waiting. Answers when nothing can go further. */

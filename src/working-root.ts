@@ -1,4 +1,5 @@
 import type { GitPort } from "~/modules/boxes/types.ts";
+import { managerModel } from "~/modules/console/service.ts";
 import type { GitHubApi } from "~/modules/github/types.ts";
 import type { ManagerRecord } from "~/modules/manager-store/types.ts";
 import type { Thinking } from "~/modules/playbook/types.ts";
@@ -34,11 +35,13 @@ export const outsideFor =
       models: async () => {
         const object = await workspace();
         if (object === undefined) return { connections: [], choice: null };
-        const [connections, setting] = await Promise.all([
-          object.modelConnections(),
-          object.consoleStore({ op: "setting.get", name: "choice" }),
-        ]);
-        return { connections, choice: "op" in setting && setting.op === "setting.get" ? choiceOf(setting.value) : null };
+        const read = async (name: string): Promise<Models["choice"]> => {
+          const setting = await object.consoleStore({ op: "setting.get", name });
+          return "op" in setting && setting.op === "setting.get" ? choiceOf(setting.value) : null;
+        };
+        // An agent that says "inherit" has its manager's own model, if a person gave it one, and else the workspace's.
+        const [connections, own, whole] = await Promise.all([object.modelConnections(), read(managerModel(record.id)), read("choice")]);
+        return { connections, choice: own ?? whole };
       },
       call: async (path, body) => {
         const object = await workspace();
@@ -50,5 +53,11 @@ export const outsideFor =
       github: root.github,
       git: root.git,
       fetch: root.fetch,
+      // The workspace keeps what is asked of a person. A workspace that is gone keeps nothing, and says so.
+      asks: async (op) => {
+        const asked = await (await workspace())?.asked(op);
+        if (asked === undefined || "_tag" in asked) throw new Error(`The workspace ${record.workspace} is not there to be asked.`);
+        return asked;
+      },
     };
   };

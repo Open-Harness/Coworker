@@ -34,6 +34,8 @@ export interface DecidingDeps {
   /** Who this is where it came from: can they write to the repo, are they inside the mail domain. */
   readonly standing: (item: Item) => Promise<Actor["standing"]>;
   readonly clock: Clock;
+  /** Does what was said answer an ask that was made on its thread? Then it is that answer, and not a new thing. */
+  readonly answered?: (item: Item) => Promise<{ readonly ask: string; readonly work: string | null } | undefined>;
 }
 
 export interface Deciding {

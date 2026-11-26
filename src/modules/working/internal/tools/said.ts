@@ -2,6 +2,7 @@ import { threads } from "~/modules/threads/service.ts";
 import type { Check } from "~/modules/playbook/types.ts";
 import type { Evidence } from "~/modules/work/types.ts";
 import { apply } from "../events.ts";
+import { ask } from "./asked.ts";
 import { type Call, flag, list, object, said, text, type Tool, wrong, type Result } from "../tool.ts";
 
 /* What an agent says to its work: what done means, what it found, what it did, and where it is stuck. */
@@ -97,13 +98,6 @@ async function check(call: Call, args: unknown): Promise<Result> {
 async function note(_: Call, args: unknown): Promise<Result> {
   const read = threads.read("note", args);
   return read._tag === "Wrong" ? wrong(read.says) : said("Noted.");
-}
-
-async function ask(_: Call, args: unknown): Promise<Result> {
-  const read = threads.read("ask", args);
-  return read._tag === "Wrong"
-    ? wrong(read.says)
-    : wrong("Asking a person is not available yet. Say what you would do, and do the part that needs no answer.");
 }
 
 async function skill({ playbook }: Call, args: unknown): Promise<Result> {

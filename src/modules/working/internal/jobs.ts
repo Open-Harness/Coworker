@@ -2,7 +2,8 @@ import type { Job, WorkingDeps } from "../types.ts";
 import { confirm, runChecks } from "./checks.ts";
 import { rearm } from "./events.ts";
 import { commentOnce } from "./github.ts";
-import { done, held, type Outcome, startThread, tellThread } from "./start.ts";
+import { askAboutModel, askJob, modelIsBack } from "./asked.ts";
+import { done, held, type Outcome, resumeThread, startThread, tellThread } from "./start.ts";
 
 /* What moving work asked to be done, done in the order it was asked, each once: what was done before a crash is not done again. */
 
@@ -30,16 +31,20 @@ async function doJob(c: WorkingDeps, workId: string, job: Job): Promise<Outcome>
       return confirm(c, workId, job);
     case "run checks":
       return runChecks(c, workId, job);
-    case "end threads":
+    case "end threads": {
       for (const row of c.store.threadsOf(workId)) if (row.state === "working") c.store.putThread({ ...row, state: "ended" });
+      // What was asked of a person for this work is not asked any more.
+      const ended = c.store.work(workId)?.ended;
+      await c.outside.asks({ op: "gone", work: workId, why: ended?.why ?? "The work ended." });
       return done;
+    }
     case "end box":
       await c.boxes.end(workId);
       return done;
     case "ask":
-      // A person is asked by the inbox; this slice does not reach it. The question is kept, so it is not lost.
-      c.store.keepOnce(job.key, job.question);
-      return done;
+      return askJob(c, workId, job);
+    case "resume":
+      return resumeThread(c, job);
     case "wake":
       return done;
   }
@@ -56,11 +61,14 @@ export async function drain(c: WorkingDeps, workId: string): Promise<void> {
     } catch (error) {
       outcome = held(`Something went wrong: ${error instanceof Error ? error.message : String(error)}`);
     }
+    if (outcome._tag === "Held" && outcome.model !== undefined)
+      outcome = await askAboutModel(c, workId, next.job, outcome.model, outcome.why).catch(() => outcome);
     if (outcome._tag === "Held") {
       c.store.setHold(workId, { why: outcome.why, retry: c.clock.now() + RETRY });
       rearm(c);
       return;
     }
+    await modelIsBack(c, workId, next.job).catch(() => undefined);
     c.store.transaction(() => {
       c.store.finishJob(next.job.key);
       c.store.setHold(workId, null);

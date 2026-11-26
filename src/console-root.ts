@@ -38,6 +38,11 @@ export const consoleFrom =
             : { _tag: "Refused", why: "reason" in renamed ? renamed.reason : "The name could not be changed." };
         },
       },
+      asks: async (op) => {
+        const asked = await object.asked(op);
+        if ("_tag" in asked) throw new Error("The workspace has nothing that waits for a person");
+        return asked;
+      },
       managers: root.managers,
       ours: root.ours,
       app: root.app,

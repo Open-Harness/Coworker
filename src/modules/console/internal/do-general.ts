@@ -1,12 +1,11 @@
 import type { Did } from "~/modules/api/types.ts";
 import { doings } from "~/modules/doings/service.ts";
-import type { Thinking } from "~/modules/playbook/types.ts";
 import type { Handler } from "./handlers.ts";
+import { chosenFrom, isChosen } from "./model-choice.ts";
 
 const refuse = (why: string): Did => ({ _tag: "Refused", why });
 const text = (value: unknown): string => (typeof value === "string" ? value.trim() : "");
 const done = (says: string, id: string | null = null): Did => ({ _tag: "Done", id, says, link: null });
-const THINKING: readonly Thinking[] = ["off", "low", "medium", "high"];
 
 const sentence = (id: string, words: Readonly<Record<string, string>>, by: string): string => doings.sentence(id, words, by);
 
@@ -27,15 +26,10 @@ const general: Handler = async (c, values) => {
 
 /** Which model answers when nobody has said otherwise: one that is connected, works, and lists it. */
 const defaultModel: Handler = async (c, values) => {
-  const [connection, model, thinking] = [text(values["connection"]), text(values["model"]), text(values["thinking"]) || "low"];
-  const found = (await c.outside.connections()).find(({ id }) => id === connection);
-  if (found === undefined) return refuse(`There is no connection "${connection}" here.`);
-  if (found.check._tag !== "Works") return refuse(`${found.label} does not work now: ${found.check.error}`);
-  if (!found.models.includes(model)) return refuse(`${found.label} does not list a model called "${model}".`);
-  const level = THINKING.find((one) => one === thinking);
-  if (level === undefined) return refuse(`Thinking is one of ${THINKING.join(", ")}.`);
-  await c.store.set("choice", { connection, model, thinking: level });
-  return done(sentence("models.default", { model, connection: found.label }, c.who.name));
+  const chosen = await chosenFrom(c, values);
+  if (!isChosen(chosen)) return chosen;
+  await c.store.set("choice", { connection: chosen.connection, model: chosen.model, thinking: chosen.thinking });
+  return done(sentence("models.default", { model: chosen.model, connection: chosen.label }, c.who.name));
 };
 
 export const generalHandlers: Readonly<Record<string, Handler>> = { "workspace.general": general, "models.default": defaultModel };
