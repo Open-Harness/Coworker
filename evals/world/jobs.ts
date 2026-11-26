@@ -25,7 +25,8 @@ export async function realModels(request: Request): Promise<Response | undefined
   if (url.host !== "models.jobs.test") return undefined;
   const [base, key] = [set("JOBS_BASE_URL"), set("JOBS_KEY")];
   if (base === undefined || key === undefined) return json({ error: { message: "Set JOBS_BASE_URL and JOBS_KEY to run the jobs" } }, 401);
-  const headers = new Headers({ "content-type": "application/json", authorization: `Bearer ${key}` });
+  // Anthropic's OpenAI-compatible endpoint lists its models only with its own version header; other servers ignore it.
+  const headers = new Headers({ "content-type": "application/json", authorization: `Bearer ${key}`, "anthropic-version": "2023-06-01" });
   const limit = budget();
   if (limit !== undefined && spentDollars() >= limit) return json({ error: { message: `JOBS_BUDGET reached: $${spentDollars().toFixed(2)} of $${limit} spent` } }, 402);
   const body = request.method === "GET" ? undefined : withUsage(await request.text());
