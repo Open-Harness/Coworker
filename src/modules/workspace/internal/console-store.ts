@@ -21,6 +21,7 @@ export const CONSOLE_MIGRATIONS: readonly string[] = [
 export const KEPT_MIGRATIONS: readonly string[] = [
   `CREATE TABLE console_kept (kind TEXT NOT NULL, id TEXT NOT NULL, seq INTEGER NOT NULL, json TEXT NOT NULL, PRIMARY KEY (kind, id))`,
   `CREATE TABLE console_message (thread TEXT NOT NULL, n INTEGER NOT NULL, json TEXT NOT NULL, PRIMARY KEY (thread, n))`,
+  `ALTER TABLE console_audit ADD COLUMN approved_by TEXT`,
 ];
 
 /** What the audit log says besides what it did: who said yes. Added last, so that it runs after every other. */

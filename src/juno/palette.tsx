@@ -56,10 +56,17 @@ interface Props {
   /** What the page you are on is called: the co-worker sees it. */
   readonly place: string;
   readonly shell: ShellView;
+  /** Where the page is, under the workspace: what can be shown there comes first. */
+  readonly path: string;
   readonly onGo: (to: string) => void;
+  /** The co-worker is asked to show how to do this. */
+  readonly onShow: (doing: string) => void;
 }
 
-export function Palette({ isOpen, onOpenChange, place, shell, onGo }: Props) {
+/** Asking to be shown is a command: what can be shown leads, ahead of asking about the page. */
+const isShowing = (query: string): boolean => /^show me how\b/iu.test(query);
+
+export function Palette({ isOpen, onOpenChange, place, shell, path, onGo, onShow }: Props) {
   const api = useApi();
   const source = useMemo(() => {
     const known = new Map<string, Item>();
@@ -67,34 +74,35 @@ export function Palette({ isOpen, onOpenChange, place, shell, onGo }: Props) {
       for (const one of all) known.set(one.id, one);
       return [...all];
     };
-    const [name, pages, doings, showing] = [shell.coworker.name, pagesOf(shell), doingsOf(shell), showingOf(shell)];
+    const [name, pages, doings, showing] = [shell.coworker.name, pagesOf(shell), doingsOf(shell), showingOf(shell, path)];
     return {
       known,
-      bootstrap: () => keep([ask(`Ask ${name} about ${place}`, "It sees the page you are on"), ...firstOf(shell)]),
+      bootstrap: () => keep([ask(`Ask ${name} about ${place}`, "It sees the page you are on"), ...firstOf(shell, path)]),
       search: async (raw: string, context?: { readonly update: (items: Item[]) => void }) => {
         const query = raw.trim();
         const here = [...doings, ...showing];
-        const mark = narrowed(shell, [], query[0] ?? "");
+        const mark = narrowed(shell, [], query[0] ?? "", path);
         // What the shell holds shows at once; what the server finds is added after it.
         const own =
           mark !== undefined
             ? matching(mark, query.slice(1))
             : [
+                ...(isShowing(query) ? matching(showing, query).slice(0, 5) : []),
                 ask(`Ask ${name}: “${query}”`, `It sees the page you are on: ${place}`),
                 ...matching(here, query).slice(0, 5),
                 ...matching(pages, query).slice(0, 4),
                 ...matching(knownOf(shell), query).slice(0, 6),
               ];
-        context?.update(keep(own));
+        context?.update(keep(own.filter((one, at, all) => all.findIndex((other) => other.id === one.id) === at)));
         const answer = await api.read("/search?words", { words: query.slice(mark === undefined ? 0 : 1) });
         const found = answer._tag === "Ok" ? foundOf(answer.value) : [];
-        if (mark !== undefined) return keep(matching(narrowed(shell, found, query[0] ?? "") ?? [], query.slice(1)));
+        if (mark !== undefined) return keep(matching(narrowed(shell, found, query[0] ?? "", path) ?? [], query.slice(1)));
         return keep(
           [...own, ...matching(found, query).slice(0, 6)].filter((one, at, all) => all.findIndex((other) => other.id === one.id) === at),
         );
       },
     };
-  }, [shell, place, api]);
+  }, [shell, place, path, api]);
   return (
     <CommandPalette
       label="Ask, go, do or find"
@@ -128,8 +136,9 @@ export function Palette({ isOpen, onOpenChange, place, shell, onGo }: Props) {
       }
       onValueChange={(id) => {
         onOpenChange(false);
-        const to = source.known.get(id)?.auxiliaryData?.to;
-        if (to !== undefined) onGo(to);
+        const picked = source.known.get(id)?.auxiliaryData;
+        if (picked?.kind === "show") onShow(id.slice("show:".length));
+        else if (picked !== undefined) onGo(picked.to);
       }}
     />
   );

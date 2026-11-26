@@ -55,13 +55,15 @@ const add: Handler = async (c, values) => {
   const at = c.clock.now();
   const id = c.ids.next("itm");
   const title = text(values["title"]);
+  /** Work added by hand is on the repo its manager works on, so that its box has that clone and its agents what the mandate gives there. */
+  const repo = open.row.hears[0];
   const item: Item = {
     id,
-    trigger: "console",
+    trigger: c.via === undefined ? "console" : "chat",
     by: "asked",
-    account: "console",
-    place: open.row.node.id,
-    thread: `console:${open.row.node.id}#${id}`,
+    account: repo === undefined ? "console" : "github",
+    place: repo ?? open.row.node.id,
+    thread: c.via === undefined ? `console:${open.row.node.id}#${id}` : `${c.via}#${id}`,
     event: "added",
     actor: { address: `person:${c.who.id}`, name: c.who.name, bot: false, person: c.who.id, standing: "inside" },
     addressed: true,

@@ -17,7 +17,9 @@ import {
   PencilSquareIcon,
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
+import { Dock } from "~/juno/dock.tsx";
 import { Palette } from "~/juno/palette.tsx";
+import { ShowProvider, useShow } from "~/juno/walk/show.tsx";
 import { ChatItem, ManagerItem, managerAt } from "~/juno/nav.tsx";
 import { Reading, Waiting, useGo, useHref, useRead } from "~/modules/page/service.ts";
 import type { Here } from "~/modules/page/types.ts";
@@ -31,6 +33,7 @@ function Frame({ shell, here, children }: { readonly shell: ShellView; readonly 
   const [isOpen, setOpen] = useState(false);
   const href = useHref();
   const go = useGo();
+  const show = useShow();
   useHotkeys([{ keys: "mod+k", allowInInputs: true, onPress: () => setOpen(true) }]);
   const { path } = here;
   const manager = managerAt(path);
@@ -109,7 +112,15 @@ function Frame({ shell, here, children }: { readonly shell: ShellView; readonly 
       <VStack as="main" height="100%" gap={0}>
         {children}
       </VStack>
-      <Palette isOpen={isOpen} onOpenChange={setOpen} place={placeOf(here, shell)} shell={shell} onGo={go} />
+      <Palette
+        isOpen={isOpen}
+        onOpenChange={setOpen}
+        place={placeOf(here, shell)}
+        path={path}
+        shell={shell}
+        onGo={go}
+        onShow={(doing) => show(doing, {})}
+      />
     </AppShell>
   );
 }
@@ -130,9 +141,12 @@ export function Shell({ here, children }: { readonly here: Here; readonly childr
       failed="We could not read this workspace"
     >
       {(shell) => (
-        <Frame shell={shell} here={here}>
-          {children}
-        </Frame>
+        <ShowProvider name={shell.coworker.name} path={here.path}>
+          <Frame shell={shell} here={here}>
+            {children}
+          </Frame>
+          {here.path !== "/" && !here.path.startsWith("/chats/") && <Dock name={shell.coworker.name} path={here.path} />}
+        </ShowProvider>
       )}
     </Reading>
   );

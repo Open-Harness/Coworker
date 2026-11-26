@@ -1,4 +1,5 @@
-import type { ChatRow, ActivityRow, ManagerRow, MoreAnswer, MoreOp } from "~/modules/console/types.ts";
+import type { ActivityRow, ManagerRow, MoreAnswer, MoreOp } from "~/modules/console/types.ts";
+import type { ChatRow } from "~/modules/talks/types.ts";
 import type { Decision } from "~/modules/intake/types.ts";
 
 /* What else the console keeps in the workspace's object: managers as they change, what a person did to a piece of work, chats. */

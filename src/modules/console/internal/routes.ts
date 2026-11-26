@@ -2,7 +2,7 @@ import type { Answer } from "~/modules/api/types.ts";
 import { doings } from "~/modules/doings/service.ts";
 import type { Call, ConsoleDeps } from "../types.ts";
 import { auditView } from "./audit.ts";
-import { chatsList, startChat } from "./chats.ts";
+import { chatsList, chatView, forkChat, sayInChat, startChat } from "./chats.ts";
 import { managerOverview } from "./manager-overview.ts";
 import { searchView } from "./search.ts";
 import { tryTemplate } from "./try.ts";
@@ -25,7 +25,8 @@ import {
   sharedView,
   usageView,
 } from "./settings.ts";
-import { answerAsk, inboxView } from "./inbox.ts";
+import { inboxView } from "./inbox.ts";
+import { answering } from "./answering.ts";
 import { threadsView } from "./threads-view.ts";
 import { coworkerView, homeView, shellView } from "./shell.ts";
 import { fillView, templatesView } from "./templates.ts";
@@ -40,6 +41,7 @@ const READS: readonly (readonly [RegExp, Part])[] = [
   [/^\/home$/u, () => ok(homeView())],
   [/^\/inbox$/u, async (c) => ok(await inboxView(c))],
   [/^\/chats$/u, async (c) => ok(await chatsList(c))],
+  [/^\/chats\/([^/]+)$/u, (c, [id]) => chatView(c, id ?? "")],
   [/^\/search$/u, (c, _, q) => searchView(c, q)],
   [/^\/overview$/u, async (c, _, q) => ok(await overviewView(c, q))],
   [/^\/tree$/u, async (c) => ok(await treeView(c))],
@@ -92,10 +94,14 @@ export async function write({ path, body }: Call, c: ConsoleDeps): Promise<Answe
   if (path === "/do") return run(c, body);
   if (path === "/walk") return walk(body);
   if (path === "/chats") return startChat(c, body);
+  const said = /^\/chats\/([^/]+)$/u.exec(path);
+  if (said !== null) return sayInChat(c, decodeURIComponent(said[1] ?? ""), body);
+  const forked = /^\/chats\/([^/]+)\/fork$/u.exec(path);
+  if (forked !== null) return forkChat(c, decodeURIComponent(forked[1] ?? ""), body);
   const tried = /^\/templates\/([^/]+)\/try$/u.exec(path);
   if (tried !== null) return tryTemplate(c, decodeURIComponent(tried[1] ?? ""), body);
   const asked = /^\/inbox\/([^/]+)$/u.exec(path);
-  if (asked !== null) return answerAsk(c, decodeURIComponent(asked[1] ?? ""), body);
+  if (asked !== null) return answering(c, decodeURIComponent(asked[1] ?? ""), body);
   if (path === "/set-up") return startSetUp(c, body);
   const inSetUp = /^\/set-up\/([^/]+)$/u.exec(path);
   if (inSetUp !== null) return sayInSetUp(c, decodeURIComponent(inSetUp[1] ?? ""), body);
