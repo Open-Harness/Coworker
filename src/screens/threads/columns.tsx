@@ -73,7 +73,7 @@ export function buildColumns(manager: string, href: (to: string) => string, isNa
       key: "knew",
       header: (
         <Tooltip content="Messages in the conversation when it was forked">
-          <span>Knew</span>
+          <Text as="span">Knew</Text>
         </Tooltip>
       ),
       width: pixel(64),

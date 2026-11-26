@@ -126,7 +126,7 @@ function Work({ view, manager }: { readonly view: BoardView; readonly manager: s
 /** The route names its manager, so no part of the path does. */
 const MANAGER = "sales";
 
-export default function SalesBoardPage(_: PageProps) {
+export default function SalesBoardPage(_props: PageProps) {
   const manager = MANAGER;
   return (
     <ManagerFrame id={manager} tab="Board">
