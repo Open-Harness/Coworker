@@ -200,8 +200,8 @@ export interface PageProps {
   readonly children: ReactNode;
 }
 
-/** Astryx's categorical data colours, by name. A chart never takes a raw colour. */
-export type ChartColor = "blue" | "orange" | "teal" | "purple" | "red" | "green" | "pink" | "cyan";
+/** Astryx's data colours, by name: the categorical ones, and `neutral` for a series that is not a category. A chart never takes a raw colour. */
+export type ChartColor = "neutral" | "blue" | "orange" | "teal" | "purple" | "red" | "green" | "pink" | "cyan";
 
 export interface ChartSeries {
   readonly name: string;

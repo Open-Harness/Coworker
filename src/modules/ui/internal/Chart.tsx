@@ -25,7 +25,7 @@ import type { ChartColor, ChartSeries, DonutChartProps, SeriesChartProps } from 
  * Colours are Astryx's data tokens, passed through recharts' own stroke and fill props, so dark mode follows the theme.
  */
 
-const COLOR = (color: ChartColor): string => `var(--color-data-categorical-${color})`;
+const COLOR = (color: ChartColor): string => (color === "neutral" ? "var(--color-data-neutral)" : `var(--color-data-categorical-${color})`);
 const TEXT = "var(--color-text-secondary)";
 const GRID = "var(--color-border)";
 const AXIS = { fontSize: 12, fill: TEXT };
@@ -118,7 +118,7 @@ function Bars({ labels, series, unit, isStacked = false, hasDecimals = false, he
           <ReferenceLine key={at} y={at} stroke={TEXT} strokeDasharray="4 4" />
         ))}
         {series.map(({ name, color, values }) => (
-          <Bar key={name} dataKey={name} fill={COLOR(color)} {...(isStacked ? { stackId: "all" } : {})} isAnimationActive={false}>
+          <Bar key={name} dataKey={name} fill={COLOR(color)} {...(isStacked ? { stackId: "all" } : {})} radius={[3, 3, 0, 0]} isAnimationActive={false}>
             {over === undefined || series.length > 1
               ? null
               : values.map((value, at) => <Cell key={labels[at] ?? at} fill={value >= over ? COLOR("red") : COLOR(color)} />)}

@@ -113,7 +113,7 @@ function Usage({
           <BarChart
             label="Spent each day"
             labels={view.days.map((one) => day(one.day, zone))}
-            series={[{ name: "Spent", values: view.days.map((one) => one.cost), color: "blue" }]}
+            series={[{ name: "Spent", values: view.days.map((one) => one.cost), color: "neutral" }]}
             unit="dollars"
             axis={{
               ticks: [0, 0.25, 0.5, 0.75, 1].map((part) => Math.round(part * view.perDay)),
