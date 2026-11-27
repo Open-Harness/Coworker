@@ -74,3 +74,26 @@ export const ModelChoice = Blueprint.value(
 );
 /** The fields of a press, by name: what the screens send with a doing. */
 export const Values = Blueprint.value(Schema.Record(Schema.String, Schema.String));
+
+/** A doing's id, as the registry names it: `work.add`, `soul.save`. */
+export const DoingId = Blueprint.value(Blueprint.text({ max: 60 }));
+/** What the co-worker may do alone, with a yes, or not at all, by doing id (spec C10). */
+export const Mays = Blueprint.value(Schema.Record(Schema.String, Schema.Literals(["on", "ask", "off"])));
+/** A whole split into parts, in cents, by manager id. The parts never add up to more than the whole (spec C11). */
+export const Spending = Blueprint.value(Schema.Record(Schema.String, Schema.BigIntFromString));
+/** How the co-worker talks: to whom, how, what it may say, and how it signs (the Talking page). */
+export const Talking = Blueprint.value(Schema.Struct({ who: Schema.String, how: Schema.String, may: Schema.String, sign: Schema.String }));
+/** When something runs on its own: a cron line, or a sentence the co-worker turns into one. */
+export const When = Blueprint.value(Blueprint.text({ max: 120 }));
+/** A web address: an MCP server, a link to a file. */
+export const Url = Blueprint.value(Blueprint.text({ max: 2000 }));
+/** A secret value: a key, a token, a password. Recorded nowhere, shown never (the vault holds it). */
+export const SecretValue = Blueprint.value(Blueprint.visibility.secret(Blueprint.text({ max: 8000 })));
+/** A person's word on what intake decided about an item: it was right, or it was wrong (spec I5). */
+export const Should = Blueprint.value(Schema.Literals(["right", "wrong"]));
+/** How an action call or an audit line ended (the audit log's outcome). */
+export const Outcome = Blueprint.value(Schema.Literals(["done", "asked", "refused", "failed"]));
+/** Who holds a conversation: the manager, or a person who took it (spec X6). */
+export const Holder = Blueprint.value(Schema.Literals(["manager", "person"]));
+/** A count: cases, runs, rows. */
+export const Count = Blueprint.value(Blueprint.uint(32));
