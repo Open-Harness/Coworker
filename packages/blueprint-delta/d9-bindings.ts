@@ -1,0 +1,146 @@
+// Delta D9: a screen bound to an operation. Phase 6's check reads this file: every registered doing must name an operation
+// that is a file in packages/blueprint/things/<thing>/verbs/, and every planned verb must be one too.
+import { proposal } from "./proposal.ts";
+
+export const D9 = proposal({
+  id: "D9",
+  name: "A screen bound to an operation",
+  what: "Which operation a press on a screen calls: a doing id, a write path, or a control that is planned.",
+  why:
+    "The registry's `Doing.at` names a page and a control, and the screens reach one operation through two doors (`/inbox/:ask` " +
+    "and `ask.answer`; inventory, Gaps). Orthograph has no screen, so nothing ties a press to its operation or says which are planned.",
+  where:
+    "A projection, beside the SDK and the MCP projections: `Blueprint.binding(operation, { doing, at, planned })`. The React " +
+    "projection then generates `useAct(doing)` typed by the operation's payload, and refuses a press with no binding.",
+  waits: ["packages/sdk (Phase 4)", "scripts/check-bindings.ts (Phase 6)"],
+});
+
+/** `thing/verb`: the file `packages/blueprint/things/<thing>/verbs/<verb>.ts`. */
+export type OperationPath = `${string}/${string}`;
+
+/** Every registered doing, and the operation it calls. */
+export const doings = {
+  "account.lend": "account/lend",
+  "agent.use": "agent/use",
+  "ask.always": "ask/always",
+  "ask.answer": "ask/answer",
+  "ask.approve": "ask/approve",
+  "billing.change_plan": "billing/change-plan",
+  "billing.download": "billing/download",
+  "billing.update_card": "billing/update-card",
+  "chat.fork": "chat/fork",
+  "chat.new": "chat/start",
+  "connector.check": "account/check",
+  "connector.connect": "account/connect",
+  "connector.scan": "account/scan",
+  "connector.take_away": "account/take-away",
+  "conversation.hand_back": "conversation/hand-back",
+  "conversation.tell": "conversation/tell",
+  "conversation.write": "conversation/write",
+  "coworker.may": "coworker/set-may",
+  "environment.add": "environment/add",
+  "environment.remove": "environment/remove",
+  "eval.judge": "playbook/judge",
+  "eval.retire": "playbook/retire-eval",
+  "history.undo": "coworker/undo",
+  "intake.correct": "item/correct",
+  "key.add": "key/add",
+  "key.replace": "key/replace",
+  "kind.alone": "playbook/set-alone",
+  "line.comment": "comment/make",
+  "manager.make": "manager/make",
+  "manager.move": "manager/move",
+  "manager.pause": "manager/pause",
+  "manager.retire": "manager/retire",
+  "manager.settings": "manager/settings",
+  "manager.start": "manager/start",
+  "mcp.add": "mcp/add",
+  "mcp.check": "mcp/check",
+  "mcp.remove": "mcp/remove",
+  "mcp.tool": "mcp/set-tool",
+  "models.default": "workspace/default-model",
+  "note.accept": "note/accept",
+  "note.forget": "note/forget",
+  "note.leave": "note/leave",
+  "objective.edit": "playbook/edit-objective",
+  "person.invite": "invite/send",
+  "person.let_in": "join/let-in",
+  "person.remove": "workspace/remove-person",
+  "person.role": "workspace/set-role",
+  "person.say_no": "join/refuse",
+  "profile.add_mail": "person/add-mail",
+  "reach.edit": "playbook/edit-reach",
+  "routine.add": "coworker/add-routine",
+  "rule.take_away": "rule/take-away",
+  "security.add_passkey": "person/add-passkey",
+  "security.remove_passkey": "person/remove-passkey",
+  "security.sign_out_others": "person/sign-out-others",
+  "session.sign_out": "person/sign-out",
+  "skill.add": "playbook/add-skill",
+  "soul.save": "coworker/save-soul",
+  "spending.save": "coworker/save-spending",
+  "suggestion.accept": "comment/accept",
+  "suggestion.leave": "comment/leave",
+  "talking.edit": "coworker/edit-talking",
+  "template.save": "template/save",
+  "trigger.add": "trigger/add",
+  "trigger.off": "trigger/off",
+  "trigger.run": "trigger/run",
+  "try.change": "trial/try",
+  "version.go_back": "playbook/go-back",
+  "version.save": "playbook/save-version",
+  "work.add": "work/add",
+  "work.answers": "work/answers",
+  "work.done_when": "work/say-done-when",
+  "work.hand_over": "work/hand-over",
+  "work.move": "work/move",
+  "work.open_again": "work/open-again",
+  "work.order": "work/order",
+  "work.stop": "work/stop",
+  "workspace.delete": "workspace/delete",
+  "workspace.export": "workspace/export",
+  "workspace.general": "workspace/general",
+  "workspace.take_back": "workspace/take-back",
+} as const satisfies Record<string, OperationPath>;
+
+/** Operations the screens imply that no doing registers yet: the control only toasts or changes local state. */
+export const planned = {
+  "account/choose-repos": "the GitHub page's repo choice",
+  "agent/edit": "Save on a shared agent",
+  "ask/remind": "Remind in the inbox, which presses the unregistered `ask.remind`",
+  "environment/edit": "Save on an environment",
+  "environment/set-secret": "adding or removing an environment's secret",
+  "item/approve": '"Yes, take it on" and "No" on an item that waits',
+  "mcp/give": '"Which managers have it"',
+  "person/edit": "Save on Profile and Notifications",
+  "playbook/edit-part": "every edit of a playbook part",
+  "skill/edit": '"Add a skill" and a skill\'s files',
+  "template/remove": '"Take away" on a template',
+  "template/rename": "rename on a template",
+  "thread/stop": '"Stop this thread"',
+  "trial/decide": '"Keep N" and "Use N+1" on compare',
+} as const satisfies Record<OperationPath, string>;
+
+/**
+ * Write paths, and the operation behind each. Some reach an operation no doing names (a chat line, a walk's events); the
+ * rest are the second doors the inventory found in front of a registered doing. The screens call these today.
+ */
+export const doors = {
+  "POST /api/workspaces": "workspace/make",
+  "POST /api/join/request": "join/ask",
+  "POST /chats": "chat/start",
+  "POST /chats/:chat": "chat/say",
+  "POST /chats/:chat/fork": "chat/fork",
+  "POST /inbox/:ask": "ask/answer",
+  "POST /set-up": "walk/start",
+  "POST /set-up/:walk (answers)": "walk/answer",
+  "POST /set-up/:walk (connected)": "walk/connect",
+  "POST /set-up/:walk (skipped)": "walk/skip",
+  "POST /set-up/:walk (that is wrong)": "walk/dispute",
+  "POST /set-up/:walk (make it)": "walk/make",
+  "POST /templates/:template/try": "template/try",
+  "POST /settings/mcp-servers": "mcp/add",
+  "POST /m/:manager/connectors/:connector/:conversation (tell)": "conversation/tell",
+  "POST /m/:manager/connectors/:connector/:conversation (write)": "conversation/write",
+  "POST /m/:manager/connectors/:connector/:conversation (hand back)": "conversation/hand-back",
+} as const satisfies Record<string, OperationPath>;

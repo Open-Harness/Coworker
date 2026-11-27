@@ -10,7 +10,8 @@ For the next agent. Written 27 November 2026, on branch `blueprint-light`, PR Op
 | 0 · Inventory | **Done**: [inventory.md](inventory.md) |
 | 1 · Layout | **Done**: the owner chose **A and A** in [layout.md](layout.md). The app stays at the root. `packages/orthograph` is Orthograph's declaration layer, vendored at commit 309a409 ([VENDORED.md](../../packages/orthograph/VENDORED.md)). The repo is a pnpm workspace. `scripts/check-packages.ts` is in `pnpm check`. |
 | 2 · Blueprint | **Done**: all 29 things, with the map in [packages/blueprint/README.md](../../packages/blueprint/README.md). Orthograph's checks are in [dx-log.md](dx-log.md). |
-| 3 to 6 | Not started |
+| 3 · Delta | **Done**: D1 to D9 in [packages/blueprint-delta](../../packages/blueprint-delta/README.md), with the bindings in `d9-bindings.ts` |
+| 4 to 6 | Not started |
 
 `pnpm check` was green at c6aec75. 2be6a37 passed every check except the tests, which it cannot affect: no test imports
 `packages/blueprint`.

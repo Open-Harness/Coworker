@@ -160,6 +160,18 @@ importers:
         specifier: workspace:*
         version: link:../orthograph
 
+  packages/blueprint-delta:
+    dependencies:
+      '@coworker/blueprint':
+        specifier: workspace:*
+        version: link:../blueprint
+      effect:
+        specifier: 4.1.1
+        version: 4.1.1
+      orthograph:
+        specifier: workspace:*
+        version: link:../orthograph
+
   packages/orthograph:
     dependencies:
       effect:
