@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+echo "Installing locked dependencies (Node $(node --version), pnpm $(pnpm --version))"
+time pnpm install --frozen-lockfile
+
+echo "Installing Playwright's headless Chromium for local E2E tests"
+time pnpm exec playwright install --only-shell chromium

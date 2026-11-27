@@ -18,3 +18,4 @@ status/dashboard
 .claude/settings.local.json
 .claude/worktrees/
 docs/private/
+.amp/portals/*
