@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Local work needs no credentials or services to restore on resume.
