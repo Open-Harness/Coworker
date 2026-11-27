@@ -1,0 +1,15 @@
+{
+  "name": "@coworker/blueprint-delta",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./bindings": "./d9-bindings.ts"
+  },
+  "dependencies": {
+    "@coworker/blueprint": "workspace:*",
+    "effect": "4.1.1",
+    "orthograph": "workspace:*"
+  }
+}
